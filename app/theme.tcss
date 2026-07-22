@@ -1,0 +1,33 @@
+Screen {
+    background: #090d12;
+}
+
+Header {
+    background: #0ea5e9;
+    color: black;
+}
+
+Footer {
+    background: #0ea5e9;
+    color: black;
+}
+
+Panel {
+    border: solid #38bdf8;
+}
+
+Horizontal {
+    height: 12;
+    margin: 1 2;
+}
+
+InfoBox {
+    border: round #38bdf8;
+    width: 1fr;
+    height: 10;
+    margin: 1;
+    padding: 1;
+    content-align: center middle;
+    color: #7dd3fc;
+    background: #111827;
+}

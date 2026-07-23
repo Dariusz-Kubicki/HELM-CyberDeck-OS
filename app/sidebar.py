@@ -22,14 +22,14 @@ class Sidebar(Vertical):
             id="storage",
             classes="nav-button",
         )
-
-        yield Static("COMING ONLINE", classes="sidebar-section")
-
         yield Button(
             "DEVICES",
             id="devices",
             classes="nav-button",
         )
+
+        yield Static("COMING ONLINE", classes="sidebar-section")
+
         yield Button("PROJECTS", id="projects", disabled=True)
         yield Button("AI", id="ai", disabled=True)
         yield Button("LOGS", id="logs", disabled=True)

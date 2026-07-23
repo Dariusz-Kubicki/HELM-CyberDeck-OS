@@ -68,6 +68,18 @@ class DeviceMonitor:
             if not vendor_id or not product_id:
                 continue
 
+            product = self._read_text(
+                device_path / "product",
+                default="USB DEVICE",
+            )
+
+            # Hide Linux root hubs and host controllers.
+            if (
+                vendor_id.lower() == "1d6b"
+                or "host controller" in product.lower()
+            ):
+                continue
+
             devices.append(
                 UsbDevice(
                     bus=self._read_text(
@@ -84,10 +96,7 @@ class DeviceMonitor:
                         device_path / "manufacturer",
                         default="UNKNOWN",
                     ),
-                    product=self._read_text(
-                        device_path / "product",
-                        default="USB DEVICE",
-                    ),
+                    product=product,
                     serial=self._read_text(
                         device_path / "serial",
                         default="—",

@@ -23,6 +23,7 @@ from services.data_service import DataService
 from services.log_service import LogService
 from services.mode_service import ModeService
 from services.settings_service import HelmSettings, SettingsService
+from services.workspace_service import WorkspaceService
 
 
 class Helm(App):
@@ -76,6 +77,7 @@ class Helm(App):
         self.log_service = LogService()
         self.settings_service = SettingsService()
         self.mode_service = ModeService()
+        self.workspace_service = WorkspaceService()
 
         self.settings = self.settings_service.load()
         self.modes = self.mode_service.load_modes()
@@ -256,10 +258,23 @@ class Helm(App):
                 mode.power_profile
             )
 
+            launch_results = self.workspace_service.launch_mode(mode)
+
             screen.show_activation(
                 mode,
                 power_profile,
+                launch_results,
             )
+
+            for result in launch_results:
+                self.log_service.info(
+                    "WORKSPACE",
+                    (
+                        f"{mode.name}: {result.application}; "
+                        f"status={result.status}; "
+                        f"detail={result.detail}"
+                    ),
+                )
 
             self.log_service.info(
                 "MODE",

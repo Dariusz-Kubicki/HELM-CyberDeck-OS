@@ -5,6 +5,7 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, Static
 
 from services.mode_service import WorkMode
+from services.workspace_service import LaunchResult
 
 
 class ModesScreen(Vertical):
@@ -56,7 +57,7 @@ class ModesScreen(Vertical):
             )
 
         yield Static(
-            "[b cyan]● WORK MODE ENGINE ONLINE[/b cyan]"
+            "[b cyan]● WORKSPACE ENGINE ONLINE[/b cyan]"
             "    //    SELECT AN OPERATION PROFILE",
             id="mode-status",
         )
@@ -74,20 +75,26 @@ class ModesScreen(Vertical):
             id="mode-details",
         )
 
+        yield Static(
+            "No workspace activation performed.",
+            id="mode-launch-report",
+        )
+
         with Horizontal(id="mode-actions"):
             yield Button(
-                "ACTIVATE SELECTED MODE",
+                "ACTIVATE WORKSPACE",
                 id="mode-activate",
                 variant="primary",
             )
 
         yield Static(
-            "Work profiles: config/modes.json",
+            "Workspaces: config/modes.json",
             id="mode-config-path",
         )
 
     def on_mount(self) -> None:
         self.select_mode(self.selected_mode_id)
+
         self.update_active_mode(
             self.active_mode_id,
             "CHECKING",
@@ -102,11 +109,10 @@ class ModesScreen(Vertical):
         self.selected_mode_id = mode_id
 
         for known_mode in self.modes:
-            button = self.query_one(
+            self.query_one(
                 f"#mode-select-{known_mode.mode_id}",
                 Button,
-            )
-            button.remove_class("selected-mode")
+            ).remove_class("selected-mode")
 
         self.query_one(
             f"#mode-select-{mode_id}",
@@ -118,8 +124,17 @@ class ModesScreen(Vertical):
             for feature in mode.features
         )
 
+        applications = (
+            "\n".join(
+                f"  • {application.name}"
+                for application in mode.applications
+            )
+            if mode.applications
+            else "  • No additional applications"
+        )
+
         self.query_one("#mode-details", Static).update(
-            f"[b cyan]{mode.name} MODE[/b cyan]\n\n"
+            f"[b cyan]{mode.name} WORKSPACE[/b cyan]\n\n"
             f"{mode.description}\n\n"
             f"[b]PRIMARY OBJECTIVE[/b]\n"
             f"{mode.objective}\n\n"
@@ -129,6 +144,8 @@ class ModesScreen(Vertical):
             f"  POWER PROFILE   {mode.power_profile.upper()}\n"
             f"  NAVIGATION LOG  "
             f"{'ENABLED' if mode.navigation_logging else 'DISABLED'}\n\n"
+            f"[b]APPLICATIONS[/b]\n"
+            f"{applications}\n\n"
             f"[b]CAPABILITIES[/b]\n"
             f"{features}"
         )
@@ -143,11 +160,10 @@ class ModesScreen(Vertical):
         active_mode = self.mode_map.get(mode_id)
 
         for mode in self.modes:
-            button = self.query_one(
+            self.query_one(
                 f"#mode-select-{mode.mode_id}",
                 Button,
-            )
-            button.remove_class("active-mode")
+            ).remove_class("active-mode")
 
         if active_mode is not None:
             self.query_one(
@@ -197,7 +213,7 @@ class ModesScreen(Vertical):
 
         if message:
             self.query_one("#mode-status", Static).update(
-                "[b cyan]● MODE ENGINE READY[/b cyan]"
+                "[b cyan]● WORKSPACE ENGINE READY[/b cyan]"
                 f"    //    {message}"
             )
 
@@ -205,12 +221,50 @@ class ModesScreen(Vertical):
         self,
         mode: WorkMode,
         power_profile: str,
+        launch_results: tuple[LaunchResult, ...],
     ) -> None:
         self.update_active_mode(
             mode.mode_id,
             power_profile,
             (
-                f"{mode.name} MODE ACTIVATED"
+                f"{mode.name} WORKSPACE ACTIVATED"
                 f"    //    POWER {power_profile}"
             ),
         )
+
+        if not launch_results:
+            report = (
+                "[b cyan]WORKSPACE ACTIVATION COMPLETE[/b cyan]\n\n"
+                "No external applications were configured for this mode."
+            )
+        else:
+            lines = [
+                "[b cyan]APPLICATION LAUNCH REPORT[/b cyan]",
+                "",
+            ]
+
+            for result in launch_results:
+                status_color = {
+                    "LAUNCHED": "cyan",
+                    "ALREADY RUNNING": "#70a9b8",
+                    "NOT INSTALLED": "yellow",
+                    "FAILED": "red",
+                }.get(result.status, "white")
+
+                lines.append(
+                    f"[b {status_color}]"
+                    f"{result.status:<15}"
+                    f"[/b {status_color}]"
+                    f"  {result.application}"
+                )
+
+                lines.append(
+                    f"                 {result.detail}"
+                )
+
+            report = "\n".join(lines)
+
+        self.query_one(
+            "#mode-launch-report",
+            Static,
+        ).update(report)

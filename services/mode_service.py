@@ -8,6 +8,15 @@ from pathlib import Path
 
 
 @dataclass(frozen=True, slots=True)
+class ApplicationSpec:
+    name: str
+    alternatives: tuple[tuple[str, ...], ...]
+    process_names: tuple[str, ...]
+    skip_if_running: bool
+    working_directory: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class WorkMode:
     mode_id: str
     name: str
@@ -18,6 +27,7 @@ class WorkMode:
     power_profile: str
     objective: str
     features: tuple[str, ...]
+    applications: tuple[ApplicationSpec, ...]
 
 
 class ModeService:
@@ -100,12 +110,7 @@ class ModeService:
             payload = json.loads(
                 self.state_path.read_text(encoding="utf-8")
             )
-
-            mode_id = str(
-                payload.get("active_mode", "command")
-            )
-
-            return mode_id or "command"
+            return str(payload.get("active_mode", "command"))
 
         except (OSError, json.JSONDecodeError):
             return "command"
@@ -126,7 +131,7 @@ class ModeService:
 
     def get_current_power_profile(self) -> str:
         if shutil.which("powerprofilesctl") is None:
-            return "UNAVAILABLE"
+            return "NOT MANAGED"
 
         try:
             result = subprocess.run(
@@ -140,7 +145,7 @@ class ModeService:
             return "UNKNOWN"
 
         if result.returncode != 0:
-            return "UNKNOWN"
+            return "NOT MANAGED"
 
         return result.stdout.strip().upper() or "UNKNOWN"
 
@@ -148,13 +153,13 @@ class ModeService:
         normalized = profile.lower().strip()
 
         if normalized == "unchanged":
-            return self.get_current_power_profile()
+            return "UNCHANGED"
 
         if normalized not in self.ALLOWED_POWER_PROFILES:
             return "INVALID"
 
         if shutil.which("powerprofilesctl") is None:
-            return "UNAVAILABLE"
+            return "NOT MANAGED"
 
         try:
             result = subprocess.run(
@@ -170,7 +175,7 @@ class ModeService:
             return "FAILED"
 
         if result.returncode != 0:
-            return "FAILED"
+            return "NOT MANAGED"
 
         return self.get_current_power_profile()
 
@@ -207,9 +212,19 @@ class ModeService:
         )
 
         raw_features = item.get("features", [])
+        raw_applications = item.get("applications", [])
 
         if not isinstance(raw_features, list):
             raw_features = []
+
+        if not isinstance(raw_applications, list):
+            raw_applications = []
+
+        applications = tuple(
+            self._parse_application(application)
+            for application in raw_applications
+            if isinstance(application, dict)
+        )
 
         return WorkMode(
             mode_id=mode_id,
@@ -226,4 +241,45 @@ class ModeService:
                 str(feature)
                 for feature in raw_features
             ),
+            applications=applications,
+        )
+
+    @staticmethod
+    def _parse_application(item: dict) -> ApplicationSpec:
+        raw_alternatives = item.get("alternatives", [])
+        alternatives: list[tuple[str, ...]] = []
+
+        if isinstance(raw_alternatives, list):
+            for command in raw_alternatives:
+                if (
+                    isinstance(command, list)
+                    and command
+                    and all(
+                        isinstance(argument, str)
+                        for argument in command
+                    )
+                ):
+                    alternatives.append(tuple(command))
+
+        raw_process_names = item.get("process_names", [])
+
+        if not isinstance(raw_process_names, list):
+            raw_process_names = []
+
+        working_directory = item.get("working_directory")
+
+        if working_directory is not None:
+            working_directory = str(working_directory)
+
+        return ApplicationSpec(
+            name=str(item.get("name", "Application")),
+            alternatives=tuple(alternatives),
+            process_names=tuple(
+                str(name)
+                for name in raw_process_names
+            ),
+            skip_if_running=bool(
+                item.get("skip_if_running", True)
+            ),
+            working_directory=working_directory,
         )

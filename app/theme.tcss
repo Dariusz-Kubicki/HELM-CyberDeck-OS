@@ -923,3 +923,23 @@ MetricCard Bar > .bar--complete {
     color: #456d78;
     content-align: right middle;
 }
+
+#mode-details {
+    min-height: 27;
+}
+
+#mode-launch-report {
+    width: 100%;
+    height: auto;
+    min-height: 6;
+    max-height: 14;
+    margin-top: 1;
+    padding: 1 2;
+    border: solid #1f7187;
+    background: #050b0f;
+    color: #b8eaf5;
+}
+
+#mode-launch-report:hover {
+    border: solid #36d7ff;
+}

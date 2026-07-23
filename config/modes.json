@@ -7,78 +7,163 @@
       "telemetry_interval": 1.0,
       "target_screen": "system",
       "navigation_logging": true,
-      "power_profile": "balanced",
+      "power_profile": "unchanged",
       "objective": "Maintain full situational awareness of the workstation.",
       "features": [
-        "Balanced system profile",
         "Live system telemetry",
         "Navigation event logging",
-        "System overview on startup"
-      ]
+        "System overview on activation",
+        "No additional desktop applications"
+      ],
+      "applications": []
     },
     {
       "id": "development",
       "name": "DEVELOPMENT",
-      "description": "High-frequency diagnostics for programming and debugging.",
+      "description": "Programming workspace for HELM and other software projects.",
       "telemetry_interval": 0.5,
       "target_screen": "logs",
       "navigation_logging": true,
       "power_profile": "performance",
-      "objective": "Maximize responsiveness and expose diagnostic events.",
+      "objective": "Prepare the workstation for programming and debugging.",
       "features": [
-        "Performance power profile",
-        "Telemetry every 0.5 seconds",
-        "Automatic LOGS screen",
-        "Full navigation logging"
+        "Open the HELM project in an available code editor",
+        "Open Textual documentation in Firefox",
+        "Display diagnostic logs",
+        "Fast telemetry refresh"
+      ],
+      "applications": [
+        {
+          "name": "Code editor",
+          "alternatives": [
+            ["code", "{project_root}"],
+            ["codium", "{project_root}"],
+            ["kate", "{project_root}"]
+          ],
+          "process_names": ["code", "codium", "kate"],
+          "skip_if_running": true,
+          "working_directory": "{project_root}"
+        },
+        {
+          "name": "Textual documentation",
+          "alternatives": [
+            ["firefox", "https://textual.textualize.io/"]
+          ],
+          "process_names": ["firefox"],
+          "skip_if_running": false,
+          "working_directory": "{project_root}"
+        }
       ]
     },
     {
       "id": "maker",
       "name": "MAKER",
-      "description": "Hardware laboratory profile for Arduino, ESP32 and robotics.",
+      "description": "Hardware laboratory for Arduino, ESP32 and robotics.",
       "telemetry_interval": 0.5,
       "target_screen": "devices",
       "navigation_logging": true,
       "power_profile": "performance",
-      "objective": "Detect and supervise connected development hardware.",
+      "objective": "Prepare hardware development tools and monitor connected devices.",
       "features": [
-        "Automatic DEVICES screen",
-        "Fast USB and serial monitoring",
-        "Performance power profile",
-        "Hardware event logging"
+        "Start Arduino IDE",
+        "Open Arduino documentation",
+        "Open connected-device monitoring",
+        "Fast USB and serial detection"
+      ],
+      "applications": [
+        {
+          "name": "Arduino IDE",
+          "alternatives": [
+            ["arduino-ide"],
+            ["arduino"],
+            ["flatpak", "run", "cc.arduino.IDE2"]
+          ],
+          "process_names": ["arduino-ide", "arduino"],
+          "skip_if_running": true,
+          "working_directory": "{home}"
+        },
+        {
+          "name": "Arduino documentation",
+          "alternatives": [
+            ["firefox", "https://docs.arduino.cc/"]
+          ],
+          "process_names": ["firefox"],
+          "skip_if_running": false,
+          "working_directory": "{home}"
+        }
       ]
     },
     {
       "id": "focus",
       "name": "FOCUS",
-      "description": "Reduced-noise profile for studying and focused project work.",
+      "description": "Reduced-noise workspace for focused project work.",
       "telemetry_interval": 2.0,
       "target_screen": "projects",
       "navigation_logging": false,
-      "power_profile": "power-saver",
-      "objective": "Reduce distractions and expose the current primary objective.",
+      "power_profile": "unchanged",
+      "objective": "Expose the primary objective and eliminate unnecessary activity.",
       "features": [
-        "Automatic PROJECTS screen",
+        "Open the PROJECTS command screen",
         "Reduced telemetry frequency",
         "Navigation logging disabled",
-        "Power-saving system profile"
+        "No automatically opened browser"
+      ],
+      "applications": []
+    },
+    {
+      "id": "research",
+      "name": "RESEARCH",
+      "description": "Browser and note-taking workspace for technical research.",
+      "telemetry_interval": 2.0,
+      "target_screen": "projects",
+      "navigation_logging": false,
+      "power_profile": "unchanged",
+      "objective": "Prepare documentation, browsing and note-taking tools.",
+      "features": [
+        "Open Firefox",
+        "Open an available notes application",
+        "Display current projects",
+        "Reduced background telemetry"
+      ],
+      "applications": [
+        {
+          "name": "Research browser",
+          "alternatives": [
+            ["firefox"]
+          ],
+          "process_names": ["firefox"],
+          "skip_if_running": true,
+          "working_directory": "{home}"
+        },
+        {
+          "name": "Notes",
+          "alternatives": [
+            ["obsidian"],
+            ["logseq"],
+            ["kate", "{project_root}/README.md"]
+          ],
+          "process_names": ["obsidian", "logseq", "kate"],
+          "skip_if_running": true,
+          "working_directory": "{project_root}"
+        }
       ]
     },
     {
       "id": "low-power",
       "name": "LOW POWER",
-      "description": "Minimal background activity and reduced energy consumption.",
+      "description": "Minimal HELM background activity.",
       "telemetry_interval": 5.0,
       "target_screen": "system",
       "navigation_logging": false,
       "power_profile": "power-saver",
-      "objective": "Preserve energy while maintaining basic system awareness.",
+      "objective": "Minimize background work while preserving system awareness.",
       "features": [
-        "Telemetry every 5 seconds",
-        "Power-saving system profile",
+        "Telemetry every five seconds",
         "Minimal event generation",
-        "Basic system monitoring"
-      ]
+        "No additional applications",
+        "Power profile applied when supported"
+      ],
+      "applications": []
     }
   ]
 }

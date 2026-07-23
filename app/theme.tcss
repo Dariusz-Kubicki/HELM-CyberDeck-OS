@@ -943,3 +943,25 @@ MetricCard Bar > .bar--complete {
 #mode-launch-report:hover {
     border: solid #36d7ff;
 }
+
+/* Full workspace engine */
+#mode-details {
+    min-height: 28;
+}
+
+#mode-launch-report {
+    width: 100%;
+    height: auto;
+    min-height: 7;
+    max-height: 14;
+    margin-top: 1;
+    padding: 1 2;
+    border: solid #1f7187;
+    background: #050b0f;
+    color: #b8eaf5;
+}
+
+#mode-launch-report:hover {
+    border: solid #36d7ff;
+    background: #071116;
+}

@@ -9,7 +9,7 @@ from services.workspace_service import LaunchResult
 
 
 class ModesScreen(Vertical):
-    """CyberDeck work mode selection and activation screen."""
+    """Full desktop workspace selection and activation."""
 
     def __init__(
         self,
@@ -42,7 +42,7 @@ class ModesScreen(Vertical):
             )
             yield Static(
                 "--",
-                id="mode-power-summary",
+                id="mode-workload-summary",
                 classes="mode-summary-card",
             )
             yield Static(
@@ -58,7 +58,7 @@ class ModesScreen(Vertical):
 
         yield Static(
             "[b cyan]● WORKSPACE ENGINE ONLINE[/b cyan]"
-            "    //    SELECT AN OPERATION PROFILE",
+            "    //    SELECT AN OPERATION ENVIRONMENT",
             id="mode-status",
         )
 
@@ -71,12 +71,12 @@ class ModesScreen(Vertical):
                 )
 
         yield Static(
-            "SELECT A MODE",
+            "SELECT A WORKSPACE",
             id="mode-details",
         )
 
         yield Static(
-            "No workspace activation performed.",
+            "No workspace has been launched during this session.",
             id="mode-launch-report",
         )
 
@@ -88,7 +88,7 @@ class ModesScreen(Vertical):
             )
 
         yield Static(
-            "Workspaces: config/modes.json",
+            "Workspace configuration: config/modes.json",
             id="mode-config-path",
         )
 
@@ -97,7 +97,7 @@ class ModesScreen(Vertical):
 
         self.update_active_mode(
             self.active_mode_id,
-            "CHECKING",
+            "UNCHANGED",
         )
 
     def select_mode(self, mode_id: str) -> None:
@@ -119,18 +119,18 @@ class ModesScreen(Vertical):
             Button,
         ).add_class("selected-mode")
 
-        features = "\n".join(
-            f"  • {feature}"
-            for feature in mode.features
-        )
-
         applications = (
             "\n".join(
                 f"  • {application.name}"
                 for application in mode.applications
             )
             if mode.applications
-            else "  • No additional applications"
+            else "  • No external applications"
+        )
+
+        features = "\n".join(
+            f"  • {feature}"
+            for feature in mode.features
         )
 
         self.query_one("#mode-details", Static).update(
@@ -138,13 +138,13 @@ class ModesScreen(Vertical):
             f"{mode.description}\n\n"
             f"[b]PRIMARY OBJECTIVE[/b]\n"
             f"{mode.objective}\n\n"
-            f"[b]MODE PARAMETERS[/b]\n"
-            f"  TELEMETRY       {mode.telemetry_interval:g} seconds\n"
-            f"  TARGET SCREEN   {mode.target_screen.upper()}\n"
-            f"  POWER PROFILE   {mode.power_profile.upper()}\n"
-            f"  NAVIGATION LOG  "
+            f"[b]WORKSPACE PARAMETERS[/b]\n"
+            f"  WORKLOAD         {mode.workload_profile}\n"
+            f"  TELEMETRY        {mode.telemetry_interval:g} seconds\n"
+            f"  TARGET SCREEN    {mode.target_screen.upper()}\n"
+            f"  NAVIGATION LOG   "
             f"{'ENABLED' if mode.navigation_logging else 'DISABLED'}\n\n"
-            f"[b]APPLICATIONS[/b]\n"
+            f"[b]APPLICATION MANIFEST[/b]\n"
             f"{applications}\n\n"
             f"[b]CAPABILITIES[/b]\n"
             f"{features}"
@@ -172,10 +172,12 @@ class ModesScreen(Vertical):
             ).add_class("active-mode")
 
             mode_name = active_mode.name
+            workload = active_mode.workload_profile
             refresh = f"{active_mode.telemetry_interval:g}s"
             target = active_mode.target_screen.upper()
         else:
             mode_name = "CUSTOM"
+            workload = "CUSTOM"
             refresh = "CUSTOM"
             target = "CUSTOM"
 
@@ -183,16 +185,16 @@ class ModesScreen(Vertical):
             "#mode-active-summary",
             Static,
         ).update(
-            "[b]ACTIVE MODE[/b]\n\n"
+            "[b]ACTIVE WORKSPACE[/b]\n\n"
             f"[b cyan]{mode_name}[/b cyan]"
         )
 
         self.query_one(
-            "#mode-power-summary",
+            "#mode-workload-summary",
             Static,
         ).update(
-            "[b]POWER PROFILE[/b]\n\n"
-            f"[b]{power_profile.upper()}[/b]"
+            "[b]WORKLOAD[/b]\n\n"
+            f"[b]{workload}[/b]"
         )
 
         self.query_one(
@@ -215,6 +217,7 @@ class ModesScreen(Vertical):
             self.query_one("#mode-status", Static).update(
                 "[b cyan]● WORKSPACE ENGINE READY[/b cyan]"
                 f"    //    {message}"
+                f"    //    SYSTEM POWER {power_profile}"
             )
 
     def show_activation(
@@ -226,16 +229,13 @@ class ModesScreen(Vertical):
         self.update_active_mode(
             mode.mode_id,
             power_profile,
-            (
-                f"{mode.name} WORKSPACE ACTIVATED"
-                f"    //    POWER {power_profile}"
-            ),
+            f"{mode.name} WORKSPACE ACTIVATED",
         )
 
         if not launch_results:
             report = (
                 "[b cyan]WORKSPACE ACTIVATION COMPLETE[/b cyan]\n\n"
-                "No external applications were configured for this mode."
+                "No external applications were configured for this workspace."
             )
         else:
             lines = [
@@ -244,20 +244,20 @@ class ModesScreen(Vertical):
             ]
 
             for result in launch_results:
-                status_color = {
+                color = {
                     "LAUNCHED": "cyan",
                     "ALREADY RUNNING": "#70a9b8",
+                    "SKIPPED": "#70a9b8",
                     "NOT INSTALLED": "yellow",
                     "FAILED": "red",
                 }.get(result.status, "white")
 
                 lines.append(
-                    f"[b {status_color}]"
-                    f"{result.status:<15}"
-                    f"[/b {status_color}]"
-                    f"  {result.application}"
+                    f"[b {color}]"
+                    f"{result.status:<16}"
+                    f"[/b {color}]"
+                    f" {result.application}"
                 )
-
                 lines.append(
                     f"                 {result.detail}"
                 )

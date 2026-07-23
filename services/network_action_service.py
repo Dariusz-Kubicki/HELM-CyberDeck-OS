@@ -220,7 +220,7 @@ class NetworkActionService:
             "status=$?; "
             "printf '\\n[HELM] Command finished with status %s.\\n' "
             "\"$status\"; "
-            "exec bash"
+            "printf '\\n[HELM] Press Enter to close this window...'; read -r _"
         )
 
         project_root = str(self.project_root)

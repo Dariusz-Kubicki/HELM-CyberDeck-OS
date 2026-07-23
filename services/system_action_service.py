@@ -172,7 +172,7 @@ class SystemActionService:
             "result=$?; "
             "printf '\\n[HELM] Process finished with status %s.\\n' "
             "\"$result\"; "
-            "exec bash"
+            "printf '\\n[HELM] Press Enter to close this window...'; read -r _"
         )
 
         project_root = str(self.project_root)

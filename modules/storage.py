@@ -24,6 +24,18 @@ class DiskDevice:
 
 
 @dataclass(frozen=True, slots=True)
+class DiskPartition:
+    name: str
+    parent: str
+    size_bytes: int
+    filesystem: str
+    label: str
+    mountpoint: str
+    used_percent: float | None
+    free_bytes: int | None
+
+
+@dataclass(frozen=True, slots=True)
 class StorageSample:
     root_total: int
     root_used: int
@@ -36,10 +48,11 @@ class StorageSample:
     total_write_bytes: int
 
     devices: tuple[DiskDevice, ...]
+    partitions: tuple[DiskPartition, ...]
 
 
 class StorageMonitor:
-    """Collects filesystem, disk I/O and physical drive telemetry."""
+    """Collects filesystem, disk I/O and drive inventory telemetry."""
 
     INVENTORY_REFRESH_SECONDS = 5.0
     SMART_REFRESH_SECONDS = 60.0
@@ -49,6 +62,7 @@ class StorageMonitor:
         self._previous_time = monotonic()
 
         self._devices: tuple[DiskDevice, ...] = ()
+        self._partitions: tuple[DiskPartition, ...] = ()
         self._next_inventory_refresh = 0.0
 
         self._smart_cache: dict[str, str] = {}
@@ -73,12 +87,18 @@ class StorageMonitor:
 
                 read_bps = max(
                     0.0,
-                    (current_io.read_bytes - self._previous_io.read_bytes)
+                    (
+                        current_io.read_bytes
+                        - self._previous_io.read_bytes
+                    )
                     / elapsed,
                 )
                 write_bps = max(
                     0.0,
-                    (current_io.write_bytes - self._previous_io.write_bytes)
+                    (
+                        current_io.write_bytes
+                        - self._previous_io.write_bytes
+                    )
                     / elapsed,
                 )
 
@@ -87,7 +107,11 @@ class StorageMonitor:
         self._previous_time = now
 
         if now >= self._next_inventory_refresh:
-            self._devices = self._read_devices(now)
+            (
+                self._devices,
+                self._partitions,
+            ) = self._read_inventory(now)
+
             self._next_inventory_refresh = (
                 now + self.INVENTORY_REFRESH_SECONDS
             )
@@ -102,9 +126,16 @@ class StorageMonitor:
             total_read_bytes=total_read_bytes,
             total_write_bytes=total_write_bytes,
             devices=self._devices,
+            partitions=self._partitions,
         )
 
-    def _read_devices(self, now: float) -> tuple[DiskDevice, ...]:
+    def _read_inventory(
+        self,
+        now: float,
+    ) -> tuple[
+        tuple[DiskDevice, ...],
+        tuple[DiskPartition, ...],
+    ]:
         try:
             output = subprocess.check_output(
                 [
@@ -112,11 +143,14 @@ class StorageMonitor:
                     "--json",
                     "--bytes",
                     "--output",
-                    "NAME,TYPE,SIZE,MODEL,TRAN,MOUNTPOINTS",
+                    (
+                        "NAME,PKNAME,TYPE,SIZE,MODEL,TRAN,"
+                        "FSTYPE,LABEL,MOUNTPOINTS"
+                    ),
                 ],
                 text=True,
                 stderr=subprocess.DEVNULL,
-                timeout=2.0,
+                timeout=3.0,
             )
             payload = json.loads(output)
 
@@ -125,11 +159,15 @@ class StorageMonitor:
             subprocess.SubprocessError,
             json.JSONDecodeError,
         ):
-            return ()
+            return (), ()
 
         devices: list[DiskDevice] = []
+        partitions: list[DiskPartition] = []
 
         for item in payload.get("blockdevices", []):
+            if not isinstance(item, dict):
+                continue
+
             if item.get("type") != "disk":
                 continue
 
@@ -141,23 +179,135 @@ class StorageMonitor:
             devices.append(
                 DiskDevice(
                     name=name,
-                    model=str(item.get("model") or "UNKNOWN").strip(),
-                    size_bytes=self._to_int(item.get("size")),
-                    transport=str(item.get("tran") or "UNKNOWN").upper(),
-                    mountpoints=self._collect_mountpoints(item),
-                    temperature_c=self._read_temperature(name),
-                    smart_status=self._get_smart_status(name, now),
+                    model=str(
+                        item.get("model") or "UNKNOWN"
+                    ).strip(),
+                    size_bytes=self._to_int(
+                        item.get("size")
+                    ),
+                    transport=str(
+                        item.get("tran") or "UNKNOWN"
+                    ).upper(),
+                    mountpoints=self._collect_mountpoints(
+                        item
+                    ),
+                    temperature_c=self._read_temperature(
+                        name
+                    ),
+                    smart_status=self._get_smart_status(
+                        name,
+                        now,
+                    ),
                 )
             )
 
-        return tuple(devices)
+            partitions.extend(
+                self._collect_partitions(
+                    item,
+                    parent_name=name,
+                )
+            )
 
-    def _get_smart_status(self, name: str, now: float) -> str:
-        last_check = self._smart_checked_at.get(name, 0.0)
+        devices.sort(key=lambda device: device.name)
+        partitions.sort(
+            key=lambda partition: (
+                partition.parent,
+                partition.name,
+            )
+        )
+
+        return tuple(devices), tuple(partitions)
+
+    def _collect_partitions(
+        self,
+        item: dict,
+        *,
+        parent_name: str,
+    ) -> list[DiskPartition]:
+        partitions: list[DiskPartition] = []
+
+        for child in item.get("children") or []:
+            if not isinstance(child, dict):
+                continue
+
+            child_type = str(
+                child.get("type") or ""
+            )
+            child_name = str(
+                child.get("name") or "unknown"
+            )
+
+            raw_parent = str(
+                child.get("pkname") or parent_name
+            )
+
+            mountpoints = self._direct_mountpoints(child)
+            mountpoint = (
+                mountpoints[0]
+                if mountpoints
+                else ""
+            )
+
+            used_percent: float | None = None
+            free_bytes: int | None = None
+
+            if mountpoint:
+                try:
+                    usage = psutil.disk_usage(mountpoint)
+                    used_percent = float(usage.percent)
+                    free_bytes = int(usage.free)
+                except (OSError, PermissionError):
+                    pass
+
+            if child_type in {
+                "part",
+                "lvm",
+                "crypt",
+                "raid",
+                "rom",
+            }:
+                partitions.append(
+                    DiskPartition(
+                        name=child_name,
+                        parent=raw_parent,
+                        size_bytes=self._to_int(
+                            child.get("size")
+                        ),
+                        filesystem=str(
+                            child.get("fstype") or "—"
+                        ),
+                        label=str(
+                            child.get("label") or "—"
+                        ),
+                        mountpoint=mountpoint or "—",
+                        used_percent=used_percent,
+                        free_bytes=free_bytes,
+                    )
+                )
+
+            partitions.extend(
+                self._collect_partitions(
+                    child,
+                    parent_name=raw_parent,
+                )
+            )
+
+        return partitions
+
+    def _get_smart_status(
+        self,
+        name: str,
+        now: float,
+    ) -> str:
+        last_check = self._smart_checked_at.get(
+            name,
+            0.0,
+        )
 
         if (
             name in self._smart_cache
-            and now - last_check < self.SMART_REFRESH_SECONDS
+            and now - last_check
+            < self.SMART_REFRESH_SECONDS
         ):
             return self._smart_cache[name]
 
@@ -173,13 +323,24 @@ class StorageMonitor:
         helper = "/usr/local/lib/helm/helm-smart-status"
         device = f"/dev/{name}"
 
-        if os.path.isfile(helper):
+        is_nvme_namespace = bool(
+            re.fullmatch(
+                r"nvme\d+n\d+",
+                name,
+            )
+        )
+
+        if (
+            is_nvme_namespace
+            and os.path.isfile(helper)
+        ):
             command = [
                 "sudo",
                 "-n",
                 helper,
                 device,
             ]
+
         elif shutil.which("smartctl") is not None:
             command = [
                 "smartctl",
@@ -187,6 +348,7 @@ class StorageMonitor:
                 "-j",
                 device,
             ]
+
         else:
             return "NOT INSTALLED"
 
@@ -195,7 +357,7 @@ class StorageMonitor:
                 command,
                 capture_output=True,
                 text=True,
-                timeout=3.0,
+                timeout=4.0,
                 check=False,
             )
 
@@ -205,13 +367,22 @@ class StorageMonitor:
 
             if (
                 "permission denied" in combined_output
-                or "operation not permitted" in combined_output
-                or "a password is required" in combined_output
+                or "operation not permitted"
+                in combined_output
+                or "a password is required"
+                in combined_output
+                or "permission denied"
+                in combined_output
             ):
                 return "RESTRICTED"
 
-            payload = json.loads(result.stdout or "{}")
-            passed = payload.get("smart_status", {}).get("passed")
+            payload = json.loads(
+                result.stdout or "{}"
+            )
+            passed = payload.get(
+                "smart_status",
+                {},
+            ).get("passed")
 
             if passed is True:
                 return "PASSED"
@@ -219,10 +390,14 @@ class StorageMonitor:
             if passed is False:
                 return "FAILED"
 
+            if result.returncode != 0:
+                return "UNAVAILABLE"
+
             return "UNKNOWN"
 
         except subprocess.TimeoutExpired:
             return "TIMEOUT"
+
         except (
             OSError,
             subprocess.SubprocessError,
@@ -231,8 +406,13 @@ class StorageMonitor:
             return "UNAVAILABLE"
 
     @staticmethod
-    def _read_temperature(name: str) -> float | None:
-        match = re.match(r"^(nvme\d+)(?:n\d+)?$", name)
+    def _read_temperature(
+        name: str,
+    ) -> float | None:
+        match = re.match(
+            r"^(nvme\d+)(?:n\d+)?$",
+            name,
+        )
 
         if match is None:
             return None
@@ -241,13 +421,22 @@ class StorageMonitor:
         matching_hwmon: list[str] = []
         fallback_hwmon: list[str] = []
 
-        for hwmon_dir in glob.glob("/sys/class/hwmon/hwmon*"):
+        for hwmon_dir in glob.glob(
+            "/sys/class/hwmon/hwmon*"
+        ):
             try:
                 with open(
-                    os.path.join(hwmon_dir, "name"),
+                    os.path.join(
+                        hwmon_dir,
+                        "name",
+                    ),
                     encoding="utf-8",
                 ) as file:
-                    sensor_name = file.read().strip().lower()
+                    sensor_name = (
+                        file.read()
+                        .strip()
+                        .lower()
+                    )
             except OSError:
                 continue
 
@@ -255,7 +444,10 @@ class StorageMonitor:
                 continue
 
             device_path = os.path.realpath(
-                os.path.join(hwmon_dir, "device")
+                os.path.join(
+                    hwmon_dir,
+                    "device",
+                )
             )
 
             if controller in device_path:
@@ -263,14 +455,29 @@ class StorageMonitor:
             else:
                 fallback_hwmon.append(hwmon_dir)
 
-        candidates = matching_hwmon or fallback_hwmon
+        candidates = (
+            matching_hwmon
+            or fallback_hwmon
+        )
 
-        def temperature_priority(path: str) -> tuple[int, str]:
-            label_path = path.replace("_input", "_label")
+        def temperature_priority(
+            path: str,
+        ) -> tuple[int, str]:
+            label_path = path.replace(
+                "_input",
+                "_label",
+            )
 
             try:
-                with open(label_path, encoding="utf-8") as file:
-                    label = file.read().strip().lower()
+                with open(
+                    label_path,
+                    encoding="utf-8",
+                ) as file:
+                    label = (
+                        file.read()
+                        .strip()
+                        .lower()
+                    )
             except OSError:
                 label = ""
 
@@ -281,9 +488,14 @@ class StorageMonitor:
 
         for hwmon_dir in candidates:
             temperature_files = glob.glob(
-                os.path.join(hwmon_dir, "temp*_input")
+                os.path.join(
+                    hwmon_dir,
+                    "temp*_input",
+                )
             )
-            temperature_files.sort(key=temperature_priority)
+            temperature_files.sort(
+                key=temperature_priority
+            )
 
             for temperature_file in temperature_files:
                 try:
@@ -292,7 +504,10 @@ class StorageMonitor:
                         encoding="utf-8",
                     ) as file:
                         temperature = (
-                            float(file.read().strip()) / 1000.0
+                            float(
+                                file.read().strip()
+                            )
+                            / 1000.0
                         )
 
                     if -20.0 <= temperature <= 200.0:
@@ -308,23 +523,39 @@ class StorageMonitor:
         cls,
         device: dict,
     ) -> tuple[str, ...]:
-        mountpoints: set[str] = set()
+        mountpoints: set[str] = set(
+            cls._direct_mountpoints(device)
+        )
 
+        for child in device.get("children") or []:
+            if isinstance(child, dict):
+                mountpoints.update(
+                    cls._collect_mountpoints(child)
+                )
+
+        return tuple(sorted(mountpoints))
+
+    @staticmethod
+    def _direct_mountpoints(
+        device: dict,
+    ) -> tuple[str, ...]:
+        mountpoints: list[str] = []
         raw_mountpoints = device.get("mountpoints")
 
         if isinstance(raw_mountpoints, list):
-            mountpoints.update(
+            mountpoints.extend(
                 str(value)
                 for value in raw_mountpoints
                 if value
             )
         elif raw_mountpoints:
-            mountpoints.add(str(raw_mountpoints))
+            mountpoints.append(
+                str(raw_mountpoints)
+            )
 
-        for child in device.get("children") or []:
-            mountpoints.update(cls._collect_mountpoints(child))
-
-        return tuple(sorted(mountpoints))
+        return tuple(
+            dict.fromkeys(mountpoints)
+        )
 
     @staticmethod
     def _to_int(value: object) -> int:

@@ -15,7 +15,8 @@
       "next_action": "Build PROJECTS control screen",
       "description": "Central command interface and custom workstation environment.",
       "path": "~/.cyberdeck/nexus",
-      "github_url": ""
+      "github_url": "",
+      "updated_at": "2026-07-23T22:15:13"
     },
     {
       "id": "filament-monitor",

@@ -25,6 +25,7 @@ class SettingsService:
         "devices",
         "projects",
         "logs",
+        "ai",
         "settings",
     )
 

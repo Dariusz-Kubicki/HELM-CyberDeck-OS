@@ -17,6 +17,7 @@ class SettingsScreen(Vertical):
         "devices",
         "projects",
         "logs",
+        "ai",
         "settings",
     )
 

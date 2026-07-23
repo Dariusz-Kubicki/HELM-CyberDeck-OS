@@ -9,6 +9,7 @@ from textual.widgets import (
     Static,
 )
 
+from app.screens.ai import AIScreen
 from app.screens.devices import DevicesScreen
 from app.screens.logs import LogsScreen
 from app.screens.network import NetworkScreen
@@ -52,6 +53,10 @@ class Helm(App):
             "logs-screen",
             "HELM // EVENT LOG",
         ),
+        "ai": (
+            "ai-screen",
+            "HELM // DIAGNOSTIC CORE",
+        ),
         "settings": (
             "settings-screen",
             "HELM // SYSTEM CONFIGURATION",
@@ -90,6 +95,7 @@ class Helm(App):
                     yield DevicesScreen(id="devices-screen")
                     yield ProjectsScreen(id="projects-screen")
                     yield LogsScreen(id="logs-screen")
+                    yield AIScreen(id="ai-screen")
                     yield SettingsScreen(
                         self.settings,
                         id="settings-screen",
@@ -138,6 +144,7 @@ class Helm(App):
             self.query_one(StorageScreen).update_snapshot(snapshot)
             self.query_one(DevicesScreen).update_snapshot(snapshot)
             self.query_one(ProjectsScreen).update_snapshot(snapshot)
+            self.query_one(AIScreen).update_snapshot(snapshot)
 
         except Exception as error:
             self.query_one(SystemScreen).show_error(error)

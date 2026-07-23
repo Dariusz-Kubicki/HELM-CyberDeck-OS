@@ -1158,3 +1158,148 @@ MetricCard Bar > .bar--complete {
     color: #70a9b8;
     content-align: left middle;
 }
+
+/* NETWORK Control Center v2 */
+
+#network-diagnostic-summary {
+    width: 100%;
+    height: 10;
+    margin: 1 0 0 0;
+}
+
+.network-diagnostic-card {
+    width: 1fr;
+    height: 9;
+    margin-right: 1;
+    padding: 1 2;
+    border: solid #1f7187;
+    background: #09171d;
+    color: #b8eaf5;
+    content-align: center middle;
+}
+
+.network-diagnostic-card:hover {
+    border: solid #36d7ff;
+    background: #0b1d24;
+}
+
+#network-health {
+    width: 100%;
+    height: auto;
+    min-height: 4;
+    margin-top: 1;
+    padding: 1 2;
+    border: solid #1f7187;
+    background: #071116;
+    color: #b8eaf5;
+    content-align: center middle;
+}
+
+#network-health.warning {
+    border: solid yellow;
+    background: #1d1a09;
+}
+
+#network-health.critical {
+    border: solid red;
+    background: #21090b;
+}
+
+#network-action-buttons {
+    width: 100%;
+    height: 5;
+    margin: 1 0 0 0;
+}
+
+.network-action-button {
+    width: 1fr;
+    height: 3;
+    margin-right: 1;
+    border: none;
+    background: #0b1a21;
+    color: #8be9fd;
+    text-style: bold;
+}
+
+.network-action-button:hover,
+.network-action-button:focus {
+    border-bottom: thick #36d7ff;
+    background: #164657;
+    color: #ffffff;
+}
+
+.network-table-title {
+    width: 100%;
+    height: 3;
+    margin-top: 1;
+    padding: 1 2;
+    border-bottom: solid #1f7187;
+    color: #5bbfd8;
+    content-align: left middle;
+}
+
+#network-connections-table {
+    width: 100%;
+    height: 15;
+    min-height: 10;
+    border: solid #1f7187;
+    background: #071116;
+    color: #b8eaf5;
+}
+
+#network-listeners-table {
+    width: 100%;
+    height: 13;
+    min-height: 9;
+    border: solid #1f7187;
+    background: #071116;
+    color: #b8eaf5;
+}
+
+#network-connections-table:focus,
+#network-listeners-table:focus {
+    border: solid #36d7ff;
+}
+
+#network-action-status {
+    width: 100%;
+    height: auto;
+    min-height: 3;
+    margin-top: 1;
+    padding: 1 2;
+    border-top: solid #1f7187;
+    color: #70a9b8;
+    content-align: left middle;
+}
+
+/* NETWORK total transfer cards */
+
+#network-totals {
+    width: 100%;
+    height: 8;
+    margin: 1 0 0 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+#network-totals:hover {
+    border: none;
+    background: transparent;
+}
+
+.network-total-card {
+    width: 1fr;
+    height: 7;
+    margin-right: 1;
+    padding: 1 2;
+    border: solid #1f7187;
+    background: #071116;
+    color: #b8eaf5;
+    content-align: center middle;
+}
+
+.network-total-card:hover {
+    border: solid #36d7ff;
+    background: #0b1d24;
+}

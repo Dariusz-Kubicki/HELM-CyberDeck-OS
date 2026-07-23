@@ -1,14 +1,15 @@
 from dataclasses import dataclass
 from datetime import datetime
 
+from modules.devices import DeviceMonitor, DeviceSample
 from modules.gpu import get_gpu_info
 from modules.hardware import (
     get_cpu_temp,
     get_cpu_usage,
-    get_disk_usage,
     get_ram_usage,
 )
 from modules.network import NetworkMonitor
+from modules.storage import StorageMonitor, StorageSample
 from modules.system import get_system_info
 
 
@@ -41,26 +42,32 @@ class SystemSnapshot:
     network_bytes_received: int
     network_bytes_sent: int
 
+    storage: StorageSample
+    devices: DeviceSample
+
 
 class DataService:
     """Collects all HELM telemetry in one place."""
 
     def __init__(self) -> None:
         self.network_monitor = NetworkMonitor()
+        self.storage_monitor = StorageMonitor()
+        self.device_monitor = DeviceMonitor()
 
     def collect(self) -> SystemSnapshot:
         system_info = get_system_info()
         gpu_info = get_gpu_info()
         network = self.network_monitor.sample()
+        storage = self.storage_monitor.sample()
+        devices = self.device_monitor.sample()
 
         return SystemSnapshot(
             timestamp=datetime.now().strftime("%H:%M:%S"),
 
             cpu_usage=self._to_float(get_cpu_usage(), default=0.0),
             cpu_temp=self._to_optional_float(get_cpu_temp()),
-
             ram_usage=self._to_float(get_ram_usage(), default=0.0),
-            disk_usage=self._to_float(get_disk_usage(), default=0.0),
+            disk_usage=storage.root_percent,
 
             gpu_usage=self._to_optional_float(gpu_info.get("usage")),
             gpu_temp=self._to_optional_float(gpu_info.get("temp")),
@@ -81,6 +88,9 @@ class DataService:
             network_upload_bps=network.upload_bps,
             network_bytes_received=network.bytes_received,
             network_bytes_sent=network.bytes_sent,
+
+            storage=storage,
+            devices=devices,
         )
 
     @staticmethod

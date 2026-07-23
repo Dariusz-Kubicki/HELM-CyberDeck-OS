@@ -17,11 +17,19 @@ class Sidebar(Vertical):
             id="network",
             classes="nav-button",
         )
+        yield Button(
+            "STORAGE",
+            id="storage",
+            classes="nav-button",
+        )
 
         yield Static("COMING ONLINE", classes="sidebar-section")
 
-        yield Button("STORAGE", id="storage", disabled=True)
-        yield Button("DEVICES", id="devices", disabled=True)
+        yield Button(
+            "DEVICES",
+            id="devices",
+            classes="nav-button",
+        )
         yield Button("PROJECTS", id="projects", disabled=True)
         yield Button("AI", id="ai", disabled=True)
         yield Button("LOGS", id="logs", disabled=True)

@@ -2,7 +2,9 @@ from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, ContentSwitcher, Footer, Header, Static
 
+from app.screens.devices import DevicesScreen
 from app.screens.network import NetworkScreen
+from app.screens.storage import StorageScreen
 from app.screens.system import SystemScreen
 from app.sidebar import Sidebar
 from services.data_service import DataService
@@ -21,6 +23,14 @@ class Helm(App):
         "network": (
             "network-screen",
             "HELM // NETWORK TELEMETRY",
+        ),
+        "storage": (
+            "storage-screen",
+            "HELM // STORAGE ARRAY",
+        ),
+        "devices": (
+            "devices-screen",
+            "HELM // CONNECTED DEVICES",
         ),
     }
 
@@ -46,6 +56,8 @@ class Helm(App):
                 ):
                     yield SystemScreen(id="system-screen")
                     yield NetworkScreen(id="network-screen")
+                    yield StorageScreen(id="storage-screen")
+                    yield DevicesScreen(id="devices-screen")
 
         yield Footer()
 
@@ -59,9 +71,12 @@ class Helm(App):
 
             self.query_one(SystemScreen).update_snapshot(snapshot)
             self.query_one(NetworkScreen).update_snapshot(snapshot)
+            self.query_one(StorageScreen).update_snapshot(snapshot)
+            self.query_one(DevicesScreen).update_snapshot(snapshot)
 
         except Exception as error:
             self.query_one(SystemScreen).show_error(error)
+            self.query_one(StorageScreen).show_error(error)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id

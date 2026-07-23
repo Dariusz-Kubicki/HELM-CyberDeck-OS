@@ -965,3 +965,73 @@ MetricCard Bar > .bar--complete {
     border: solid #36d7ff;
     background: #071116;
 }
+
+/* SYSTEM Control Center v2 */
+
+#system-inspector {
+    width: 100%;
+    height: auto;
+    margin-top: 1;
+}
+
+#system-detail-summary {
+    width: 100%;
+    height: 10;
+    margin: 0;
+}
+
+.system-detail-card {
+    width: 1fr;
+    height: 9;
+    margin-right: 1;
+    padding: 1 2;
+    border: solid #1f7187;
+    background: #09171d;
+    color: #b8eaf5;
+    content-align: center middle;
+}
+
+.system-detail-card:hover {
+    border: solid #36d7ff;
+    background: #0b1d24;
+}
+
+#cpu-core-grid {
+    width: 100%;
+    height: auto;
+    min-height: 9;
+    margin-top: 1;
+    padding: 1 2;
+    border: solid #1f7187;
+    background: #071116;
+    color: #b8eaf5;
+}
+
+#cpu-core-grid:hover {
+    border: solid #36d7ff;
+    background: #0b1d24;
+}
+
+#process-section-title {
+    width: 100%;
+    height: 3;
+    margin-top: 1;
+    padding: 1 2;
+    border-bottom: solid #1f7187;
+    color: #5bbfd8;
+    text-style: bold;
+    content-align: left middle;
+}
+
+#top-processes-table {
+    width: 100%;
+    height: 16;
+    min-height: 12;
+    border: solid #1f7187;
+    background: #071116;
+    color: #b8eaf5;
+}
+
+#top-processes-table:focus {
+    border: solid #36d7ff;
+}

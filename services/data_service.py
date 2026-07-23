@@ -10,6 +10,7 @@ from modules.hardware import (
 )
 from modules.network import NetworkMonitor
 from modules.projects import ProjectMonitor, ProjectSample
+from modules.resources import ResourceMonitor, ResourceSample
 from modules.storage import StorageMonitor, StorageSample
 from modules.system import get_system_info
 
@@ -46,6 +47,7 @@ class SystemSnapshot:
     storage: StorageSample
     devices: DeviceSample
     projects: ProjectSample
+    resources: ResourceSample
 
 
 class DataService:
@@ -56,33 +58,62 @@ class DataService:
         self.storage_monitor = StorageMonitor()
         self.device_monitor = DeviceMonitor()
         self.project_monitor = ProjectMonitor()
+        self.resource_monitor = ResourceMonitor()
 
     def collect(self) -> SystemSnapshot:
         system_info = get_system_info()
         gpu_info = get_gpu_info()
+
         network = self.network_monitor.sample()
         storage = self.storage_monitor.sample()
         devices = self.device_monitor.sample()
         projects = self.project_monitor.sample()
+        resources = self.resource_monitor.sample()
 
         return SystemSnapshot(
             timestamp=datetime.now().strftime("%H:%M:%S"),
 
-            cpu_usage=self._to_float(get_cpu_usage(), default=0.0),
-            cpu_temp=self._to_optional_float(get_cpu_temp()),
-            ram_usage=self._to_float(get_ram_usage(), default=0.0),
+            cpu_usage=self._to_float(
+                get_cpu_usage(),
+                default=0.0,
+            ),
+            cpu_temp=self._to_optional_float(
+                get_cpu_temp()
+            ),
+            ram_usage=self._to_float(
+                get_ram_usage(),
+                default=0.0,
+            ),
             disk_usage=storage.root_percent,
 
-            gpu_usage=self._to_optional_float(gpu_info.get("usage")),
-            gpu_temp=self._to_optional_float(gpu_info.get("temp")),
-            gpu_memory=self._to_optional_float(gpu_info.get("memory")),
-            gpu_power=self._to_optional_float(gpu_info.get("power")),
+            gpu_usage=self._to_optional_float(
+                gpu_info.get("usage")
+            ),
+            gpu_temp=self._to_optional_float(
+                gpu_info.get("temp")
+            ),
+            gpu_memory=self._to_optional_float(
+                gpu_info.get("memory")
+            ),
+            gpu_power=self._to_optional_float(
+                gpu_info.get("power")
+            ),
 
-            host=str(system_info.get("host", "unknown")),
-            user=str(system_info.get("user", "unknown")),
-            os_name=str(system_info.get("os", "unknown")),
-            kernel=str(system_info.get("kernel", "unknown")),
-            uptime=str(system_info.get("uptime", "unknown")),
+            host=str(
+                system_info.get("host", "unknown")
+            ),
+            user=str(
+                system_info.get("user", "unknown")
+            ),
+            os_name=str(
+                system_info.get("os", "unknown")
+            ),
+            kernel=str(
+                system_info.get("kernel", "unknown")
+            ),
+            uptime=str(
+                system_info.get("uptime", "unknown")
+            ),
 
             network_interface=network.interface,
             network_ip=network.ip_address,
@@ -96,17 +127,23 @@ class DataService:
             storage=storage,
             devices=devices,
             projects=projects,
+            resources=resources,
         )
 
     @staticmethod
-    def _to_float(value: object, default: float = 0.0) -> float:
+    def _to_float(
+        value: object,
+        default: float = 0.0,
+    ) -> float:
         try:
             return float(value)
         except (TypeError, ValueError):
             return default
 
     @staticmethod
-    def _to_optional_float(value: object) -> float | None:
+    def _to_optional_float(
+        value: object,
+    ) -> float | None:
         try:
             return float(value)
         except (TypeError, ValueError):

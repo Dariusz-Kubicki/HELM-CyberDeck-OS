@@ -22,11 +22,14 @@ from app.screens.settings import SettingsScreen
 from app.screens.storage import StorageScreen
 from app.screens.system import SystemScreen
 from app.sidebar import Sidebar
+from app.system_actions import SystemActions
+from services.alert_service import SystemAlert
 from services.data_service import DataService
 from services.log_service import LogService
 from services.mode_service import ModeService
 from services.settings_service import HelmSettings, SettingsService
 from services.workspace_service import WorkspaceService
+from services.system_action_service import SystemActionService
 
 
 class Helm(App):
@@ -84,12 +87,14 @@ class Helm(App):
         self.settings_service = SettingsService()
         self.mode_service = ModeService()
         self.workspace_service = WorkspaceService()
+        self.system_action_service = SystemActionService()
 
         self.settings = self.settings_service.load()
         self.modes = self.mode_service.load_modes()
         self.active_mode_id = self.mode_service.load_active_mode()
 
         self.refresh_timer: Timer | None = None
+        self._active_system_alerts: dict[str, str] = {}
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -229,7 +234,8 @@ class Helm(App):
         try:
             snapshot = self.data_service.collect()
 
-            self.query_one(SystemScreen).update_snapshot(snapshot)
+            system_alerts = self.query_one(SystemScreen).update_snapshot(snapshot)
+            self._process_system_alerts(system_alerts)
             self.query_one(NetworkScreen).update_snapshot(snapshot)
             self.query_one(StorageScreen).update_snapshot(snapshot)
             self.query_one(DevicesScreen).update_snapshot(snapshot)
@@ -257,6 +263,20 @@ class Helm(App):
         if button_id is None:
             return
 
+        system_actions = {
+            "system-action-btop": "btop",
+            "system-action-sensors": "sensors",
+            "system-action-gpu": "gpu",
+            "system-action-diagnostic": "diagnostic",
+        }
+
+        if button_id in system_actions:
+            self._launch_system_action(
+                system_actions[button_id]
+            )
+            event.stop()
+            return
+
         if button_id.startswith("mode-select-"):
             mode_id = button_id.removeprefix("mode-select-")
 
@@ -279,6 +299,89 @@ class Helm(App):
 
         if button_id in self.NAVIGATION:
             self._open_screen(button_id)
+
+    def _launch_system_action(
+        self,
+        action_id: str,
+    ) -> None:
+        result = self.system_action_service.launch(
+            action_id
+        )
+
+        self.query_one(
+            SystemActions
+        ).show_result(result)
+
+        message = (
+            f"{result.title}; "
+            f"status={result.status}; "
+            f"detail={result.detail}"
+        )
+
+        if result.status == "LAUNCHED":
+            self.log_service.info(
+                "SYSTEM ACTION",
+                message,
+            )
+        elif result.status == "NOT INSTALLED":
+            self.log_service.warning(
+                "SYSTEM ACTION",
+                message,
+            )
+        else:
+            self.log_service.error(
+                "SYSTEM ACTION",
+                message,
+            )
+
+    def _process_system_alerts(
+        self,
+        alerts: tuple[SystemAlert, ...],
+    ) -> None:
+        current_alerts = {
+            alert.code: alert
+            for alert in alerts
+        }
+
+        previous_codes = set(
+            self._active_system_alerts
+        )
+        current_codes = set(current_alerts)
+
+        for code in sorted(
+            current_codes - previous_codes
+        ):
+            alert = current_alerts[code]
+
+            message = (
+                f"{alert.title}: "
+                f"{alert.value}; "
+                f"{alert.message}"
+            )
+
+            if alert.severity == "CRITICAL":
+                self.log_service.critical(
+                    "SYSTEM ALERT",
+                    message,
+                )
+            else:
+                self.log_service.warning(
+                    "SYSTEM ALERT",
+                    message,
+                )
+
+        for code in sorted(
+            previous_codes - current_codes
+        ):
+            self.log_service.info(
+                "SYSTEM ALERT",
+                f"Condition cleared: {code}",
+            )
+
+        self._active_system_alerts = {
+            code: alert.severity
+            for code, alert in current_alerts.items()
+        }
 
     def _activate_workspace_from_palette(
         self,

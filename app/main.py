@@ -1,15 +1,29 @@
 from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer
+from textual.containers import Horizontal, Vertical
+from textual.widgets import Footer, Header, Static
 
-from app.dashboard import Dashboard
+from app.screens.system import SystemScreen
+from app.sidebar import Sidebar
 
 
 class Helm(App):
     CSS_PATH = "theme.tcss"
+    TITLE = "HELM"
+    SUB_TITLE = "CyberDeck Control Interface"
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
-        yield Dashboard()
+
+        with Horizontal(id="main-layout"):
+            yield Sidebar(id="sidebar")
+
+            with Vertical(id="content-area"):
+                yield Static(
+                    "HELM // SYSTEM OVERVIEW",
+                    id="screen-title",
+                )
+                yield SystemScreen(id="system-screen")
+
         yield Footer()
 
 

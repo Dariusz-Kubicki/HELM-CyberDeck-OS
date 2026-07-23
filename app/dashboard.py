@@ -1,49 +1,55 @@
-from textual.containers import Horizontal
 from textual.app import ComposeResult
+from textual.containers import Horizontal
+from textual.widgets import Static
 
-from app.widgets import InfoBox
-from modules.hardware import (
-    get_cpu_usage,
-    get_ram_usage,
-    get_disk_usage,
-)
+from services.data_service import SystemSnapshot
 
-from modules.gpu import get_gpu_info
+
+class MetricBox(Static):
+    """Single telemetry tile."""
+
+    def __init__(self, title: str, widget_id: str) -> None:
+        super().__init__(id=widget_id)
+        self.title = title
+
+    def set_value(self, value: str) -> None:
+        self.update(f"[b]{self.title}[/b]\n\n{value}")
 
 
 class Dashboard(Horizontal):
+    """Displays hardware telemetry without collecting data itself."""
 
     def compose(self) -> ComposeResult:
-        yield InfoBox("CPU")
-        yield InfoBox("GPU")
-        yield InfoBox("RAM")
-        yield InfoBox("SSD")
+        yield MetricBox("CPU", "cpu-box")
+        yield MetricBox("GPU", "gpu-box")
+        yield MetricBox("RAM", "ram-box")
+        yield MetricBox("STORAGE", "storage-box")
 
-    def on_mount(self):
-        self.set_interval(1, self.update_stats)
+    def update_snapshot(self, snapshot: SystemSnapshot) -> None:
+        cpu_temp = self._format_value(snapshot.cpu_temp, "°C")
+        gpu_usage = self._format_value(snapshot.gpu_usage, "%")
+        gpu_temp = self._format_value(snapshot.gpu_temp, "°C")
+        gpu_power = self._format_value(snapshot.gpu_power, " W")
 
-    def update_stats(self):
-
-        gpu = get_gpu_info()
-
-        boxes = list(self.query(InfoBox))
-
-        boxes = list(self.query(InfoBox))
-
-        boxes[0].update_value(
-            f"{get_cpu_usage()} %"
+        self.query_one("#cpu-box", MetricBox).set_value(
+            f"{snapshot.cpu_usage:.1f}%\n{cpu_temp}"
         )
 
-        boxes[1].update_value(
-            f"{gpu['usage']} %\n"
-            f"{gpu['temp']} °C\n"
-            f"{gpu['power']} W"
+        self.query_one("#gpu-box", MetricBox).set_value(
+            f"{gpu_usage}\n{gpu_temp}\n{gpu_power}"
         )
 
-        boxes[2].update_value(
-            f"{get_ram_usage()} %"
+        self.query_one("#ram-box", MetricBox).set_value(
+            f"{snapshot.ram_usage:.1f}%"
         )
 
-        boxes[3].update_value(
-            f"{get_disk_usage()} %"
+        self.query_one("#storage-box", MetricBox).set_value(
+            f"{snapshot.disk_usage:.1f}%"
         )
+
+    @staticmethod
+    def _format_value(value: float | None, suffix: str) -> str:
+        if value is None:
+            return "N/A"
+
+        return f"{value:.1f}{suffix}"

@@ -10,3 +10,9 @@ logs/*.log.*
 # Active HELM runtime mode
 config/mode_state.json
 config/mode_state.json.tmp
+*.py[cod]
+*.before-*
+*.bak
+config/backups/
+config/exports/
+logs/exports/

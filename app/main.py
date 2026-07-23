@@ -1,8 +1,10 @@
 from functools import partial
 from typing import Iterable
+from textual import work
 from textual.app import App, ComposeResult, SystemCommand
 from textual.containers import Horizontal, Vertical
 from textual.timer import Timer
+from textual.worker import Worker, get_current_worker
 from textual.screen import Screen
 from textual.widgets import (
     Button,
@@ -24,7 +26,12 @@ from app.screens.system import SystemScreen
 from app.sidebar import Sidebar
 from app.system_actions import SystemActions
 from services.alert_service import SystemAlert
-from services.data_service import DataService
+from services.data_service import (
+    DataService,
+    SystemSnapshot,
+    TelemetryIssue,
+    TelemetryResult,
+)
 from services.log_service import LogService
 from services.mode_service import ModeService
 from services.settings_service import HelmSettings, SettingsService
@@ -96,6 +103,18 @@ class Helm(App):
         self.refresh_timer: Timer | None = None
         self._active_system_alerts: dict[str, str] = {}
 
+        self._telemetry_sequence = 0
+        self._telemetry_last_applied = 0
+        self._telemetry_in_flight = False
+        self._telemetry_shutdown = False
+        self._telemetry_skipped_cycles = 0
+        self._telemetry_last_duration_ms = 0.0
+
+        self._telemetry_worker: Worker[None] | None = None
+        self._last_snapshot: SystemSnapshot | None = None
+
+        self._telemetry_issue_state: dict[str, str] = {}
+
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
 
@@ -123,7 +142,10 @@ class Helm(App):
                     )
                     yield ProjectsScreen(id="projects-screen")
                     yield LogsScreen(id="logs-screen")
-                    yield AIScreen(id="ai-screen")
+                    yield AIScreen(
+                        self.settings,
+                        id="ai-screen",
+                    )
                     yield SettingsScreen(
                         self.settings,
                         id="settings-screen",
@@ -213,8 +235,18 @@ class Helm(App):
         self._restart_refresh_timer()
 
     def on_unmount(self) -> None:
+        self._telemetry_shutdown = True
+
         if self.refresh_timer is not None:
             self.refresh_timer.stop()
+
+        worker = self._telemetry_worker
+
+        if (
+            worker is not None
+            and not worker.is_finished
+        ):
+            worker.cancel()
 
         self.log_service.info(
             "HELM",
@@ -231,30 +263,280 @@ class Helm(App):
         )
 
     def refresh_snapshot(self) -> None:
+        """Request a telemetry cycle without blocking the UI."""
+        if self._telemetry_shutdown:
+            return
+
+        if self._telemetry_in_flight:
+            self._telemetry_skipped_cycles += 1
+            self._update_telemetry_subtitle(
+                "BUSY"
+            )
+            return
+
+        self._telemetry_sequence += 1
+        sequence = self._telemetry_sequence
+
+        self._telemetry_in_flight = True
+
+        self._telemetry_worker = (
+            self._collect_snapshot_worker(
+                sequence,
+                self._last_snapshot,
+            )
+        )
+
+    @work(
+        name="telemetry-collector",
+        group="telemetry",
+        thread=True,
+        exit_on_error=False,
+    )
+    def _collect_snapshot_worker(
+        self,
+        sequence: int,
+        previous_snapshot: SystemSnapshot | None,
+    ) -> None:
+        worker = get_current_worker()
+
+        if (
+            worker.is_cancelled
+            or self._telemetry_shutdown
+        ):
+            return
+
+        result = self.data_service.collect_result(
+            sequence=sequence,
+            previous_snapshot=previous_snapshot,
+        )
+
+        if (
+            worker.is_cancelled
+            or self._telemetry_shutdown
+        ):
+            return
+
         try:
-            snapshot = self.data_service.collect()
+            self.call_from_thread(
+                self._apply_telemetry_result,
+                result,
+            )
+        except RuntimeError:
+            # App is already shutting down.
+            return
 
-            system_alerts = self.query_one(SystemScreen).update_snapshot(snapshot)
-            self._process_system_alerts(system_alerts)
-            self.query_one(NetworkScreen).update_snapshot(snapshot)
-            self.query_one(StorageScreen).update_snapshot(snapshot)
-            self.query_one(DevicesScreen).update_snapshot(snapshot)
-            self.query_one(ProjectsScreen).update_snapshot(snapshot)
-            self.query_one(AIScreen).update_snapshot(snapshot)
+    def _apply_telemetry_result(
+        self,
+        result: TelemetryResult,
+    ) -> None:
+        if self._telemetry_shutdown:
+            return
 
-        except Exception as error:
-            self.query_one(SystemScreen).show_error(error)
-            self.query_one(StorageScreen).show_error(error)
+        ui_issues: list[TelemetryIssue] = []
 
-            self.log_service.error(
+        try:
+            if (
+                result.sequence
+                <= self._telemetry_last_applied
+            ):
+                return
+
+            self._telemetry_last_applied = (
+                result.sequence
+            )
+
+            self._telemetry_last_duration_ms = (
+                result.duration_ms
+            )
+
+            snapshot = result.snapshot
+
+            if snapshot is not None:
+                self._last_snapshot = snapshot
+
+                try:
+                    system_alerts = self.query_one(
+                        SystemScreen
+                    ).update_snapshot(snapshot)
+
+                    self._process_system_alerts(
+                        system_alerts
+                    )
+
+                except Exception as error:
+                    ui_issues.append(
+                        self._make_ui_issue(
+                            "UI SYSTEM",
+                            error,
+                        )
+                    )
+
+                screen_updates = (
+                    (
+                        "UI NETWORK",
+                        NetworkScreen,
+                    ),
+                    (
+                        "UI STORAGE",
+                        StorageScreen,
+                    ),
+                    (
+                        "UI DEVICES",
+                        DevicesScreen,
+                    ),
+                    (
+                        "UI PROJECTS",
+                        ProjectsScreen,
+                    ),
+                    (
+                        "UI AI",
+                        AIScreen,
+                    ),
+                )
+
+                for source, screen_type in screen_updates:
+                    try:
+                        self.query_one(
+                            screen_type
+                        ).update_snapshot(
+                            snapshot
+                        )
+
+                    except Exception as error:
+                        ui_issues.append(
+                            self._make_ui_issue(
+                                source,
+                                error,
+                            )
+                        )
+
+            all_issues = (
+                *result.issues,
+                *ui_issues,
+            )
+
+            self._synchronize_telemetry_issues(
+                all_issues
+            )
+
+            if result.snapshot is None:
+                engine_state = "FAILED"
+            elif all_issues:
+                engine_state = "DEGRADED"
+            else:
+                engine_state = "NOMINAL"
+
+            self._update_telemetry_subtitle(
+                engine_state
+            )
+
+        finally:
+            self._telemetry_in_flight = False
+            self._refresh_log_screen()
+
+    def _synchronize_telemetry_issues(
+        self,
+        issues: tuple[TelemetryIssue, ...],
+    ) -> None:
+        current_state = {
+            issue.source: issue.signature
+            for issue in issues
+        }
+
+        for issue in issues:
+            previous_signature = (
+                self._telemetry_issue_state.get(
+                    issue.source
+                )
+            )
+
+            if (
+                previous_signature
+                == issue.signature
+            ):
+                continue
+
+            message = (
+                f"{issue.source}: "
+                f"{issue.error_type}: "
+                f"{issue.message}; "
+                f"fallback="
+                f"{'USED' if issue.fallback_used else 'UNAVAILABLE'}"
+            )
+
+            if issue.fallback_used:
+                self.log_service.warning(
+                    "TELEMETRY",
+                    message,
+                )
+            else:
+                self.log_service.error(
+                    "TELEMETRY",
+                    message,
+                )
+
+        recovered_sources = (
+            set(self._telemetry_issue_state)
+            - set(current_state)
+        )
+
+        for source in sorted(
+            recovered_sources
+        ):
+            self.log_service.info(
                 "TELEMETRY",
-                f"{type(error).__name__}: {error}",
+                (
+                    f"{source}: telemetry "
+                    "source recovered"
+                ),
             )
 
-        self.query_one(LogsScreen).update_entries(
-            self.log_service.tail(
-                limit=self.settings.log_rows,
+        self._telemetry_issue_state = (
+            current_state
+        )
+
+    def _refresh_log_screen(self) -> None:
+        try:
+            self.query_one(
+                LogsScreen
+            ).update_entries(
+                self.log_service.tail(
+                    limit=self.settings.log_rows,
+                )
             )
+        except Exception:
+            # LOGS failure must not stop telemetry.
+            pass
+
+    def _update_telemetry_subtitle(
+        self,
+        state: str,
+    ) -> None:
+        self.sub_title = (
+            f"TELEMETRY {state}"
+            f"  //  "
+            f"{self._telemetry_last_duration_ms:.0f} ms"
+            f"  //  SKIPPED "
+            f"{self._telemetry_skipped_cycles}"
+        )
+
+    @staticmethod
+    def _make_ui_issue(
+        source: str,
+        error: Exception,
+    ) -> TelemetryIssue:
+        message = " ".join(
+            str(error).split()
+        )
+
+        return TelemetryIssue(
+            source=source,
+            error_type=type(error).__name__,
+            message=(
+                message[:300]
+                or "No error detail provided."
+            ),
+            fallback_used=True,
         )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -444,6 +726,13 @@ class Helm(App):
             start_screen=mode.target_screen,
             navigation_logging=mode.navigation_logging,
             log_rows=self.settings.log_rows,
+            ai_model=self.settings.ai_model,
+            ai_context_window=(
+                self.settings.ai_context_window
+            ),
+            ai_keep_alive=(
+                self.settings.ai_keep_alive
+            ),
         )
 
         try:

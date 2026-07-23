@@ -17,7 +17,7 @@ class LaunchResult:
 
 
 class WorkspaceService:
-    """Launches applications configured for HELM work modes."""
+    """Launches complete desktop workspaces configured in HELM."""
 
     def __init__(self) -> None:
         self.project_root = Path(__file__).resolve().parents[1]
@@ -27,9 +27,104 @@ class WorkspaceService:
         self,
         mode: WorkMode,
     ) -> tuple[LaunchResult, ...]:
-        return tuple(
-            self._launch_application(application)
+        results = tuple(
+            self._launch_item(application)
             for application in mode.applications
+        )
+
+        self._send_notification(mode, results)
+        return results
+
+    def _launch_item(
+        self,
+        application: ApplicationSpec,
+    ) -> LaunchResult:
+        if application.kind == "browser":
+            return self._launch_browser(application)
+
+        return self._launch_application(application)
+
+    def _launch_browser(
+        self,
+        application: ApplicationSpec,
+    ) -> LaunchResult:
+        if not application.urls:
+            return LaunchResult(
+                application=application.name,
+                status="SKIPPED",
+                detail="No URLs configured",
+            )
+
+        browsers = (
+            "firefox",
+            "brave",
+            "brave-browser",
+            "chromium",
+            "google-chrome-stable",
+            "google-chrome",
+        )
+
+        selected_browser = next(
+            (
+                browser
+                for browser in browsers
+                if shutil.which(browser) is not None
+            ),
+            None,
+        )
+
+        if selected_browser is not None:
+            command = (
+                selected_browser,
+                "--new-window",
+                *application.urls,
+            )
+
+            try:
+                self._spawn(
+                    command,
+                    working_directory=str(self.home),
+                )
+            except OSError as error:
+                return LaunchResult(
+                    application=application.name,
+                    status="FAILED",
+                    detail=f"{type(error).__name__}: {error}",
+                )
+
+            return LaunchResult(
+                application=application.name,
+                status="LAUNCHED",
+                detail=(
+                    f"{selected_browser}: "
+                    f"{len(application.urls)} tab(s)"
+                ),
+            )
+
+        if shutil.which("xdg-open") is not None:
+            launched = 0
+
+            for url in application.urls:
+                try:
+                    self._spawn(
+                        ("xdg-open", url),
+                        working_directory=str(self.home),
+                    )
+                    launched += 1
+                except OSError:
+                    continue
+
+            if launched:
+                return LaunchResult(
+                    application=application.name,
+                    status="LAUNCHED",
+                    detail=f"xdg-open: {launched} URL(s)",
+                )
+
+        return LaunchResult(
+            application=application.name,
+            status="NOT INSTALLED",
+            detail="No supported browser detected",
         )
 
     def _launch_application(
@@ -71,14 +166,9 @@ class WorkspaceService:
         )
 
         try:
-            subprocess.Popen(
+            self._spawn(
                 resolved_command,
-                cwd=working_directory,
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True,
-                close_fds=True,
+                working_directory=working_directory,
             )
 
         except (OSError, ValueError) as error:
@@ -123,11 +213,7 @@ class WorkspaceService:
     def _flatpak_app_exists(application_id: str) -> bool:
         try:
             result = subprocess.run(
-                [
-                    "flatpak",
-                    "info",
-                    application_id,
-                ],
+                ["flatpak", "info", application_id],
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -151,9 +237,12 @@ class WorkspaceService:
             for name in process_names
         }
 
-        proc_root = Path("/proc")
+        try:
+            process_directories = Path("/proc").iterdir()
+        except OSError:
+            return False
 
-        for process_directory in proc_root.iterdir():
+        for process_directory in process_directories:
             if not process_directory.name.isdigit():
                 continue
 
@@ -164,7 +253,6 @@ class WorkspaceService:
                     encoding="utf-8",
                     errors="replace",
                 ).strip().lower()
-
             except OSError:
                 continue
 
@@ -173,9 +261,26 @@ class WorkspaceService:
 
         return False
 
+    @staticmethod
+    def _spawn(
+        command: tuple[str, ...],
+        *,
+        working_directory: str,
+    ) -> None:
+        subprocess.Popen(
+            command,
+            cwd=working_directory,
+            env=os.environ.copy(),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+            close_fds=True,
+        )
+
     def _expand_value(self, value: str) -> str:
         return (
-            os.path.expandvars(value)
+            os.path.expandvars(str(value))
             .replace(
                 "{project_root}",
                 str(self.project_root),
@@ -185,3 +290,43 @@ class WorkspaceService:
                 str(self.home),
             )
         )
+
+    @staticmethod
+    def _send_notification(
+        mode: WorkMode,
+        results: tuple[LaunchResult, ...],
+    ) -> None:
+        if shutil.which("notify-send") is None:
+            return
+
+        launched = sum(
+            result.status == "LAUNCHED"
+            for result in results
+        )
+        unavailable = sum(
+            result.status in {"FAILED", "NOT INSTALLED"}
+            for result in results
+        )
+
+        message = (
+            f"Workspace activated\n"
+            f"Applications launched: {launched}\n"
+            f"Unavailable: {unavailable}"
+        )
+
+        try:
+            subprocess.Popen(
+                [
+                    "notify-send",
+                    "-a",
+                    "HELM",
+                    f"HELM // {mode.name}",
+                    message,
+                ],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+        except OSError:
+            pass

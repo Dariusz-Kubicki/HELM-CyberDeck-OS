@@ -10,10 +10,12 @@ from pathlib import Path
 @dataclass(frozen=True, slots=True)
 class ApplicationSpec:
     name: str
+    kind: str
     alternatives: tuple[tuple[str, ...], ...]
     process_names: tuple[str, ...]
     skip_if_running: bool
     working_directory: str | None
+    urls: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,6 +26,7 @@ class WorkMode:
     telemetry_interval: float
     target_screen: str
     navigation_logging: bool
+    workload_profile: str
     power_profile: str
     objective: str
     features: tuple[str, ...]
@@ -31,7 +34,7 @@ class WorkMode:
 
 
 class ModeService:
-    """Loads, validates and applies HELM work modes."""
+    """Loads, validates and stores HELM workspace modes."""
 
     ALLOWED_SCREENS = {
         "system",
@@ -57,7 +60,6 @@ class ModeService:
 
         self.config_path = project_root / "config" / "modes.json"
         self.state_path = project_root / "config" / "mode_state.json"
-
         self._modes: tuple[WorkMode, ...] = ()
 
     def load_modes(self) -> tuple[WorkMode, ...]:
@@ -67,7 +69,7 @@ class ModeService:
             )
         except (OSError, json.JSONDecodeError) as error:
             raise RuntimeError(
-                f"Cannot load work modes: {error}"
+                f"Cannot load workspaces: {error}"
             ) from error
 
         raw_modes = payload.get("modes", [])
@@ -82,12 +84,12 @@ class ModeService:
         )
 
         if not modes:
-            raise RuntimeError("No valid work modes configured")
+            raise RuntimeError("No valid workspaces configured")
 
         mode_ids = [mode.mode_id for mode in modes]
 
         if len(mode_ids) != len(set(mode_ids)):
-            raise RuntimeError("Work mode IDs must be unique")
+            raise RuntimeError("Workspace IDs must be unique")
 
         self._modes = modes
         return modes
@@ -142,12 +144,12 @@ class ModeService:
                 check=False,
             )
         except (OSError, subprocess.SubprocessError):
-            return "UNKNOWN"
+            return "NOT MANAGED"
 
         if result.returncode != 0:
             return "NOT MANAGED"
 
-        return result.stdout.strip().upper() or "UNKNOWN"
+        return result.stdout.strip().upper() or "NOT MANAGED"
 
     def apply_power_profile(self, profile: str) -> str:
         normalized = profile.lower().strip()
@@ -169,10 +171,8 @@ class ModeService:
                 timeout=5.0,
                 check=False,
             )
-        except subprocess.TimeoutExpired:
-            return "TIMEOUT"
-        except OSError:
-            return "FAILED"
+        except (OSError, subprocess.SubprocessError):
+            return "NOT MANAGED"
 
         if result.returncode != 0:
             return "NOT MANAGED"
@@ -183,7 +183,7 @@ class ModeService:
         mode_id = str(item.get("id", "")).strip().lower()
 
         if not mode_id:
-            raise RuntimeError("Mode without an ID detected")
+            raise RuntimeError("Workspace without an ID detected")
 
         target_screen = str(
             item.get("target_screen", "system")
@@ -235,6 +235,9 @@ class ModeService:
             navigation_logging=bool(
                 item.get("navigation_logging", True)
             ),
+            workload_profile=str(
+                item.get("workload_profile", "BALANCED")
+            ).upper(),
             power_profile=power_profile,
             objective=str(item.get("objective", "")),
             features=tuple(
@@ -246,6 +249,13 @@ class ModeService:
 
     @staticmethod
     def _parse_application(item: dict) -> ApplicationSpec:
+        kind = str(
+            item.get("kind", "application")
+        ).strip().lower()
+
+        if kind not in {"application", "browser"}:
+            kind = "application"
+
         raw_alternatives = item.get("alternatives", [])
         alternatives: list[tuple[str, ...]] = []
 
@@ -266,6 +276,11 @@ class ModeService:
         if not isinstance(raw_process_names, list):
             raw_process_names = []
 
+        raw_urls = item.get("urls", [])
+
+        if not isinstance(raw_urls, list):
+            raw_urls = []
+
         working_directory = item.get("working_directory")
 
         if working_directory is not None:
@@ -273,6 +288,7 @@ class ModeService:
 
         return ApplicationSpec(
             name=str(item.get("name", "Application")),
+            kind=kind,
             alternatives=tuple(alternatives),
             process_names=tuple(
                 str(name)
@@ -282,4 +298,9 @@ class ModeService:
                 item.get("skip_if_running", True)
             ),
             working_directory=working_directory,
+            urls=tuple(
+                str(url)
+                for url in raw_urls
+                if str(url).strip()
+            ),
         )

@@ -235,6 +235,10 @@ class Helm(App):
         )
 
         if mode is None:
+            self.log_service.error(
+                "WORKSPACE",
+                "Selected workspace does not exist",
+            )
             return
 
         settings = HelmSettings(
@@ -279,9 +283,10 @@ class Helm(App):
             self.log_service.info(
                 "MODE",
                 (
-                    f"Activated {mode.name} mode; "
+                    f"Activated {mode.name} workspace; "
                     f"telemetry={mode.telemetry_interval}s; "
-                    f"power={power_profile}"
+                    f"target={mode.target_screen}; "
+                    f"applications={len(launch_results)}"
                 ),
             )
 
@@ -292,7 +297,7 @@ class Helm(App):
 
         except Exception as error:
             self.log_service.error(
-                "MODE",
+                "WORKSPACE",
                 f"{type(error).__name__}: {error}",
             )
 

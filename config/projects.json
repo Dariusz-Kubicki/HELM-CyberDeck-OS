@@ -1,0 +1,59 @@
+{
+  "projects": [
+    {
+      "id": "helm",
+      "name": "HELM / CyberDeck OS",
+      "category": "SOFTWARE",
+      "status": "ACTIVE",
+      "priority": 5,
+      "progress": 42,
+      "tech": ["Python", "Textual", "Arch Linux"],
+      "next_action": "Build PROJECTS control screen",
+      "description": "Central command interface and custom workstation environment."
+    },
+    {
+      "id": "filament-monitor",
+      "name": "Filament Humidity Monitor",
+      "category": "EMBEDDED",
+      "status": "PLANNING",
+      "priority": 4,
+      "progress": 15,
+      "tech": ["ESP32-C3", "AHT20", "OLED"],
+      "next_action": "Order components and design enclosure",
+      "description": "Humidity and temperature monitor for the filament container."
+    },
+    {
+      "id": "line-follower",
+      "name": "Line Follower Robot",
+      "category": "ROBOTICS",
+      "status": "BLOCKED",
+      "priority": 3,
+      "progress": 45,
+      "tech": ["Arduino", "TB6612FNG", "IR sensors"],
+      "next_action": "Replace the L293D motor driver",
+      "description": "Four-motor autonomous robot with line sensors."
+    },
+    {
+      "id": "greenhouse",
+      "name": "Greenhouse Automation",
+      "category": "AUTOMATION",
+      "status": "CONCEPT",
+      "priority": 2,
+      "progress": 5,
+      "tech": ["ESP32", "Sensors", "Relays"],
+      "next_action": "Define system requirements",
+      "description": "Monitoring and automatic control system for the greenhouse."
+    },
+    {
+      "id": "room-security",
+      "name": "Room Security System",
+      "category": "AI / VISION",
+      "status": "CONCEPT",
+      "priority": 2,
+      "progress": 3,
+      "tech": ["Camera", "AI", "Notifications"],
+      "next_action": "Select camera and detection platform",
+      "description": "Activity detection, identification and intrusion alerts."
+    }
+  ]
+}

@@ -4,6 +4,7 @@ from textual.widgets import Button, ContentSwitcher, Footer, Header, Static
 
 from app.screens.devices import DevicesScreen
 from app.screens.network import NetworkScreen
+from app.screens.projects import ProjectsScreen
 from app.screens.storage import StorageScreen
 from app.screens.system import SystemScreen
 from app.sidebar import Sidebar
@@ -32,6 +33,10 @@ class Helm(App):
             "devices-screen",
             "HELM // CONNECTED DEVICES",
         ),
+        "projects": (
+            "projects-screen",
+            "HELM // PROJECT COMMAND",
+        ),
     }
 
     def __init__(self) -> None:
@@ -58,6 +63,7 @@ class Helm(App):
                     yield NetworkScreen(id="network-screen")
                     yield StorageScreen(id="storage-screen")
                     yield DevicesScreen(id="devices-screen")
+                    yield ProjectsScreen(id="projects-screen")
 
         yield Footer()
 
@@ -73,6 +79,7 @@ class Helm(App):
             self.query_one(NetworkScreen).update_snapshot(snapshot)
             self.query_one(StorageScreen).update_snapshot(snapshot)
             self.query_one(DevicesScreen).update_snapshot(snapshot)
+            self.query_one(ProjectsScreen).update_snapshot(snapshot)
 
         except Exception as error:
             self.query_one(SystemScreen).show_error(error)

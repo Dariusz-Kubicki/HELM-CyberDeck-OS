@@ -9,6 +9,7 @@ from modules.hardware import (
     get_ram_usage,
 )
 from modules.network import NetworkMonitor
+from modules.projects import ProjectMonitor, ProjectSample
 from modules.storage import StorageMonitor, StorageSample
 from modules.system import get_system_info
 
@@ -44,15 +45,17 @@ class SystemSnapshot:
 
     storage: StorageSample
     devices: DeviceSample
+    projects: ProjectSample
 
 
 class DataService:
-    """Collects all HELM telemetry in one place."""
+    """Collects all HELM telemetry and operational data."""
 
     def __init__(self) -> None:
         self.network_monitor = NetworkMonitor()
         self.storage_monitor = StorageMonitor()
         self.device_monitor = DeviceMonitor()
+        self.project_monitor = ProjectMonitor()
 
     def collect(self) -> SystemSnapshot:
         system_info = get_system_info()
@@ -60,6 +63,7 @@ class DataService:
         network = self.network_monitor.sample()
         storage = self.storage_monitor.sample()
         devices = self.device_monitor.sample()
+        projects = self.project_monitor.sample()
 
         return SystemSnapshot(
             timestamp=datetime.now().strftime("%H:%M:%S"),
@@ -91,6 +95,7 @@ class DataService:
 
             storage=storage,
             devices=devices,
+            projects=projects,
         )
 
     @staticmethod

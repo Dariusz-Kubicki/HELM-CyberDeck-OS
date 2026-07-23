@@ -3,12 +3,14 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import Button, ContentSwitcher, Footer, Header, Static
 
 from app.screens.devices import DevicesScreen
+from app.screens.logs import LogsScreen
 from app.screens.network import NetworkScreen
 from app.screens.projects import ProjectsScreen
 from app.screens.storage import StorageScreen
 from app.screens.system import SystemScreen
 from app.sidebar import Sidebar
 from services.data_service import DataService
+from services.log_service import LogService
 
 
 class Helm(App):
@@ -37,11 +39,16 @@ class Helm(App):
             "projects-screen",
             "HELM // PROJECT COMMAND",
         ),
+        "logs": (
+            "logs-screen",
+            "HELM // EVENT LOG",
+        ),
     }
 
     def __init__(self) -> None:
         super().__init__()
         self.data_service = DataService()
+        self.log_service = LogService()
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -64,12 +71,24 @@ class Helm(App):
                     yield StorageScreen(id="storage-screen")
                     yield DevicesScreen(id="devices-screen")
                     yield ProjectsScreen(id="projects-screen")
+                    yield LogsScreen(id="logs-screen")
 
         yield Footer()
 
     def on_mount(self) -> None:
+        self.log_service.info(
+            "HELM",
+            "CyberDeck control interface started",
+        )
+
         self.refresh_snapshot()
         self.set_interval(1.0, self.refresh_snapshot)
+
+    def on_unmount(self) -> None:
+        self.log_service.info(
+            "HELM",
+            "CyberDeck control interface stopped",
+        )
 
     def refresh_snapshot(self) -> None:
         try:
@@ -84,6 +103,15 @@ class Helm(App):
         except Exception as error:
             self.query_one(SystemScreen).show_error(error)
             self.query_one(StorageScreen).show_error(error)
+
+            self.log_service.error(
+                "TELEMETRY",
+                f"{type(error).__name__}: {error}",
+            )
+
+        self.query_one(LogsScreen).update_entries(
+            self.log_service.tail(limit=200)
+        )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id
@@ -103,6 +131,11 @@ class Helm(App):
             ).remove_class("selected")
 
         event.button.add_class("selected")
+
+        self.log_service.info(
+            "NAVIGATION",
+            f"Opened {button_id.upper()} screen",
+        )
 
 
 if __name__ == "__main__":

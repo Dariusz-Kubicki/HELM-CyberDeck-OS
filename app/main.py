@@ -12,6 +12,7 @@ from textual.widgets import (
 from app.screens.ai import AIScreen
 from app.screens.devices import DevicesScreen
 from app.screens.logs import LogsScreen
+from app.screens.modes import ModesScreen
 from app.screens.network import NetworkScreen
 from app.screens.projects import ProjectsScreen
 from app.screens.settings import SettingsScreen
@@ -20,6 +21,7 @@ from app.screens.system import SystemScreen
 from app.sidebar import Sidebar
 from services.data_service import DataService
 from services.log_service import LogService
+from services.mode_service import ModeService
 from services.settings_service import HelmSettings, SettingsService
 
 
@@ -45,6 +47,10 @@ class Helm(App):
             "devices-screen",
             "HELM // CONNECTED DEVICES",
         ),
+        "modes": (
+            "modes-screen",
+            "HELM // OPERATION MODES",
+        ),
         "projects": (
             "projects-screen",
             "HELM // PROJECT COMMAND",
@@ -69,8 +75,12 @@ class Helm(App):
         self.data_service = DataService()
         self.log_service = LogService()
         self.settings_service = SettingsService()
+        self.mode_service = ModeService()
 
         self.settings = self.settings_service.load()
+        self.modes = self.mode_service.load_modes()
+        self.active_mode_id = self.mode_service.load_active_mode()
+
         self.refresh_timer: Timer | None = None
 
     def compose(self) -> ComposeResult:
@@ -93,6 +103,11 @@ class Helm(App):
                     yield NetworkScreen(id="network-screen")
                     yield StorageScreen(id="storage-screen")
                     yield DevicesScreen(id="devices-screen")
+                    yield ModesScreen(
+                        self.modes,
+                        self.active_mode_id,
+                        id="modes-screen",
+                    )
                     yield ProjectsScreen(id="projects-screen")
                     yield LogsScreen(id="logs-screen")
                     yield AIScreen(id="ai-screen")
@@ -108,6 +123,27 @@ class Helm(App):
             "HELM",
             "CyberDeck control interface started",
         )
+
+        active_mode = self.mode_service.get_mode(
+            self.active_mode_id
+        )
+
+        if active_mode is not None:
+            power_profile = self.mode_service.apply_power_profile(
+                active_mode.power_profile
+            )
+
+            self.query_one(ModesScreen).update_active_mode(
+                active_mode.mode_id,
+                power_profile,
+                f"{active_mode.name} MODE RESTORED",
+            )
+        else:
+            self.query_one(ModesScreen).update_active_mode(
+                "custom",
+                self.mode_service.get_current_power_profile(),
+                "CUSTOM RUNTIME CONFIGURATION",
+            )
 
         self._open_screen(
             self.settings.start_screen,
@@ -164,6 +200,21 @@ class Helm(App):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id
 
+        if button_id is None:
+            return
+
+        if button_id.startswith("mode-select-"):
+            mode_id = button_id.removeprefix("mode-select-")
+
+            self.query_one(ModesScreen).select_mode(mode_id)
+            event.stop()
+            return
+
+        if button_id == "mode-activate":
+            self._activate_selected_mode()
+            event.stop()
+            return
+
         if button_id == "settings-save":
             self._save_settings()
             return
@@ -174,6 +225,67 @@ class Helm(App):
 
         if button_id in self.NAVIGATION:
             self._open_screen(button_id)
+
+    def _activate_selected_mode(self) -> None:
+        screen = self.query_one(ModesScreen)
+        mode = self.mode_service.get_mode(
+            screen.selected_mode_id
+        )
+
+        if mode is None:
+            return
+
+        settings = HelmSettings(
+            telemetry_interval=mode.telemetry_interval,
+            start_screen=mode.target_screen,
+            navigation_logging=mode.navigation_logging,
+            log_rows=self.settings.log_rows,
+        )
+
+        try:
+            self.settings_service.save(settings)
+            self.mode_service.save_active_mode(mode.mode_id)
+
+            self.settings = settings
+            self.active_mode_id = mode.mode_id
+
+            self.query_one(SettingsScreen).load_settings(settings)
+            self._restart_refresh_timer()
+
+            power_profile = self.mode_service.apply_power_profile(
+                mode.power_profile
+            )
+
+            screen.show_activation(
+                mode,
+                power_profile,
+            )
+
+            self.log_service.info(
+                "MODE",
+                (
+                    f"Activated {mode.name} mode; "
+                    f"telemetry={mode.telemetry_interval}s; "
+                    f"power={power_profile}"
+                ),
+            )
+
+            self._open_screen(
+                mode.target_screen,
+                log_event=False,
+            )
+
+        except Exception as error:
+            self.log_service.error(
+                "MODE",
+                f"{type(error).__name__}: {error}",
+            )
+
+            screen.update_active_mode(
+                self.active_mode_id,
+                self.mode_service.get_current_power_profile(),
+                f"ACTIVATION ERROR: {error}",
+            )
 
     def _open_screen(
         self,
@@ -210,6 +322,16 @@ class Helm(App):
                 f"Opened {navigation_id.upper()} screen",
             )
 
+    def _set_custom_mode(self) -> None:
+        self.active_mode_id = "custom"
+        self.mode_service.save_active_mode("custom")
+
+        self.query_one(ModesScreen).update_active_mode(
+            "custom",
+            self.mode_service.get_current_power_profile(),
+            "CUSTOM SETTINGS ACTIVE",
+        )
+
     def _save_settings(self) -> None:
         screen = self.query_one(SettingsScreen)
 
@@ -220,6 +342,7 @@ class Helm(App):
             self.settings = settings
             screen.load_settings(settings)
             self._restart_refresh_timer()
+            self._set_custom_mode()
 
             screen.show_status(
                 "Runtime configuration saved successfully."
@@ -251,6 +374,7 @@ class Helm(App):
             self.settings = settings
             screen.load_settings(settings)
             self._restart_refresh_timer()
+            self._set_custom_mode()
 
             screen.show_status(
                 "Default configuration restored."

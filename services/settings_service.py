@@ -23,6 +23,7 @@ class SettingsService:
         "network",
         "storage",
         "devices",
+        "modes",
         "projects",
         "logs",
         "ai",

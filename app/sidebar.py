@@ -11,6 +11,7 @@ class Sidebar(Vertical):
         yield Button("NETWORK", id="network", classes="nav-button")
         yield Button("STORAGE", id="storage", classes="nav-button")
         yield Button("DEVICES", id="devices", classes="nav-button")
+        yield Button("MODES", id="modes", classes="nav-button")
         yield Button("PROJECTS", id="projects", classes="nav-button")
         yield Button("LOGS", id="logs", classes="nav-button")
         yield Button("AI", id="ai", classes="nav-button")

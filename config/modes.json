@@ -1,0 +1,84 @@
+{
+  "modes": [
+    {
+      "id": "command",
+      "name": "COMMAND",
+      "description": "Default CyberDeck command and monitoring profile.",
+      "telemetry_interval": 1.0,
+      "target_screen": "system",
+      "navigation_logging": true,
+      "power_profile": "balanced",
+      "objective": "Maintain full situational awareness of the workstation.",
+      "features": [
+        "Balanced system profile",
+        "Live system telemetry",
+        "Navigation event logging",
+        "System overview on startup"
+      ]
+    },
+    {
+      "id": "development",
+      "name": "DEVELOPMENT",
+      "description": "High-frequency diagnostics for programming and debugging.",
+      "telemetry_interval": 0.5,
+      "target_screen": "logs",
+      "navigation_logging": true,
+      "power_profile": "performance",
+      "objective": "Maximize responsiveness and expose diagnostic events.",
+      "features": [
+        "Performance power profile",
+        "Telemetry every 0.5 seconds",
+        "Automatic LOGS screen",
+        "Full navigation logging"
+      ]
+    },
+    {
+      "id": "maker",
+      "name": "MAKER",
+      "description": "Hardware laboratory profile for Arduino, ESP32 and robotics.",
+      "telemetry_interval": 0.5,
+      "target_screen": "devices",
+      "navigation_logging": true,
+      "power_profile": "performance",
+      "objective": "Detect and supervise connected development hardware.",
+      "features": [
+        "Automatic DEVICES screen",
+        "Fast USB and serial monitoring",
+        "Performance power profile",
+        "Hardware event logging"
+      ]
+    },
+    {
+      "id": "focus",
+      "name": "FOCUS",
+      "description": "Reduced-noise profile for studying and focused project work.",
+      "telemetry_interval": 2.0,
+      "target_screen": "projects",
+      "navigation_logging": false,
+      "power_profile": "power-saver",
+      "objective": "Reduce distractions and expose the current primary objective.",
+      "features": [
+        "Automatic PROJECTS screen",
+        "Reduced telemetry frequency",
+        "Navigation logging disabled",
+        "Power-saving system profile"
+      ]
+    },
+    {
+      "id": "low-power",
+      "name": "LOW POWER",
+      "description": "Minimal background activity and reduced energy consumption.",
+      "telemetry_interval": 5.0,
+      "target_screen": "system",
+      "navigation_logging": false,
+      "power_profile": "power-saver",
+      "objective": "Preserve energy while maintaining basic system awareness.",
+      "features": [
+        "Telemetry every 5 seconds",
+        "Power-saving system profile",
+        "Minimal event generation",
+        "Basic system monitoring"
+      ]
+    }
+  ]
+}

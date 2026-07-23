@@ -6,3 +6,7 @@ venv/
 logs/*.log
 logs/*.log.*
 !logs/.gitkeep
+
+# Active HELM runtime mode
+config/mode_state.json
+config/mode_state.json.tmp

@@ -1,6 +1,6 @@
 {
-  "telemetry_interval": 1.0,
+  "telemetry_interval": 5.0,
   "start_screen": "system",
-  "navigation_logging": true,
+  "navigation_logging": false,
   "log_rows": 200
 }

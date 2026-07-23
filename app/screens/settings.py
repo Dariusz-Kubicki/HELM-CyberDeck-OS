@@ -15,6 +15,7 @@ class SettingsScreen(Vertical):
         "network",
         "storage",
         "devices",
+        "modes",
         "projects",
         "logs",
         "ai",

@@ -2369,3 +2369,103 @@ MetricCard Bar > .bar--complete {
     border: solid #36d7ff;
     background: #0b1d24;
 }
+
+/* AI Hybrid Diagnostic Core v2 */
+
+#ai-screen {
+    width: 100%;
+    height: 1fr;
+    overflow-y: auto;
+    padding-bottom: 1;
+}
+
+#ai-actions,
+#ai-session-actions {
+    width: 100%;
+    height: 5;
+    margin-top: 1;
+}
+
+.ai-stop-action {
+    width: 1fr;
+    height: 3;
+    margin-right: 1;
+    border: none;
+    background: #251014;
+    color: #ff8f9a;
+    text-style: bold;
+}
+
+.ai-stop-action:hover,
+.ai-stop-action:focus {
+    border-bottom: thick red;
+    background: #45151c;
+    color: #ffffff;
+}
+
+.ai-stop-action:disabled {
+    background: #11181b;
+    color: #45616a;
+}
+
+#ai-transcript {
+    width: 100%;
+    height: 24;
+    min-height: 18;
+    margin-top: 1;
+    padding: 1 2;
+    border: solid #1f7187;
+    background: #050b0f;
+    color: #b8eaf5;
+    scrollbar-color: #1f7187;
+    scrollbar-color-hover: #36d7ff;
+}
+
+#ai-live-response {
+    width: 100%;
+    height: 14;
+    min-height: 8;
+    max-height: 18;
+    margin-top: 1;
+    padding: 1 2;
+    border: solid #36d7ff;
+    background: #071116;
+    color: #d4f7ff;
+    scrollbar-color: #1f7187;
+    scrollbar-color-hover: #36d7ff;
+}
+
+#ai-command-row {
+    width: 100%;
+    height: 5;
+    margin-top: 1;
+}
+
+#ai-command {
+    width: 1fr;
+    height: 3;
+    border: solid #1f7187;
+    background: #071116;
+    color: #d4f7ff;
+}
+
+#ai-command:focus {
+    border: solid #36d7ff;
+}
+
+#ai-command:disabled {
+    border: solid #18313a;
+    background: #0b1215;
+    color: #45616a;
+}
+
+#ai-status-bar {
+    width: 100%;
+    height: 4;
+    margin-bottom: 1;
+    padding: 1 2;
+    border-top: solid #1f7187;
+    background: #071116;
+    color: #70a9b8;
+    content-align: left middle;
+}

@@ -13,8 +13,8 @@ class Sidebar(Vertical):
         yield Button("DEVICES", id="devices", classes="nav-button")
         yield Button("PROJECTS", id="projects", classes="nav-button")
         yield Button("LOGS", id="logs", classes="nav-button")
+        yield Button("SETTINGS", id="settings", classes="nav-button")
 
         yield Static("COMING ONLINE", classes="sidebar-section")
 
         yield Button("AI", id="ai", disabled=True)
-        yield Button("SETTINGS", id="settings", disabled=True)

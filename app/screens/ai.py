@@ -143,6 +143,10 @@ class AIScreen(Vertical):
             self._submit_command(command)
             event.stop()
 
+    def execute_command(self, command: str) -> None:
+        """Execute a diagnostic command from another HELM component."""
+        self._submit_command(command)
+
     def _submit_command(self, command: str) -> None:
         if not command:
             return

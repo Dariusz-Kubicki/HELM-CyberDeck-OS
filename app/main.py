@@ -1,6 +1,9 @@
-from textual.app import App, ComposeResult
+from functools import partial
+from typing import Iterable
+from textual.app import App, ComposeResult, SystemCommand
 from textual.containers import Horizontal, Vertical
 from textual.timer import Timer
+from textual.screen import Screen
 from textual.widgets import (
     Button,
     ContentSwitcher,
@@ -30,6 +33,9 @@ class Helm(App):
     CSS_PATH = "theme.tcss"
     TITLE = "HELM"
     SUB_TITLE = "CyberDeck Control Interface"
+
+    COMMAND_PALETTE_BINDING = "ctrl+k"
+    COMMAND_PALETTE_DISPLAY = "CTRL+K"
 
     NAVIGATION = {
         "system": (
@@ -119,6 +125,52 @@ class Helm(App):
                     )
 
         yield Footer()
+
+    def get_system_commands(
+        self,
+        screen: Screen,
+    ) -> Iterable[SystemCommand]:
+        """Expose HELM actions through the global command palette."""
+
+        yield from super().get_system_commands(screen)
+
+        for navigation_id, (_, title) in self.NAVIGATION.items():
+            yield SystemCommand(
+                f"Open {navigation_id.upper()}",
+                title,
+                partial(
+                    self._open_screen,
+                    navigation_id,
+                ),
+            )
+
+        for mode in self.modes:
+            yield SystemCommand(
+                f"Activate {mode.name} workspace",
+                mode.description,
+                partial(
+                    self._activate_workspace_from_palette,
+                    mode.mode_id,
+                ),
+            )
+
+        yield SystemCommand(
+            "Run full CyberDeck diagnostic",
+            "Open the AI core and analyze live system telemetry.",
+            partial(
+                self._run_ai_command,
+                "diagnostic",
+            ),
+        )
+
+        yield SystemCommand(
+            "Show AI command help",
+            "Open the diagnostic core command reference.",
+            partial(
+                self._run_ai_command,
+                "help",
+            ),
+        )
 
     def on_mount(self) -> None:
         self.log_service.info(
@@ -227,6 +279,32 @@ class Helm(App):
 
         if button_id in self.NAVIGATION:
             self._open_screen(button_id)
+
+    def _activate_workspace_from_palette(
+        self,
+        mode_id: str,
+    ) -> None:
+        """Select and activate a workspace from the command palette."""
+
+        modes_screen = self.query_one(ModesScreen)
+        modes_screen.select_mode(mode_id)
+
+        self._activate_selected_mode()
+
+    def _run_ai_command(self, command: str) -> None:
+        """Open the AI screen and execute a diagnostic command."""
+
+        self._open_screen(
+            "ai",
+            log_event=False,
+        )
+
+        self.query_one(AIScreen).execute_command(command)
+
+        self.log_service.info(
+            "COMMAND",
+            f"Executed AI command: {command}",
+        )
 
     def _activate_selected_mode(self) -> None:
         screen = self.query_one(ModesScreen)

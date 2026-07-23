@@ -824,8 +824,9 @@ MetricCard Bar > .bar--complete {
 
 #modes-screen {
     width: 100%;
-    height: 100%;
+    height: 1fr;
     overflow-y: auto;
+    padding-bottom: 1;
 }
 
 #modes-summary {
@@ -906,7 +907,7 @@ MetricCard Bar > .bar--complete {
 
 #mode-actions {
     width: 100%;
-    height: 5;
+    height: 4;
     margin: 1 0 0 0;
     align-horizontal: right;
 }
@@ -952,7 +953,7 @@ MetricCard Bar > .bar--complete {
 #mode-launch-report {
     width: 100%;
     height: auto;
-    min-height: 7;
+    min-height: 5;
     max-height: 14;
     margin-top: 1;
     padding: 1 2;
@@ -1923,4 +1924,307 @@ MetricCard Bar > .bar--complete {
 #projects-completed-title {
     border-bottom: solid #286445;
     color: #72d69f;
+}
+
+/* MODES Control Center v2 */
+
+.modes-section-title {
+    width: 100%;
+    height: 3;
+    margin-top: 1;
+    padding: 1 2;
+    border-bottom: solid #1f7187;
+    color: #5bbfd8;
+    text-style: bold;
+    content-align: left middle;
+}
+
+#modes-table {
+    width: 100%;
+    height: 14;
+    min-height: 10;
+    border: solid #1f7187;
+    background: #071116;
+    color: #b8eaf5;
+}
+
+#modes-table:focus {
+    border: solid #36d7ff;
+}
+
+#mode-database-actions,
+#mode-application-actions {
+    width: 100%;
+    height: 5;
+    margin: 1 0 0 0;
+}
+
+.mode-control-button {
+    width: 1fr;
+    height: 3;
+    margin-right: 1;
+    border: none;
+    background: #0b1a21;
+    color: #8be9fd;
+    text-style: bold;
+}
+
+.mode-control-button:hover,
+.mode-control-button:focus {
+    border-bottom: thick #36d7ff;
+    background: #164657;
+    color: #ffffff;
+}
+
+.mode-delete-button {
+    width: 1fr;
+    height: 3;
+    margin-right: 1;
+    border: none;
+    background: #251014;
+    color: #ff8f9a;
+    text-style: bold;
+}
+
+.mode-delete-button:hover,
+.mode-delete-button:focus {
+    border-bottom: thick red;
+    background: #45151c;
+    color: #ffffff;
+}
+
+#mode-details {
+    width: 100%;
+    height: auto;
+    min-height: 24;
+    margin-top: 1;
+    padding: 2 3;
+    padding-bottom: 2;
+}
+
+#mode-applications-table {
+    width: 100%;
+    height: 13;
+    min-height: 9;
+    border: solid #1f7187;
+    background: #071116;
+    color: #b8eaf5;
+}
+
+#mode-applications-table:focus {
+    border: solid #36d7ff;
+}
+
+#mode-web-app-editor {
+    width: 100%;
+    height: 5;
+    margin-top: 1;
+}
+
+#mode-web-app-name {
+    width: 26%;
+    height: 3;
+    margin-right: 1;
+    border: solid #1f7187;
+    background: #071116;
+    color: #d4f7ff;
+}
+
+#mode-web-app-urls {
+    width: 1fr;
+    height: 3;
+    margin-right: 1;
+    border: solid #1f7187;
+    background: #071116;
+    color: #d4f7ff;
+}
+
+#mode-web-app-name:focus,
+#mode-web-app-urls:focus {
+    border: solid #36d7ff;
+}
+
+#mode-web-app-add {
+    width: 20;
+    min-width: 20;
+}
+
+#mode-launch-report {
+    width: 100%;
+    height: auto;
+    min-height: 7;
+    max-height: 16;
+}
+
+#mode-actions {
+    width: 100%;
+    height: 5;
+    margin-top: 1;
+    align-horizontal: center;
+}
+
+#mode-activate {
+    width: 44;
+    height: 3;
+}
+
+#mode-editor-title {
+    width: 100%;
+    height: 3;
+    margin-top: 1;
+    padding: 1 2;
+    border-bottom: solid #36d7ff;
+    background: #071116;
+    color: #5bbfd8;
+    content-align: left middle;
+}
+
+#mode-editor-basic {
+    width: 100%;
+    height: 14;
+    margin-top: 1;
+}
+
+.mode-editor-column {
+    width: 1fr;
+    height: 13;
+    margin-right: 1;
+    padding: 1 2;
+    border: solid #1f7187;
+    background: #09171d;
+}
+
+.mode-field-label {
+    width: 100%;
+    height: 1;
+    margin-top: 1;
+    color: #5bbfd8;
+    text-style: bold;
+}
+
+.mode-field-label.standalone {
+    height: 2;
+    margin-top: 1;
+    padding: 0 2;
+    content-align: left middle;
+}
+
+.mode-editor-column Input {
+    width: 100%;
+    height: 3;
+    border: solid #1f7187;
+    background: #071116;
+    color: #d4f7ff;
+}
+
+#mode-description-input {
+    width: 100%;
+    height: 8;
+    border: solid #1f7187;
+    background: #071116;
+    color: #d4f7ff;
+}
+
+#mode-objective-input {
+    width: 100%;
+    height: 7;
+    padding: 1;
+    border: solid #1f7187;
+    background: #071116;
+    color: #d4f7ff;
+}
+
+#mode-features-input {
+    width: 100%;
+    height: 10;
+    padding: 1;
+    border: solid #1f7187;
+    background: #071116;
+    color: #d4f7ff;
+}
+
+#mode-description-input:focus,
+#mode-objective-input:focus,
+#mode-features-input:focus,
+.mode-editor-column Input:focus {
+    border: solid #36d7ff;
+}
+
+#mode-editor-controls {
+    width: 100%;
+    height: 5;
+    margin-top: 1;
+}
+
+.mode-cycle-control {
+    width: 1fr;
+    height: 3;
+    margin-right: 1;
+}
+
+.mode-cycle-arrow {
+    width: 5;
+    min-width: 5;
+    height: 3;
+    margin: 0;
+    border: none;
+    background: #12313a;
+    color: #36d7ff;
+    text-style: bold;
+}
+
+.mode-cycle-arrow:hover,
+.mode-cycle-arrow:focus {
+    background: #164657;
+    color: #ffffff;
+}
+
+.mode-cycle-value {
+    width: 1fr;
+    height: 3;
+    padding: 0 1;
+    border-top: solid #1f7187;
+    border-bottom: solid #1f7187;
+    background: #071116;
+    color: #d4f7ff;
+    text-style: bold;
+    content-align: center middle;
+}
+
+#mode-editor-actions {
+    width: 100%;
+    height: 5;
+    margin-top: 1;
+}
+
+#mode-save,
+#mode-cancel {
+    width: 1fr;
+    height: 3;
+    margin-right: 1;
+}
+
+/* Final MODES editor clipping fix */
+
+#mode-editor-basic {
+    width: 100%;
+    height: 18;
+    min-height: 18;
+    margin-top: 1;
+}
+
+.mode-editor-column {
+    width: 1fr;
+    height: 17;
+    min-height: 17;
+    margin-right: 1;
+    padding: 1 2;
+    border: solid #1f7187;
+    background: #09171d;
+}
+
+#mode-description-input {
+    width: 100%;
+    height: 9;
+    min-height: 9;
 }

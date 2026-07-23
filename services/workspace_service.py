@@ -28,12 +28,25 @@ class WorkspaceService:
         mode: WorkMode,
     ) -> tuple[LaunchResult, ...]:
         results = tuple(
-            self._launch_item(application)
+            self.launch_application(application)
             for application in mode.applications
         )
 
         self._send_notification(mode, results)
         return results
+
+    def launch_application(
+        self,
+        application: ApplicationSpec,
+    ) -> LaunchResult:
+        if not application.enabled:
+            return LaunchResult(
+                application=application.name,
+                status="DISABLED",
+                detail="Disabled in the workspace manifest",
+            )
+
+        return self._launch_item(application)
 
     def _launch_item(
         self,

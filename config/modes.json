@@ -22,7 +22,8 @@
           "kind": "browser",
           "urls": [
             "https://www.youtube.com/"
-          ]
+          ],
+          "enabled": true
         }
       ]
     },
@@ -64,7 +65,8 @@
             "arduino"
           ],
           "skip_if_running": true,
-          "working_directory": "{home}"
+          "working_directory": "{home}",
+          "enabled": true
         },
         {
           "name": "Maker browser workspace",
@@ -72,7 +74,8 @@
           "urls": [
             "https://chatgpt.com/",
             "https://github.com/"
-          ]
+          ],
+          "enabled": true
         }
       ]
     },
@@ -116,7 +119,8 @@
             "kate"
           ],
           "skip_if_running": true,
-          "working_directory": "{project_root}"
+          "working_directory": "{project_root}",
+          "enabled": true
         },
         {
           "name": "Development browser workspace",
@@ -124,7 +128,8 @@
           "urls": [
             "https://chatgpt.com/",
             "https://github.com/"
-          ]
+          ],
+          "enabled": true
         },
         {
           "name": "Project terminal",
@@ -148,7 +153,8 @@
           ],
           "process_names": [],
           "skip_if_running": false,
-          "working_directory": "{project_root}"
+          "working_directory": "{project_root}",
+          "enabled": true
         }
       ]
     },

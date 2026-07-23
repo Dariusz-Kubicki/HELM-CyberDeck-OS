@@ -512,10 +512,12 @@ class Helm(App):
                 Button,
             ).remove_class("selected")
 
-        self.query_one(
+        active_button = self.query_one(
             f"#{navigation_id}",
             Button,
-        ).add_class("selected")
+        )
+        active_button.add_class("selected")
+        active_button.focus()
 
         if log_event and self.settings.navigation_logging:
             self.log_service.info(

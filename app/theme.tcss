@@ -175,3 +175,47 @@ MetricCard Bar > .bar--bar {
 MetricCard Bar > .bar--complete {
     color: #36d7ff;
 }
+
+#system-screen {
+    overflow-y: auto;
+}
+
+#cpu-history {
+    width: 100%;
+    height: 9;
+    margin-top: 1;
+    padding: 1 2;
+    border: solid #1f7187;
+    background: #09171d;
+}
+
+#cpu-history:hover {
+    border: solid #36d7ff;
+    background: #0b1d24;
+}
+
+#cpu-history-header {
+    width: 100%;
+    height: 1;
+}
+
+#cpu-history-title {
+    width: 1fr;
+    height: 1;
+    color: #5bbfd8;
+    text-style: bold;
+}
+
+#cpu-history-stats {
+    width: auto;
+    height: 1;
+    color: #70a9b8;
+    text-align: right;
+}
+
+#cpu-sparkline {
+    width: 100%;
+    height: 4;
+    margin-top: 1;
+    background: #071116;
+}

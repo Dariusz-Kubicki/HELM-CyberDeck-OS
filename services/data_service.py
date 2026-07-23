@@ -8,6 +8,7 @@ from modules.hardware import (
     get_disk_usage,
     get_ram_usage,
 )
+from modules.network import NetworkMonitor
 from modules.system import get_system_info
 
 
@@ -17,7 +18,6 @@ class SystemSnapshot:
 
     cpu_usage: float
     cpu_temp: float | None
-
     ram_usage: float
     disk_usage: float
 
@@ -32,13 +32,26 @@ class SystemSnapshot:
     kernel: str
     uptime: str
 
+    network_interface: str
+    network_ip: str
+    network_link_speed: int
+    network_online: bool
+    network_download_bps: float
+    network_upload_bps: float
+    network_bytes_received: int
+    network_bytes_sent: int
+
 
 class DataService:
-    """Collects system telemetry in one place."""
+    """Collects all HELM telemetry in one place."""
+
+    def __init__(self) -> None:
+        self.network_monitor = NetworkMonitor()
 
     def collect(self) -> SystemSnapshot:
         system_info = get_system_info()
         gpu_info = get_gpu_info()
+        network = self.network_monitor.sample()
 
         return SystemSnapshot(
             timestamp=datetime.now().strftime("%H:%M:%S"),
@@ -59,6 +72,15 @@ class DataService:
             os_name=str(system_info.get("os", "unknown")),
             kernel=str(system_info.get("kernel", "unknown")),
             uptime=str(system_info.get("uptime", "unknown")),
+
+            network_interface=network.interface,
+            network_ip=network.ip_address,
+            network_link_speed=network.link_speed_mbps,
+            network_online=network.is_up,
+            network_download_bps=network.download_bps,
+            network_upload_bps=network.upload_bps,
+            network_bytes_received=network.bytes_received,
+            network_bytes_sent=network.bytes_sent,
         )
 
     @staticmethod

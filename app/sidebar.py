@@ -1,14 +1,28 @@
 from textual.app import ComposeResult
 from textual.containers import Vertical
-from textual.widgets import Button
+from textual.widgets import Button, Static
 
 
 class Sidebar(Vertical):
     def compose(self) -> ComposeResult:
-        yield Button("SYSTEM", id="system")
-        yield Button("NETWORK", id="network")
-        yield Button("DEVICES", id="devices")
-        yield Button("PROJECTS", id="projects")
-        yield Button("AI", id="ai")
-        yield Button("LOGS", id="logs")
-        yield Button("SETTINGS", id="settings")
+        yield Static("HELM // NAVIGATION", id="sidebar-title")
+
+        yield Button(
+            "SYSTEM",
+            id="system",
+            classes="nav-button selected",
+        )
+        yield Button(
+            "NETWORK",
+            id="network",
+            classes="nav-button",
+        )
+
+        yield Static("COMING ONLINE", classes="sidebar-section")
+
+        yield Button("STORAGE", id="storage", disabled=True)
+        yield Button("DEVICES", id="devices", disabled=True)
+        yield Button("PROJECTS", id="projects", disabled=True)
+        yield Button("AI", id="ai", disabled=True)
+        yield Button("LOGS", id="logs", disabled=True)
+        yield Button("SETTINGS", id="settings", disabled=True)

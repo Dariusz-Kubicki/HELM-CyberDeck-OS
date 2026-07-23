@@ -1,6 +1,9 @@
 {
-  "telemetry_interval": 0.5,
-  "start_screen": "devices",
+  "telemetry_interval": 1.0,
+  "start_screen": "system",
   "navigation_logging": true,
-  "log_rows": 200
+  "log_rows": 200,
+  "ai_model": "qwen3:8b",
+  "ai_context_window": 8192,
+  "ai_keep_alive": "10m"
 }

@@ -17,6 +17,7 @@ from textual.worker import get_current_worker
 
 from services.assistant_service import AssistantService
 from services.data_service import SystemSnapshot
+from services.settings_service import HelmSettings
 from services.local_ai_service import (
     LocalAIError,
     LocalAIMetrics,
@@ -32,13 +33,27 @@ class AIScreen(Vertical):
 
     def __init__(
         self,
+        settings: HelmSettings | None = None,
         *args,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
 
+        self.runtime_settings = (
+            settings or HelmSettings()
+        )
+
         self.assistant = AssistantService()
-        self.local_ai = LocalAIService()
+
+        self.local_ai = LocalAIService(
+            model=self.runtime_settings.ai_model,
+            context_window=(
+                self.runtime_settings.ai_context_window
+            ),
+            keep_alive=(
+                self.runtime_settings.ai_keep_alive
+            ),
+        )
 
         self.latest_snapshot: SystemSnapshot | None = None
 
@@ -771,6 +786,59 @@ class AIScreen(Vertical):
             "CORE SWITCHED",
             self.core_mode,
             "cyan",
+        )
+
+    def apply_settings(
+        self,
+        settings: HelmSettings,
+    ) -> None:
+        """Apply new local AI configuration without restarting HELM."""
+        if self.generating:
+            self._stop_generation()
+
+        previous_model = self.local_ai.model
+
+        self.runtime_settings = settings
+
+        self.local_ai = LocalAIService(
+            model=settings.ai_model,
+            context_window=settings.ai_context_window,
+            keep_alive=settings.ai_keep_alive,
+        )
+
+        self.local_status = LocalAIStatus(
+            online=False,
+            version="N/A",
+            model=self.local_ai.model,
+            model_installed=False,
+            model_loaded=False,
+            detail="Local provider configuration changed.",
+        )
+
+        self._check_local_provider()
+        self._update_command_placeholder()
+
+        self._set_status(
+            "AI CONFIGURATION APPLIED",
+            (
+                f"{previous_model} -> {self.local_ai.model}"
+                f" // context "
+                f"{self.local_ai.context_window}"
+                f" // keep-alive "
+                f"{self.local_ai.keep_alive}"
+            ),
+            "cyan",
+        )
+
+        self._log(
+            "LOCAL AI",
+            "INFO",
+            (
+                f"Configuration updated; "
+                f"model={self.local_ai.model}; "
+                f"context={self.local_ai.context_window}; "
+                f"keep_alive={self.local_ai.keep_alive}"
+            ),
         )
 
     def _check_local_provider(self) -> None:

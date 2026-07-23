@@ -291,10 +291,27 @@ class Helm(App):
 
         if button_id == "settings-save":
             self._save_settings()
+            event.stop()
+            return
+
+        if button_id == "settings-backup":
+            self._backup_settings()
+            event.stop()
+            return
+
+        if button_id == "settings-export":
+            self._export_settings()
+            event.stop()
+            return
+
+        if button_id == "settings-restore":
+            self._restore_settings_backup()
+            event.stop()
             return
 
         if button_id == "settings-reset":
             self._reset_settings()
+            event.stop()
             return
 
         if button_id in self.NAVIGATION:
@@ -535,25 +552,72 @@ class Helm(App):
             "CUSTOM SETTINGS ACTIVE",
         )
 
-    def _save_settings(self) -> None:
-        screen = self.query_one(SettingsScreen)
+    def _apply_settings_runtime(
+        self,
+        settings: HelmSettings,
+        *,
+        mark_custom: bool = True,
+    ) -> None:
+        self.settings = settings
 
-        try:
-            settings = screen.read_settings()
-            self.settings_service.save(settings)
+        settings_screen = self.query_one(
+            SettingsScreen
+        )
 
-            self.settings = settings
-            screen.load_settings(settings)
-            self._restart_refresh_timer()
+        settings_screen.load_settings(
+            settings
+        )
+
+        self.query_one(
+            AIScreen
+        ).apply_settings(
+            settings
+        )
+
+        self._restart_refresh_timer()
+
+        if mark_custom:
             self._set_custom_mode()
 
+        settings_screen.refresh_diagnostics()
+
+    def _save_settings(self) -> None:
+        screen = self.query_one(
+            SettingsScreen
+        )
+
+        screen.clear_confirmation()
+
+        try:
+            settings = (
+                self.settings_service.validate(
+                    screen.read_settings()
+                )
+            )
+
+            # Kopia zawiera ustawienia sprzed zapisu.
+            self.settings_service.create_backup()
+            self.settings_service.save(settings)
+
+            self._apply_settings_runtime(
+                settings
+            )
+
             screen.show_status(
-                "Runtime configuration saved successfully."
+                (
+                    "Runtime and local AI configuration "
+                    "saved successfully."
+                )
             )
 
             self.log_service.info(
                 "SETTINGS",
-                "Runtime configuration updated",
+                (
+                    "Runtime configuration updated; "
+                    f"model={settings.ai_model}; "
+                    f"context={settings.ai_context_window}; "
+                    f"keep_alive={settings.ai_keep_alive}"
+                ),
             )
 
         except Exception as error:
@@ -567,31 +631,202 @@ class Helm(App):
                 f"{type(error).__name__}: {error}",
             )
 
-    def _reset_settings(self) -> None:
-        screen = self.query_one(SettingsScreen)
+    def _backup_settings(self) -> None:
+        screen = self.query_one(
+            SettingsScreen
+        )
+
+        screen.clear_confirmation()
 
         try:
-            settings = HelmSettings()
-            self.settings_service.save(settings)
-
-            self.settings = settings
-            screen.load_settings(settings)
-            self._restart_refresh_timer()
-            self._set_custom_mode()
-
-            screen.show_status(
-                "Default configuration restored."
+            backup_path = (
+                self.settings_service
+                .create_backup()
             )
 
-            self.log_service.warning(
+            screen.refresh_diagnostics()
+
+            screen.show_status(
+                str(backup_path),
+                state="BACKUP CREATED",
+            )
+
+            self.log_service.info(
                 "SETTINGS",
-                "Default runtime configuration restored",
+                f"Created backup: {backup_path}",
             )
 
         except Exception as error:
             screen.show_status(
                 f"{type(error).__name__}: {error}",
                 error=True,
+            )
+
+            self.log_service.error(
+                "SETTINGS",
+                f"Backup failed: {error}",
+            )
+
+    def _export_settings(self) -> None:
+        screen = self.query_one(
+            SettingsScreen
+        )
+
+        screen.clear_confirmation()
+
+        try:
+            settings = (
+                self.settings_service.validate(
+                    screen.read_settings()
+                )
+            )
+
+            export_path = (
+                self.settings_service
+                .export_profile(settings)
+            )
+
+            screen.refresh_diagnostics()
+
+            screen.show_status(
+                str(export_path),
+                state="PROFILE EXPORTED",
+            )
+
+            self.log_service.info(
+                "SETTINGS",
+                f"Exported profile: {export_path}",
+            )
+
+        except Exception as error:
+            screen.show_status(
+                f"{type(error).__name__}: {error}",
+                error=True,
+            )
+
+            self.log_service.error(
+                "SETTINGS",
+                f"Export failed: {error}",
+            )
+
+    def _restore_settings_backup(self) -> None:
+        screen = self.query_one(
+            SettingsScreen
+        )
+
+        if not screen.confirm_action(
+            "restore"
+        ):
+            return
+
+        try:
+            # Najpierw wybieramy starą kopię.
+            source = (
+                self.settings_service
+                .latest_backup_path()
+            )
+
+            # Dopiero potem zabezpieczamy obecny stan.
+            # Dzięki temu nowy rollback nie zostanie
+            # omyłkowo wybrany do przywrócenia.
+            rollback_backup = (
+                self.settings_service
+                .create_backup()
+            )
+
+            settings = (
+                self.settings_service
+                .restore_backup(source)
+            )
+
+            self._apply_settings_runtime(
+                settings
+            )
+
+            screen.show_status(
+                (
+                    f"Restored {source.name}; "
+                    f"previous state saved as "
+                    f"{rollback_backup.name}"
+                ),
+                warning=True,
+                state="BACKUP RESTORED",
+            )
+
+            self.log_service.warning(
+                "SETTINGS",
+                (
+                    f"Restored settings backup: {source}; "
+                    f"rollback backup: {rollback_backup}"
+                ),
+            )
+
+        except Exception as error:
+            screen.show_status(
+                f"{type(error).__name__}: {error}",
+                error=True,
+            )
+
+            self.log_service.error(
+                "SETTINGS",
+                f"Restore failed: {error}",
+            )
+
+    def _reset_settings(self) -> None:
+        screen = self.query_one(
+            SettingsScreen
+        )
+
+        if not screen.confirm_action(
+            "reset"
+        ):
+            return
+
+        try:
+            backup_path = (
+                self.settings_service
+                .create_backup()
+            )
+
+            settings = (
+                self.settings_service.defaults()
+            )
+
+            self.settings_service.save(
+                settings
+            )
+
+            self._apply_settings_runtime(
+                settings
+            )
+
+            screen.show_status(
+                (
+                    "Default configuration restored; "
+                    f"previous state saved as "
+                    f"{backup_path.name}."
+                ),
+                warning=True,
+                state="DEFAULTS RESTORED",
+            )
+
+            self.log_service.warning(
+                "SETTINGS",
+                (
+                    "Default configuration restored; "
+                    f"backup={backup_path}"
+                ),
+            )
+
+        except Exception as error:
+            screen.show_status(
+                f"{type(error).__name__}: {error}",
+                error=True,
+            )
+
+            self.log_service.error(
+                "SETTINGS",
+                f"{type(error).__name__}: {error}",
             )
 
 

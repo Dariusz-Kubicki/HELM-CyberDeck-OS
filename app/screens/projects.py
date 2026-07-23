@@ -33,6 +33,9 @@ class ProjectsScreen(Vertical):
         self.action_service = ProjectActionService()
 
         self.projects: tuple[Project, ...] = ()
+        self.active_projects: tuple[Project, ...] = ()
+        self.completed_projects: tuple[Project, ...] = ()
+
         self.selected_project_id: str | None = None
         self.pending_selected_project_id: str | None = None
 
@@ -45,7 +48,12 @@ class ProjectsScreen(Vertical):
 
         self.pending_delete_project_id: str | None = None
 
-        self._last_rows: tuple[
+        self._last_active_rows: tuple[
+            tuple[str, ...],
+            ...,
+        ] = ()
+
+        self._last_completed_rows: tuple[
             tuple[str, ...],
             ...,
         ] = ()
@@ -79,12 +87,22 @@ class ProjectsScreen(Vertical):
         )
 
         yield Static(
-            "[b cyan]PROJECT DATABASE[/b cyan]"
-            "    //    SELECT A ROW TO MANAGE IT",
+            "[b cyan]ACTIVE / PLANNED PROJECTS[/b cyan]"
+            "    //    CURRENT MISSION QUEUE",
+            id="projects-active-title",
             classes="projects-section-title",
         )
 
-        yield DataTable(id="projects-table")
+        yield DataTable(id="projects-active-table")
+
+        yield Static(
+            "[b green]COMPLETED / STABLE PROJECTS[/b green]"
+            "    //    FINISHED OR READY FOR EXPANSION",
+            id="projects-completed-title",
+            classes="projects-section-title",
+        )
+
+        yield DataTable(id="projects-completed-table")
 
         with Horizontal(id="project-quick-actions"):
             yield Button(
@@ -309,23 +327,27 @@ class ProjectsScreen(Vertical):
         )
 
     def on_mount(self) -> None:
-        table = self.query_one(
-            "#projects-table",
-            DataTable,
-        )
+        for table_id in (
+            "#projects-active-table",
+            "#projects-completed-table",
+        ):
+            table = self.query_one(
+                table_id,
+                DataTable,
+            )
 
-        table.cursor_type = "row"
-        table.zebra_stripes = True
+            table.cursor_type = "row"
+            table.zebra_stripes = True
 
-        table.add_columns(
-            "PRI",
-            "PROJECT",
-            "CATEGORY",
-            "STATUS",
-            "PROGRESS",
-            "TECH STACK",
-            "NEXT ACTION",
-        )
+            table.add_columns(
+                "PRI",
+                "PROJECT",
+                "CATEGORY",
+                "STATUS",
+                "PROGRESS",
+                "TECH STACK",
+                "NEXT ACTION",
+            )
 
         self._set_editor_enabled(False)
 
@@ -377,14 +399,45 @@ class ProjectsScreen(Vertical):
 
         self._update_focus(sample)
 
-        self.projects = tuple(
+        archived_statuses = {
+            "STABLE",
+            "DONE",
+            "COMPLETED",
+        }
+
+        self.active_projects = tuple(
             sorted(
-                sample.projects,
+                (
+                    project
+                    for project in sample.projects
+                    if project.status
+                    not in archived_statuses
+                ),
                 key=lambda project: (
                     -project.priority,
                     project.name.lower(),
                 ),
             )
+        )
+
+        self.completed_projects = tuple(
+            sorted(
+                (
+                    project
+                    for project in sample.projects
+                    if project.status
+                    in archived_statuses
+                ),
+                key=lambda project: (
+                    project.status != "STABLE",
+                    project.name.lower(),
+                ),
+            )
+        )
+
+        self.projects = (
+            self.active_projects
+            + self.completed_projects
         )
 
         project_ids = {
@@ -401,34 +454,67 @@ class ProjectsScreen(Vertical):
             )
             self.pending_selected_project_id = None
 
-        elif (
-            self.selected_project_id
-            not in project_ids
-        ):
+        elif self.selected_project_id not in project_ids:
             self.selected_project_id = (
                 self.projects[0].project_id
                 if self.projects
                 else None
             )
 
-        rows = tuple(
-            (
-                str(project.priority),
-                project.name,
-                project.category,
-                project.status,
-                self._progress_bar(
-                    project.progress
-                ),
-                ", ".join(project.tech) or "—",
-                project.next_action,
-            )
-            for project in self.projects
+        active_rows = self._project_rows(
+            self.active_projects
         )
 
-        if rows != self._last_rows:
-            self._replace_project_rows(rows)
-            self._last_rows = rows
+        completed_rows = self._project_rows(
+            self.completed_projects
+        )
+
+        if active_rows != self._last_active_rows:
+            self._replace_project_rows(
+                "#projects-active-table",
+                active_rows,
+                "NO ACTIVE OR PLANNED PROJECTS",
+            )
+            self._last_active_rows = active_rows
+
+        if completed_rows != self._last_completed_rows:
+            self._replace_project_rows(
+                "#projects-completed-table",
+                completed_rows,
+                "NO COMPLETED OR STABLE PROJECTS",
+            )
+            self._last_completed_rows = completed_rows
+
+        self.query_one(
+            "#projects-active-title",
+            Static,
+        ).update(
+            "[b cyan]ACTIVE / PLANNED PROJECTS[/b cyan]"
+            f"    //    TOTAL {len(self.active_projects)}"
+            "    //    CURRENT MISSION QUEUE"
+        )
+
+        stable_count = sum(
+            project.status == "STABLE"
+            for project in self.completed_projects
+        )
+
+        done_count = sum(
+            project.status in {
+                "DONE",
+                "COMPLETED",
+            }
+            for project in self.completed_projects
+        )
+
+        self.query_one(
+            "#projects-completed-title",
+            Static,
+        ).update(
+            "[b green]COMPLETED / STABLE PROJECTS[/b green]"
+            f"    //    STABLE {stable_count}"
+            f"    //    DONE {done_count}"
+        )
 
         self._restore_selected_row()
 
@@ -474,12 +560,33 @@ class ProjectsScreen(Vertical):
             f"{escape(project.description)}"
         )
 
+    @staticmethod
+    def _project_rows(
+        projects: tuple[Project, ...],
+    ) -> tuple[tuple[str, ...], ...]:
+        return tuple(
+            (
+                str(project.priority),
+                project.name,
+                project.category,
+                project.status,
+                ProjectsScreen._progress_bar(
+                    project.progress
+                ),
+                ", ".join(project.tech) or "—",
+                project.next_action,
+            )
+            for project in projects
+        )
+
     def _replace_project_rows(
         self,
+        table_id: str,
         rows: tuple[tuple[str, ...], ...],
+        empty_message: str,
     ) -> None:
         table = self.query_one(
-            "#projects-table",
+            table_id,
             DataTable,
         )
 
@@ -490,7 +597,7 @@ class ProjectsScreen(Vertical):
         else:
             table.add_row(
                 "—",
-                "NO PROJECTS REGISTERED",
+                empty_message,
                 "—",
                 "—",
                 "—",
@@ -502,13 +609,27 @@ class ProjectsScreen(Vertical):
         if self.selected_project_id is None:
             return
 
-        for index, project in enumerate(self.projects):
-            if (
-                project.project_id
-                == self.selected_project_id
-            ):
+        groups = (
+            (
+                "#projects-active-table",
+                self.active_projects,
+            ),
+            (
+                "#projects-completed-table",
+                self.completed_projects,
+            ),
+        )
+
+        for table_id, projects in groups:
+            for index, project in enumerate(projects):
+                if (
+                    project.project_id
+                    != self.selected_project_id
+                ):
+                    continue
+
                 self.query_one(
-                    "#projects-table",
+                    table_id,
                     DataTable,
                 ).move_cursor(
                     row=index,
@@ -521,19 +642,25 @@ class ProjectsScreen(Vertical):
         self,
         event: DataTable.RowHighlighted,
     ) -> None:
-        if event.control.id != "projects-table":
+        if self._editor_active:
             return
 
-        if self._editor_active:
+        if event.control.id == "projects-active-table":
+            source = self.active_projects
+
+        elif event.control.id == "projects-completed-table":
+            source = self.completed_projects
+
+        else:
             return
 
         row = event.cursor_row
 
-        if not 0 <= row < len(self.projects):
+        if not 0 <= row < len(source):
             return
 
         self.selected_project_id = (
-            self.projects[row].project_id
+            source[row].project_id
         )
 
         self._reset_delete_confirmation()
@@ -856,10 +983,14 @@ class ProjectsScreen(Vertical):
                 Button,
             ).disabled = enabled
 
-        self.query_one(
-            "#projects-table",
-            DataTable,
-        ).disabled = enabled
+        for table_id in (
+            "#projects-active-table",
+            "#projects-completed-table",
+        ):
+            self.query_one(
+                table_id,
+                DataTable,
+            ).disabled = enabled
 
     def on_button_pressed(
         self,
@@ -1249,6 +1380,7 @@ class ProjectsScreen(Vertical):
             "ACTIVE": "cyan",
             "BUILDING": "cyan",
             "TESTING": "cyan",
+            "STABLE": "green",
             "DONE": "green",
             "COMPLETED": "green",
             "BLOCKED": "red",

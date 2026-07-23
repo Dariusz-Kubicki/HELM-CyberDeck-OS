@@ -46,6 +46,7 @@ class ProjectMonitor:
     }
 
     COMPLETED_STATUSES = {
+        "STABLE",
         "DONE",
         "COMPLETED",
     }

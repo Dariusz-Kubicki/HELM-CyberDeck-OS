@@ -1891,3 +1891,36 @@ MetricCard Bar > .bar--complete {
     color: #5f7f88;
     opacity: 75%;
 }
+
+/* PROJECTS active and completed categories */
+
+#projects-active-table {
+    width: 100%;
+    height: 15;
+    min-height: 10;
+    border: solid #1f7187;
+    background: #071116;
+    color: #b8eaf5;
+}
+
+#projects-completed-table {
+    width: 100%;
+    height: 11;
+    min-height: 7;
+    border: solid #286445;
+    background: #07120f;
+    color: #b8eaf5;
+}
+
+#projects-active-table:focus {
+    border: solid #36d7ff;
+}
+
+#projects-completed-table:focus {
+    border: solid #5ee39b;
+}
+
+#projects-completed-title {
+    border-bottom: solid #286445;
+    color: #72d69f;
+}

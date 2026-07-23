@@ -29,6 +29,7 @@ class ProjectService:
         "TESTING",
         "BLOCKED",
         "PAUSED",
+        "STABLE",
         "DONE",
     )
 

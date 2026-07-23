@@ -1627,3 +1627,267 @@ MetricCard Bar > .bar--complete {
     color: #70a9b8;
     content-align: left middle;
 }
+
+/* PROJECTS Mission Control v2 */
+
+#projects-table {
+    width: 100%;
+    height: 15;
+    min-height: 11;
+}
+
+#project-quick-actions,
+#project-workspace-actions {
+    width: 100%;
+    height: 5;
+    margin: 1 0 0 0;
+}
+
+.project-control-button {
+    width: 1fr;
+    height: 3;
+    margin-right: 1;
+    border: none;
+    background: #0b1a21;
+    color: #8be9fd;
+    text-style: bold;
+}
+
+.project-control-button:hover,
+.project-control-button:focus {
+    border-bottom: thick #36d7ff;
+    background: #164657;
+    color: #ffffff;
+}
+
+.project-delete-button {
+    width: 1fr;
+    height: 3;
+    margin-right: 1;
+    border: none;
+    background: #251014;
+    color: #ff8f9a;
+    text-style: bold;
+}
+
+.project-delete-button:hover,
+.project-delete-button:focus {
+    border-bottom: thick red;
+    background: #45151c;
+    color: #ffffff;
+}
+
+#project-editor-title {
+    width: 100%;
+    height: 3;
+    margin-top: 1;
+    padding: 1 2;
+    border-bottom: solid #36d7ff;
+    background: #071116;
+    color: #5bbfd8;
+    content-align: left middle;
+}
+
+#project-editor-grid {
+    width: 100%;
+    height: 17;
+    margin-top: 1;
+}
+
+.project-editor-column {
+    width: 1fr;
+    height: 16;
+    margin-right: 1;
+    padding: 1 2;
+    border: solid #1f7187;
+    background: #09171d;
+}
+
+.project-field-label {
+    width: 100%;
+    height: 1;
+    margin-top: 1;
+    color: #5bbfd8;
+    text-style: bold;
+}
+
+.project-editor-column Input {
+    width: 100%;
+    height: 3;
+    border: solid #1f7187;
+    background: #071116;
+    color: #d4f7ff;
+}
+
+.project-editor-column Input:focus {
+    border: solid #36d7ff;
+}
+
+.project-editor-column Input:disabled {
+    border: solid #12313a;
+    background: #081216;
+    color: #5f7f88;
+    opacity: 75%;
+}
+
+#project-editor-controls {
+    width: 100%;
+    height: 5;
+    margin-top: 1;
+}
+
+.project-cycle-control {
+    width: 1fr;
+    height: 3;
+    margin-right: 1;
+}
+
+.project-cycle-arrow {
+    width: 7;
+    min-width: 7;
+    height: 3;
+    margin: 0;
+    border: none;
+    background: #12313a;
+    color: #36d7ff;
+    text-style: bold;
+}
+
+.project-cycle-arrow:hover,
+.project-cycle-arrow:focus {
+    background: #164657;
+    color: #ffffff;
+}
+
+.project-cycle-value {
+    width: 1fr;
+    height: 3;
+    padding: 0 1;
+    border-top: solid #1f7187;
+    border-bottom: solid #1f7187;
+    background: #071116;
+    color: #d4f7ff;
+    text-style: bold;
+    content-align: center middle;
+}
+
+#project-editor-actions {
+    width: 100%;
+    height: 5;
+    margin-top: 1;
+}
+
+#project-save,
+#project-cancel {
+    width: 1fr;
+    height: 3;
+    margin-right: 1;
+}
+
+#project-action-status {
+    width: 100%;
+    height: auto;
+    min-height: 3;
+    margin-top: 1;
+    padding: 1 2;
+    border-top: solid #1f7187;
+    background: #071116;
+    color: #70a9b8;
+    content-align: left middle;
+}
+
+/* PROJECTS editor layout and GitHub integration */
+
+#project-editor-grid {
+    width: 100%;
+    height: 21;
+    margin-top: 1;
+}
+
+.project-editor-column {
+    width: 1fr;
+    height: 20;
+    margin-right: 1;
+    padding: 1 2;
+    border: solid #1f7187;
+    background: #09171d;
+}
+
+#project-description-label {
+    width: 100%;
+    height: 2;
+    margin-top: 1;
+    padding: 0 2;
+    color: #5bbfd8;
+    text-style: bold;
+    content-align: left middle;
+}
+
+#project-description-input {
+    width: 100%;
+    height: 8;
+    margin-top: 0;
+    padding: 1;
+    border: solid #1f7187;
+    background: #071116;
+    color: #d4f7ff;
+}
+
+#project-description-input:focus {
+    border: solid #36d7ff;
+}
+
+#project-description-input:disabled {
+    border: solid #12313a;
+    background: #081216;
+    color: #5f7f88;
+    opacity: 75%;
+}
+
+/* PROJECTS editor layout and GitHub integration */
+
+#project-editor-grid {
+    width: 100%;
+    height: 21;
+    margin-top: 1;
+}
+
+.project-editor-column {
+    width: 1fr;
+    height: 20;
+    margin-right: 1;
+    padding: 1 2;
+    border: solid #1f7187;
+    background: #09171d;
+}
+
+#project-description-label {
+    width: 100%;
+    height: 2;
+    margin-top: 1;
+    padding: 0 2;
+    color: #5bbfd8;
+    text-style: bold;
+    content-align: left middle;
+}
+
+#project-description-input {
+    width: 100%;
+    height: 8;
+    margin-top: 0;
+    padding: 1;
+    border: solid #1f7187;
+    background: #071116;
+    color: #d4f7ff;
+}
+
+#project-description-input:focus {
+    border: solid #36d7ff;
+}
+
+#project-description-input:disabled {
+    border: solid #12313a;
+    background: #081216;
+    color: #5f7f88;
+    opacity: 75%;
+}

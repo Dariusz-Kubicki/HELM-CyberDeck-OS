@@ -17,6 +17,9 @@ class Project:
     tech: tuple[str, ...]
     next_action: str
     description: str
+    path: str
+    github_url: str
+    updated_at: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,9 +36,24 @@ class ProjectSample:
 class ProjectMonitor:
     """Loads and caches the HELM project database."""
 
-    REFRESH_SECONDS = 2.0
+    REFRESH_SECONDS = 0.25
 
-    def __init__(self, config_path: Path | None = None) -> None:
+    ACTIVE_STATUSES = {
+        "ACTIVE",
+        "IN PROGRESS",
+        "BUILDING",
+        "TESTING",
+    }
+
+    COMPLETED_STATUSES = {
+        "DONE",
+        "COMPLETED",
+    }
+
+    def __init__(
+        self,
+        config_path: Path | None = None,
+    ) -> None:
         self.config_path = config_path or (
             Path(__file__).resolve().parents[1]
             / "config"
@@ -76,13 +94,17 @@ class ProjectMonitor:
 
         try:
             payload = json.loads(
-                self.config_path.read_text(encoding="utf-8")
+                self.config_path.read_text(
+                    encoding="utf-8"
+                )
             )
 
             raw_projects = payload.get("projects", [])
 
             if not isinstance(raw_projects, list):
-                raise ValueError("'projects' must be a list")
+                raise ValueError(
+                    "'projects' must be a list"
+                )
 
             projects = tuple(
                 self._parse_project(item)
@@ -90,29 +112,26 @@ class ProjectMonitor:
                 if isinstance(item, dict)
             )
 
-            active_statuses = {
-                "ACTIVE",
-                "IN PROGRESS",
-                "BUILDING",
-                "TESTING",
-            }
-            completed_statuses = {"DONE", "COMPLETED"}
-
             active_count = sum(
-                project.status in active_statuses
+                project.status in self.ACTIVE_STATUSES
                 for project in projects
             )
+
             completed_count = sum(
-                project.status in completed_statuses
+                project.status in self.COMPLETED_STATUSES
                 for project in projects
             )
+
             blocked_count = sum(
                 project.status == "BLOCKED"
                 for project in projects
             )
 
             average_progress = (
-                sum(project.progress for project in projects)
+                sum(
+                    project.progress
+                    for project in projects
+                )
                 / len(projects)
                 if projects
                 else 0.0
@@ -121,11 +140,22 @@ class ProjectMonitor:
             focus_candidates = tuple(
                 project
                 for project in projects
-                if project.status in active_statuses
+                if project.status in self.ACTIVE_STATUSES
+            )
+
+            unfinished_projects = tuple(
+                project
+                for project in projects
+                if project.status
+                not in self.COMPLETED_STATUSES
             )
 
             focus_project = max(
-                focus_candidates or projects,
+                (
+                    focus_candidates
+                    or unfinished_projects
+                    or projects
+                ),
                 key=lambda project: (
                     project.priority,
                     -project.progress,
@@ -142,9 +172,15 @@ class ProjectMonitor:
                 focus_project=focus_project,
                 error=None,
             )
+
             self._last_modified_ns = modified_ns
 
-        except (OSError, ValueError, TypeError, json.JSONDecodeError) as error:
+        except (
+            OSError,
+            ValueError,
+            TypeError,
+            json.JSONDecodeError,
+        ) as error:
             self._cached_sample = self._error_sample(
                 f"Invalid project database: {error}"
             )
@@ -169,24 +205,68 @@ class ProjectMonitor:
             progress = 0
 
         return Project(
-            project_id=str(item.get("id", "unknown")),
-            name=str(item.get("name", "Unnamed project")),
-            category=str(item.get("category", "GENERAL")).upper(),
-            status=str(item.get("status", "CONCEPT")).upper(),
-            priority=max(1, min(priority, 5)),
-            progress=max(0, min(progress, 100)),
-            tech=tuple(str(value) for value in raw_tech),
-            next_action=str(item.get("next_action", "Not defined")),
-            description=str(item.get("description", "")),
+            project_id=str(
+                item.get("id", "unknown")
+            ),
+            name=str(
+                item.get("name", "Unnamed project")
+            ),
+            category=str(
+                item.get("category", "GENERAL")
+            ).upper(),
+            status=str(
+                item.get("status", "CONCEPT")
+            ).upper(),
+            priority=max(
+                1,
+                min(priority, 5),
+            ),
+            progress=max(
+                0,
+                min(progress, 100),
+            ),
+            tech=tuple(
+                str(value)
+                for value in raw_tech
+            ),
+            next_action=str(
+                item.get(
+                    "next_action",
+                    "Not defined",
+                )
+            ),
+            description=str(
+                item.get("description", "")
+            ),
+            path=str(
+                item.get("path", "")
+            ),
+            github_url=str(
+                item.get("github_url", "")
+            ),
+            updated_at=str(
+                item.get("updated_at", "")
+            ),
         )
 
-    def _error_sample(self, message: str) -> ProjectSample:
+    def _error_sample(
+        self,
+        message: str,
+    ) -> ProjectSample:
         return ProjectSample(
             projects=self._cached_sample.projects,
             active_count=self._cached_sample.active_count,
-            completed_count=self._cached_sample.completed_count,
-            blocked_count=self._cached_sample.blocked_count,
-            average_progress=self._cached_sample.average_progress,
-            focus_project=self._cached_sample.focus_project,
+            completed_count=(
+                self._cached_sample.completed_count
+            ),
+            blocked_count=(
+                self._cached_sample.blocked_count
+            ),
+            average_progress=(
+                self._cached_sample.average_progress
+            ),
+            focus_project=(
+                self._cached_sample.focus_project
+            ),
             error=message,
         )

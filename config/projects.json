@@ -7,31 +7,51 @@
       "status": "ACTIVE",
       "priority": 5,
       "progress": 42,
-      "tech": ["Python", "Textual", "Arch Linux"],
+      "tech": [
+        "Python",
+        "Textual",
+        "Arch Linux"
+      ],
       "next_action": "Build PROJECTS control screen",
-      "description": "Central command interface and custom workstation environment."
+      "description": "Central command interface and custom workstation environment.",
+      "path": "~/.cyberdeck/nexus",
+      "github_url": ""
     },
     {
       "id": "filament-monitor",
       "name": "Filament Humidity Monitor",
       "category": "EMBEDDED",
       "status": "PLANNING",
-      "priority": 4,
+      "priority": 2,
       "progress": 15,
-      "tech": ["ESP32-C3", "AHT20", "OLED"],
+      "tech": [
+        "ESP32-C3",
+        "AHT20",
+        "OLED"
+      ],
       "next_action": "Order components and design enclosure",
-      "description": "Humidity and temperature monitor for the filament container."
+      "description": "Humidity and temperature monitor for the filament container.",
+      "path": "",
+      "github_url": "https://github.com/Dariusz-Kubicki/FilamentMonitor",
+      "updated_at": "2026-07-23T22:02:04"
     },
     {
       "id": "line-follower",
-      "name": "Line Follower Robot",
+      "name": "Line Follower Robot \"Nudel\"",
       "category": "ROBOTICS",
-      "status": "BLOCKED",
+      "status": "PAUSED",
       "priority": 3,
-      "progress": 45,
-      "tech": ["Arduino", "TB6612FNG", "IR sensors"],
-      "next_action": "Replace the L293D motor driver",
-      "description": "Four-motor autonomous robot with line sensors."
+      "progress": 80,
+      "tech": [
+        "Arduino",
+        "TB6612FNG",
+        "IR sensors"
+      ],
+      "next_action": "Program a robot",
+      "description": "Four-motor autonomous robot with line sensors.",
+      "path": "",
+      "github_url": "https://github.com/Dariusz-Kubicki/Self-driving_robot_Nudel",
+      "updated_at": "2026-07-23T22:00:38"
     },
     {
       "id": "greenhouse",
@@ -39,10 +59,17 @@
       "category": "AUTOMATION",
       "status": "CONCEPT",
       "priority": 2,
-      "progress": 5,
-      "tech": ["ESP32", "Sensors", "Relays"],
+      "progress": 0,
+      "tech": [
+        "ESP32",
+        "Sensors",
+        "Relays"
+      ],
       "next_action": "Define system requirements",
-      "description": "Monitoring and automatic control system for the greenhouse."
+      "description": "Monitoring and automatic control system for the greenhouse.",
+      "path": "",
+      "updated_at": "2026-07-23T21:51:56",
+      "github_url": ""
     },
     {
       "id": "room-security",
@@ -50,10 +77,17 @@
       "category": "AI / VISION",
       "status": "CONCEPT",
       "priority": 2,
-      "progress": 3,
-      "tech": ["Camera", "AI", "Notifications"],
+      "progress": 0,
+      "tech": [
+        "Camera",
+        "AI",
+        "Notifications"
+      ],
       "next_action": "Select camera and detection platform",
-      "description": "Activity detection, identification and intrusion alerts."
+      "description": "Activity detection, identification and intrusion alerts.",
+      "path": "",
+      "updated_at": "2026-07-23T21:51:58",
+      "github_url": ""
     }
   ]
 }

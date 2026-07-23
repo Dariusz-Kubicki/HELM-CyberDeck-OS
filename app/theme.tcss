@@ -1424,3 +1424,206 @@ MetricCard Bar > .bar--complete {
     color: #70a9b8;
     content-align: left middle;
 }
+
+/* DEVICES Control Center v2 */
+
+#devices-summary {
+    width: 100%;
+    height: 9;
+}
+
+#device-health {
+    width: 100%;
+    height: auto;
+    min-height: 4;
+    margin-top: 1;
+    padding: 1 2;
+    border: solid #1f7187;
+    background: #071116;
+    color: #b8eaf5;
+    content-align: center middle;
+}
+
+#device-health.warning {
+    border: solid yellow;
+    background: #1d1a09;
+}
+
+#device-health.critical {
+    border: solid red;
+    background: #21090b;
+}
+
+#device-action-buttons {
+    width: 100%;
+    height: 5;
+    margin: 1 0 0 0;
+}
+
+.device-action-button {
+    width: 1fr;
+    height: 3;
+    margin-right: 1;
+    border: none;
+    background: #0b1a21;
+    color: #8be9fd;
+    text-style: bold;
+}
+
+.device-action-button:hover,
+.device-action-button:focus {
+    border-bottom: thick #36d7ff;
+    background: #164657;
+    color: #ffffff;
+}
+
+#selected-device-details {
+    width: 100%;
+    height: auto;
+    min-height: 12;
+    margin-top: 1;
+    padding: 1 2;
+    border: solid #1f7187;
+    background: #09171d;
+    color: #b8eaf5;
+}
+
+#selected-device-details:hover {
+    border: solid #36d7ff;
+    background: #0b1d24;
+}
+
+#usb-devices-table {
+    height: 13;
+    min-height: 9;
+}
+
+#serial-devices-table {
+    height: 12;
+    min-height: 9;
+}
+
+#serial-console-header {
+    width: 100%;
+    height: 5;
+    margin: 1 0 0 0;
+    padding: 0;
+    border-bottom: solid #1f7187;
+}
+
+#serial-console-title {
+    width: 1fr;
+    height: 3;
+    padding: 1 2;
+    color: #70a9b8;
+    content-align: left middle;
+}
+
+#serial-baud-control {
+    width: 30;
+    height: 3;
+    margin: 0;
+    padding: 0;
+}
+
+.serial-baud-arrow {
+    width: 5;
+    min-width: 5;
+    height: 3;
+    margin: 0;
+    border: none;
+    background: #12313a;
+    color: #36d7ff;
+    text-style: bold;
+}
+
+.serial-baud-arrow:hover,
+.serial-baud-arrow:focus {
+    background: #164657;
+    color: #ffffff;
+}
+
+#serial-baud-value {
+    width: 1fr;
+    height: 3;
+    padding: 0 1;
+    border-top: solid #1f7187;
+    border-bottom: solid #1f7187;
+    background: #071116;
+    color: #d4f7ff;
+    text-style: bold;
+    content-align: center middle;
+}
+
+#device-console-grid {
+    width: 100%;
+    height: 23;
+    margin: 1 0 0 0;
+}
+
+.device-console-panel {
+    width: 1fr;
+    height: 22;
+    margin-right: 1;
+    padding: 1;
+    border: solid #1f7187;
+    background: #050b0f;
+}
+
+.device-console-panel:hover {
+    border: solid #36d7ff;
+}
+
+.device-console-panel-title {
+    width: 100%;
+    height: 2;
+    padding: 0 1;
+    color: #5bbfd8;
+    text-style: bold;
+}
+
+#serial-console,
+#device-event-log {
+    width: 100%;
+    height: 1fr;
+    padding: 1;
+    background: #050b0f;
+    color: #b8eaf5;
+    scrollbar-color: #1f7187;
+    scrollbar-color-hover: #36d7ff;
+}
+
+#serial-command-row {
+    width: 100%;
+    height: 5;
+    margin: 1 0 0 0;
+}
+
+#serial-command-input {
+    width: 1fr;
+    height: 3;
+    border: solid #1f7187;
+    background: #071116;
+    color: #d4f7ff;
+}
+
+#serial-command-input:focus {
+    border: solid #36d7ff;
+}
+
+#device-action-send {
+    width: 16;
+    height: 3;
+    margin-left: 1;
+}
+
+#device-action-status {
+    width: 100%;
+    height: auto;
+    min-height: 3;
+    margin-top: 1;
+    padding: 1 2;
+    border-top: solid #1f7187;
+    color: #70a9b8;
+    content-align: left middle;
+}

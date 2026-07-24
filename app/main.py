@@ -1,4 +1,5 @@
 from functools import partial
+from rich.markup import escape
 from typing import Iterable
 from textual import work
 from textual.app import App, ComposeResult, SystemCommand
@@ -15,6 +16,7 @@ from textual.widgets import (
 )
 
 from app.screens.ai import AIScreen
+from app.screens.boot import BootScreen
 from app.screens.devices import DevicesScreen
 from app.screens.logs import LogsScreen
 from app.screens.modes import ModesScreen
@@ -24,6 +26,7 @@ from app.screens.settings import SettingsScreen
 from app.screens.storage import StorageScreen
 from app.screens.system import SystemScreen
 from app.sidebar import Sidebar
+from app.signature_rail import SignatureRail
 from app.system_actions import SystemActions
 from services.alert_service import SystemAlert
 from services.data_service import (
@@ -87,6 +90,30 @@ class Helm(App):
         ),
     }
 
+    SCREEN_CODES = {
+        "system": "01",
+        "network": "02",
+        "storage": "03",
+        "devices": "04",
+        "modes": "05",
+        "projects": "06",
+        "logs": "07",
+        "ai": "08",
+        "settings": "09",
+    }
+
+    SCREEN_CONTEXT = {
+        "system": "CORE TELEMETRY",
+        "network": "NETWORK FABRIC",
+        "storage": "DATA VAULT",
+        "devices": "HARDWARE MATRIX",
+        "modes": "WORKSPACE ENGINE",
+        "projects": "MISSION CONTROL",
+        "logs": "EVENT ARCHIVE",
+        "ai": "LOCAL INTELLIGENCE",
+        "settings": "SYSTEM CONTROL",
+    }
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -136,9 +163,22 @@ class Helm(App):
             yield Sidebar(id="sidebar")
 
             with Vertical(id="content-area"):
-                yield Static(
-                    "HELM // SYSTEM OVERVIEW",
-                    id="screen-title",
+                with Horizontal(id="screen-header"):
+                    yield Static(
+                        "[b #42e8ff]01[/b #42e8ff]"
+                        " [#315965]//[/] "
+                        "[b]HELM // SYSTEM OVERVIEW[/b]",
+                        id="screen-title",
+                    )
+
+                    yield Static(
+                        "[b #6feeff]CORE TELEMETRY[/b #6feeff]\n"
+                        "[#456d78]MODE CUSTOM[/]",
+                        id="screen-context",
+                    )
+
+                yield SignatureRail(
+                    id="signature-rail",
                 )
 
                 with ContentSwitcher(
@@ -235,6 +275,8 @@ class Helm(App):
         )
 
     def on_mount(self) -> None:
+        self.push_screen(BootScreen())
+
         self.log_service.info(
             "HELM",
             "CyberDeck control interface started",
@@ -261,13 +303,62 @@ class Helm(App):
                 "CUSTOM RUNTIME CONFIGURATION",
             )
 
+        sidebar = self.query_one(
+            Sidebar
+        )
+
+        if active_mode is not None:
+            sidebar.update_mode(
+                active_mode.name,
+                active_mode.mode_id,
+            )
+        else:
+            sidebar.update_mode(
+                "CUSTOM RUNTIME",
+                "custom",
+            )
+
         self._open_screen(
             self.settings.start_screen,
             log_event=False,
         )
 
+        self._prime_interface_labels()
+
         self.refresh_snapshot()
         self._restart_refresh_timer()
+
+    def _prime_interface_labels(self) -> None:
+        """Fill status surfaces before the first user action."""
+        try:
+            self.query_one(
+                "#mode-status",
+                Static,
+            ).update(
+                "[b #58f6d0]"
+                "● WORKSPACE ENGINE ONLINE"
+                "[/]    //    "
+                "SELECT, EDIT OR ACTIVATE A PROFILE"
+            )
+        except Exception:
+            pass
+
+        try:
+            section_titles = list(
+                self.query(
+                    ".modes-section-title"
+                )
+            )
+
+            if section_titles:
+                section_titles[0].update(
+                    "[b #42e8ff]"
+                    "WORKSPACE DATABASE"
+                    "[/]    //    "
+                    "AVAILABLE OPERATION PROFILES"
+                )
+        except Exception:
+            pass
 
     def on_unmount(self) -> None:
         self._telemetry_shutdown = True
@@ -569,6 +660,85 @@ class Helm(App):
             f"{self._telemetry_last_duration_ms:.0f} ms"
             f"  //  SKIPPED "
             f"{self._telemetry_skipped_cycles}"
+        )
+
+        try:
+            self.query_one(
+                Sidebar
+            ).update_core_state(
+                self._health_state,
+                self._telemetry_state,
+                self._telemetry_last_duration_ms,
+                self._telemetry_skipped_cycles,
+            )
+        except Exception:
+            pass
+
+        try:
+            self.query_one(
+                SignatureRail
+            ).update_state(
+                self._health_state,
+                self._telemetry_state,
+                self._telemetry_last_duration_ms,
+                self._telemetry_skipped_cycles,
+                self.active_mode_id,
+            )
+        except Exception:
+            pass
+
+        try:
+            self._apply_core_visual_state()
+        except Exception:
+            pass
+
+    def _apply_core_visual_state(self) -> None:
+        health = self._health_state.upper()
+        telemetry = self._telemetry_state.upper()
+
+        states = {
+            health,
+            telemetry,
+        }
+
+        critical_states = {
+            "CRITICAL",
+            "FAILED",
+            "OFFLINE",
+        }
+
+        warning_states = {
+            "DEGRADED",
+            "WARNING",
+            "SCANNING",
+            "STARTING",
+        }
+
+        if states & critical_states:
+            visual_state = "critical"
+        elif states & warning_states:
+            visual_state = "degraded"
+        elif "BUSY" in states:
+            visual_state = "processing"
+        else:
+            visual_state = "nominal"
+
+        layout = self.query_one(
+            "#main-layout"
+        )
+
+        for class_name in (
+            "core-nominal",
+            "core-degraded",
+            "core-processing",
+            "core-critical",
+        ):
+            layout.remove_class(
+                class_name
+            )
+
+        layout.add_class(
+            f"core-{visual_state}"
         )
 
     @staticmethod
@@ -1085,6 +1255,13 @@ class Helm(App):
             self.settings = settings
             self.active_mode_id = mode.mode_id
 
+            self.query_one(
+                Sidebar
+            ).update_mode(
+                mode.name,
+                mode.mode_id,
+            )
+
             self.query_one(SettingsScreen).load_settings(settings)
             self._restart_refresh_timer()
 
@@ -1153,7 +1330,64 @@ class Helm(App):
             ContentSwitcher,
         ).current = screen_id
 
-        self.query_one("#screen-title", Static).update(title)
+        screen_code = self.SCREEN_CODES.get(
+            navigation_id,
+            "00",
+        )
+
+        screen_context = self.SCREEN_CONTEXT.get(
+            navigation_id,
+            "SYSTEM MODULE",
+        )
+
+        self.query_one(
+            "#screen-title",
+            Static,
+        ).update(
+            f"[b #42e8ff]{screen_code}[/b #42e8ff]"
+            " [#315965]//[/] "
+            f"[b]{escape(title)}[/b]"
+        )
+
+        self.query_one(
+            "#screen-context",
+            Static,
+        ).update(
+            f"[b #6feeff]"
+            f"{escape(screen_context)}"
+            f"[/b #6feeff]\n"
+            f"[#456d78]MODE "
+            f"{escape(self.active_mode_id.upper())}"
+            f"[/]"
+        )
+
+        try:
+            self.query_one(
+                SignatureRail
+            ).update_module(
+                screen_code,
+                title,
+                screen_context,
+            )
+        except Exception:
+            pass
+
+        try:
+            content_area = self.query_one(
+                "#content-area"
+            )
+
+            for module_name in self.NAVIGATION:
+                content_area.remove_class(
+                    f"module-{module_name}"
+                )
+
+            content_area.add_class(
+                f"module-{navigation_id}"
+            )
+
+        except Exception:
+            pass
 
         for button_name in self.NAVIGATION:
             self.query_one(
@@ -1182,6 +1416,13 @@ class Helm(App):
             "custom",
             self.mode_service.get_current_power_profile(),
             "CUSTOM SETTINGS ACTIVE",
+        )
+
+        self.query_one(
+            Sidebar
+        ).update_mode(
+            "CUSTOM RUNTIME",
+            "custom",
         )
 
     def _apply_settings_runtime(

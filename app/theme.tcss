@@ -2626,3 +2626,1108 @@ MetricCard Bar > .bar--complete {
     color: #456d78;
     content-align: right middle;
 }
+
+
+/* =========================================================
+   HELM CYBERDECK OS v1.0
+   FINAL VISUAL OVERRIDE LAYER
+   ========================================================= */
+
+Screen {
+    background: #020609;
+    color: #b8eaf5;
+}
+
+Header {
+    height: 3;
+    padding: 0 2;
+    background: #040b10;
+    color: #42e8ff;
+    border-bottom: solid #174b5a;
+    text-style: bold;
+}
+
+Footer {
+    height: 3;
+    padding: 0 2;
+    background: #040b10;
+    color: #6f9da8;
+    border-top: solid #123843;
+}
+
+#main-layout {
+    width: 100%;
+    height: 1fr;
+    margin: 0;
+    background: #020609;
+}
+
+
+/* SIDEBAR */
+
+#sidebar {
+    width: 26;
+    height: 100%;
+    padding: 1;
+    border-left: solid #0b2730;
+    border-right: solid #1b697b;
+    background: #030a0f;
+}
+
+#sidebar-brand {
+    width: 100%;
+    height: 4;
+    padding: 0 1;
+    border-bottom: solid #1f7187;
+    background: #061219;
+    color: #42e8ff;
+    content-align: center middle;
+}
+
+.sidebar-section {
+    width: 100%;
+    height: 2;
+    margin-top: 1;
+    padding: 0 1;
+    border-left: thick #1f7187;
+    color: #477683;
+    text-style: bold;
+    content-align: left middle;
+}
+
+#sidebar .nav-button {
+    width: 100%;
+    height: 3;
+    margin: 0;
+    padding: 0 2;
+    border: none;
+    border-left: solid #0b2730;
+    background: #050e13;
+    color: #78b9c7;
+    text-style: bold;
+    content-align: left middle;
+}
+
+#sidebar .nav-button:hover {
+    border-left: thick #258ca5;
+    background: #0a2028;
+    color: #c9f8ff;
+}
+
+#sidebar .nav-button:focus {
+    border-left: thick #42e8ff;
+    border-bottom: solid #164657;
+    background: #0b2731;
+    color: #ffffff;
+}
+
+#sidebar .nav-button.selected {
+    border-left: thick #42e8ff;
+    border-bottom: solid #1f7187;
+    background: #0c2b35;
+    color: #ffffff;
+}
+
+#sidebar .nav-button.selected:hover {
+    background: #103743;
+}
+
+#sidebar-core-state {
+    width: 100%;
+    height: 5;
+    margin-top: 1;
+    padding: 1;
+    border-top: solid #174b5a;
+    border-bottom: solid #123843;
+    background: #040d12;
+    color: #6f9da8;
+    content-align: left middle;
+}
+
+#sidebar-mode-state {
+    width: 100%;
+    height: 5;
+    padding: 1;
+    border-bottom: solid #123843;
+    background: #040d12;
+    color: #6f9da8;
+    content-align: left middle;
+}
+
+#sidebar-hotkey {
+    width: 100%;
+    height: 2;
+    padding: 0 1;
+    color: #355b66;
+    text-style: bold;
+    content-align: center middle;
+}
+
+
+/* CONTENT FRAME */
+
+#content-area {
+    width: 1fr;
+    height: 100%;
+    padding: 0 2 1 2;
+    background: #020609;
+}
+
+#screen-header {
+    width: 100%;
+    height: 5;
+    margin: 0 0 1 0;
+    padding: 0;
+    border-bottom: solid #1f7187;
+    background: #040c11;
+}
+
+#screen-title {
+    width: 1fr;
+    height: 4;
+    padding: 1 2;
+    margin: 0;
+    border-left: thick #42e8ff;
+    color: #b8eaf5;
+    text-style: bold;
+    content-align: left middle;
+}
+
+#screen-context {
+    width: 29;
+    height: 4;
+    padding: 0 2;
+    margin: 0;
+    border-left: solid #123843;
+    color: #6f9da8;
+    content-align: right middle;
+}
+
+#screen-switcher {
+    width: 100%;
+    height: 1fr;
+    background: #020609;
+}
+
+
+/* CYBERDECK PANEL FOUNDATION */
+
+MetricCard,
+.network-card,
+.network-rate-card,
+.network-graph,
+.network-total-card,
+.network-diagnostic-card,
+.storage-card,
+.storage-graph,
+.devices-card,
+.project-card,
+.mode-summary-card,
+.logs-card,
+.ai-card,
+.settings-card,
+.system-detail-card,
+.resource-history-graph,
+.project-editor-column,
+.mode-editor-column,
+.settings-panel,
+#mode-details,
+#selected-device-details,
+#logs-details,
+#settings-diagnostics,
+#cpu-core-grid,
+#system-actions {
+    border: solid #174b5a;
+    background: #050e13;
+    color: #b8eaf5;
+}
+
+MetricCard:hover,
+.network-card:hover,
+.network-rate-card:hover,
+.network-graph:hover,
+.network-total-card:hover,
+.network-diagnostic-card:hover,
+.storage-card:hover,
+.storage-graph:hover,
+.devices-card:hover,
+.project-card:hover,
+.mode-summary-card:hover,
+.logs-card:hover,
+.ai-card:hover,
+.settings-card:hover,
+.system-detail-card:hover,
+.resource-history-graph:hover,
+.project-editor-column:hover,
+.mode-editor-column:hover,
+#mode-details:hover,
+#selected-device-details:hover,
+#logs-details:hover,
+#settings-diagnostics:hover,
+#cpu-core-grid:hover,
+#system-actions:hover {
+    border: solid #42e8ff;
+    background: #081820;
+}
+
+.metric-title,
+.network-graph-title,
+.storage-graph-title,
+.resource-history-title,
+.project-field-label,
+.mode-field-label,
+.device-console-panel-title {
+    color: #42e8ff;
+}
+
+.metric-value {
+    color: #e2fbff;
+}
+
+.metric-detail,
+.resource-history-stats,
+.storage-graph-stats {
+    color: #5f8c97;
+}
+
+
+/* SECTION HEADERS */
+
+.devices-section-title,
+.projects-section-title,
+.modes-section-title,
+.settings-section-title,
+.network-table-title,
+.storage-table-title,
+#process-section-title,
+#project-editor-title,
+#mode-editor-title,
+#logs-table-title {
+    height: 3;
+    padding: 1 2;
+    border-left: thick #42e8ff;
+    border-bottom: solid #174b5a;
+    background: #040d12;
+    color: #6feeff;
+    text-style: bold;
+    content-align: left middle;
+}
+
+
+/* DATA SURFACES */
+
+DataTable,
+#storage-devices,
+#storage-partitions,
+#usb-devices-table,
+#serial-devices-table,
+#projects-active-table,
+#projects-completed-table,
+#modes-table,
+#mode-applications-table,
+#logs-table,
+#top-processes-table,
+#network-connections-table,
+#network-listeners-table {
+    border: solid #174b5a;
+    background: #030a0f;
+    color: #b8eaf5;
+}
+
+DataTable:focus,
+#storage-devices:focus,
+#storage-partitions:focus,
+#usb-devices-table:focus,
+#serial-devices-table:focus,
+#projects-active-table:focus,
+#projects-completed-table:focus,
+#modes-table:focus,
+#mode-applications-table:focus,
+#logs-table:focus,
+#top-processes-table:focus,
+#network-connections-table:focus,
+#network-listeners-table:focus {
+    border: solid #42e8ff;
+}
+
+
+/* TERMINAL SURFACES */
+
+RichLog,
+#ai-transcript,
+#ai-live-response,
+#serial-console,
+#device-event-log,
+#mode-launch-report {
+    border: solid #174b5a;
+    background: #010507;
+    color: #b8eaf5;
+    scrollbar-color: #1f7187;
+    scrollbar-color-hover: #42e8ff;
+}
+
+#ai-live-response {
+    border: solid #42e8ff;
+    background: #041118;
+}
+
+
+/* INPUTS */
+
+Input,
+TextArea,
+#ai-command,
+#serial-command-input,
+#logs-search-input,
+#mode-web-app-name,
+#mode-web-app-urls,
+#project-description-input,
+#mode-description-input,
+#mode-objective-input,
+#mode-features-input,
+.setting-input {
+    border: solid #174b5a;
+    background: #030a0f;
+    color: #dcfaff;
+}
+
+Input:focus,
+TextArea:focus,
+#ai-command:focus,
+#serial-command-input:focus,
+#logs-search-input:focus,
+#mode-web-app-name:focus,
+#mode-web-app-urls:focus,
+#project-description-input:focus,
+#mode-description-input:focus,
+#mode-objective-input:focus,
+#mode-features-input:focus,
+.setting-input:focus {
+    border: solid #42e8ff;
+    background: #06151c;
+}
+
+
+/* CONTROL BUTTONS */
+
+.ai-action,
+.system-action-button,
+.network-action-button,
+.storage-action-button,
+.device-action-button,
+.project-control-button,
+.mode-control-button,
+.logs-control-button,
+.settings-control-button,
+.mode-choice {
+    border: none;
+    border-bottom: solid #174b5a;
+    background: #07151b;
+    color: #77cddd;
+    text-style: bold;
+}
+
+.ai-action:hover,
+.ai-action:focus,
+.system-action-button:hover,
+.system-action-button:focus,
+.network-action-button:hover,
+.network-action-button:focus,
+.storage-action-button:hover,
+.storage-action-button:focus,
+.device-action-button:hover,
+.device-action-button:focus,
+.project-control-button:hover,
+.project-control-button:focus,
+.mode-control-button:hover,
+.mode-control-button:focus,
+.logs-control-button:hover,
+.logs-control-button:focus,
+.settings-control-button:hover,
+.settings-control-button:focus,
+.mode-choice:hover,
+.mode-choice:focus {
+    border-bottom: thick #42e8ff;
+    background: #0d3541;
+    color: #ffffff;
+}
+
+.cycle-arrow,
+.project-cycle-arrow,
+.mode-cycle-arrow,
+.logs-cycle-arrow,
+.serial-baud-arrow {
+    border: none;
+    background: #0b2530;
+    color: #42e8ff;
+}
+
+.cycle-arrow:hover,
+.cycle-arrow:focus,
+.project-cycle-arrow:hover,
+.project-cycle-arrow:focus,
+.mode-cycle-arrow:hover,
+.mode-cycle-arrow:focus,
+.logs-cycle-arrow:hover,
+.logs-cycle-arrow:focus,
+.serial-baud-arrow:hover,
+.serial-baud-arrow:focus {
+    background: #145063;
+    color: #ffffff;
+}
+
+.cycle-value,
+.project-cycle-value,
+.mode-cycle-value,
+.logs-cycle-value,
+#serial-baud-value {
+    border-top: solid #174b5a;
+    border-bottom: solid #174b5a;
+    background: #030a0f;
+    color: #d7faff;
+}
+
+
+/* STATUS BARS */
+
+#system-alert-banner,
+#network-health,
+#storage-health,
+#device-health,
+#logs-status,
+#mode-status,
+#settings-status,
+#ai-status-bar,
+#project-action-status,
+#device-action-status,
+#storage-action-status,
+#network-action-status {
+    border: solid #174b5a;
+    background: #040d12;
+    color: #6f9da8;
+}
+
+#system-alerts.has-warning #system-alert-banner,
+#network-health.warning,
+#storage-health.warning,
+#device-health.warning {
+    border: solid #ffbd59;
+    background: #1b1507;
+    color: #ffe0a3;
+}
+
+#system-alerts.has-critical #system-alert-banner,
+#network-health.critical,
+#storage-health.critical,
+#device-health.critical {
+    border: solid #ff4365;
+    background: #1e070d;
+    color: #ffb3c0;
+}
+
+
+/* PROGRESS */
+
+MetricCard Bar > .bar--bar {
+    color: #42e8ff;
+    background: #102c35;
+}
+
+MetricCard Bar > .bar--complete {
+    color: #42e8ff;
+}
+
+
+/* BOOT SEQUENCE */
+
+BootScreen {
+    align: center middle;
+    background: #010305;
+}
+
+#boot-logo {
+    width: 78;
+    height: 6;
+    padding: 1 2;
+    border-top: solid #42e8ff;
+    border-left: thick #42e8ff;
+    border-right: solid #174b5a;
+    background: #030b10;
+    color: #42e8ff;
+    text-style: bold;
+    content-align: center middle;
+}
+
+#boot-build {
+    width: 78;
+    height: 3;
+    padding: 1 2;
+    border-left: solid #174b5a;
+    border-right: solid #174b5a;
+    border-bottom: solid #174b5a;
+    background: #030b10;
+    color: #477683;
+    text-style: bold;
+    content-align: center middle;
+}
+
+#boot-sequence {
+    width: 78;
+    height: 13;
+    padding: 1 4;
+    border-left: solid #174b5a;
+    border-right: solid #174b5a;
+    background: #02070a;
+    color: #9ccbd4;
+    content-align: left middle;
+}
+
+#boot-progress {
+    width: 78;
+    height: 4;
+    padding: 1 4;
+    border-left: solid #174b5a;
+    border-right: solid #174b5a;
+    background: #02070a;
+    color: #42e8ff;
+    text-style: bold;
+    content-align: center middle;
+}
+
+#boot-access {
+    width: 78;
+    height: 4;
+    padding: 1 2;
+    border-left: solid #174b5a;
+    border-right: solid #174b5a;
+    background: #030b10;
+    color: #58f6d0;
+    content-align: center middle;
+}
+
+#boot-hint {
+    width: 78;
+    height: 3;
+    padding: 1;
+    border-left: solid #174b5a;
+    border-right: solid #174b5a;
+    border-bottom: solid #42e8ff;
+    background: #030b10;
+    color: #315965;
+    content-align: center middle;
+}
+
+
+/* =========================================================
+   HELM CYBERDECK OS v1.0
+   FINAL POLISH
+   ========================================================= */
+
+/* Override default Textual primary buttons */
+
+Button.-primary,
+#ai-execute,
+#mode-activate,
+#settings-save,
+#project-save,
+#device-action-send,
+#mode-web-app-add {
+    border: none;
+    border-left: thick #42e8ff;
+    border-bottom: solid #1f7187;
+    background: #0b2e38;
+    color: #dffbff;
+    text-style: bold;
+}
+
+Button.-primary:hover,
+Button.-primary:focus,
+#ai-execute:hover,
+#ai-execute:focus,
+#mode-activate:hover,
+#mode-activate:focus,
+#settings-save:hover,
+#settings-save:focus,
+#project-save:hover,
+#project-save:focus,
+#device-action-send:hover,
+#device-action-send:focus,
+#mode-web-app-add:hover,
+#mode-web-app-add:focus {
+    border-left: thick #8cf5ff;
+    border-bottom: thick #42e8ff;
+    background: #125265;
+    color: #ffffff;
+}
+
+/* Stronger active navigation signal */
+
+#sidebar .nav-button.selected {
+    border-left: thick #42e8ff;
+    border-bottom: solid #42e8ff;
+    background: #10333e;
+    color: #ffffff;
+}
+
+/* Reduce the feeling of empty separator surfaces */
+
+#mode-status {
+    border-left: thick #58f6d0;
+    color: #8fd9e5;
+    content-align: left middle;
+}
+
+#modes-table {
+    border-top: solid #42e8ff;
+}
+
+/* More deliberate terminal cursor surfaces */
+
+#ai-command,
+#serial-command-input,
+#logs-search-input {
+    border-left: thick #1f7187;
+}
+
+#ai-command:focus,
+#serial-command-input:focus,
+#logs-search-input:focus {
+    border-left: thick #42e8ff;
+}
+
+/* Slightly stronger telemetry cards */
+
+MetricCard,
+.ai-card,
+.mode-summary-card {
+    border-top: solid #246e80;
+}
+
+MetricCard:hover,
+.ai-card:hover,
+.mode-summary-card:hover {
+    border-top: solid #8cf5ff;
+}
+
+/* Refined scrollbars */
+
+VerticalScroll,
+ScrollView {
+    scrollbar-size: 1 1;
+    scrollbar-color: #174b5a;
+    scrollbar-color-hover: #42e8ff;
+    scrollbar-color-active: #8cf5ff;
+}
+
+
+/* =========================================================
+   HELM v1.0 — FINAL BOX MODEL REPAIR
+   Prevent borders and padding from clipping interface text.
+   ========================================================= */
+
+
+/* SIDEBAR LIVE STATE */
+
+#sidebar-core-state {
+    width: 100%;
+    height: 7;
+    min-height: 7;
+    padding: 1;
+    content-align: left top;
+}
+
+#sidebar-mode-state {
+    width: 100%;
+    height: 6;
+    min-height: 6;
+    padding: 1;
+    content-align: left top;
+}
+
+
+/* SINGLE-LINE STATUS SURFACES */
+
+#logs-status,
+#mode-status,
+#settings-status,
+#network-health,
+#storage-health,
+#device-health {
+    width: 100%;
+    height: auto;
+    min-height: 4;
+    padding: 0 2;
+    content-align: left middle;
+}
+
+
+/* MULTI-LINE ALERT SURFACES */
+
+#system-alert-banner {
+    width: 100%;
+    height: auto;
+    min-height: 4;
+    padding: 0 2;
+    content-align: left middle;
+}
+
+
+/* LOWER ACTION STATUS BARS */
+
+#ai-status-bar,
+#project-action-status,
+#device-action-status,
+#storage-action-status,
+#network-action-status,
+#system-action-status {
+    height: auto;
+    min-height: 3;
+    padding: 0 2;
+    content-align: left middle;
+}
+
+
+/* SECTION AND TABLE HEADERS */
+
+.devices-section-title,
+.projects-section-title,
+.modes-section-title,
+.settings-section-title,
+.network-table-title,
+.storage-table-title,
+#process-section-title,
+#project-editor-title,
+#mode-editor-title,
+#logs-table-title {
+    width: 100%;
+    height: 3;
+    min-height: 3;
+    padding: 0 2;
+    content-align: left middle;
+}
+
+
+/* LOGS FILTER WIDTH REPAIR FOR 122-COLUMN TERMINALS */
+
+.logs-cycle-control {
+    width: 24;
+    min-width: 24;
+    height: 3;
+    margin-right: 1;
+}
+
+#logs-search-input {
+    width: 1fr;
+    min-width: 14;
+    height: 3;
+    margin-right: 1;
+}
+
+#logs-pause {
+    width: 17;
+    min-width: 17;
+    height: 3;
+}
+
+
+/* LOGS VISUAL HIERARCHY */
+
+#logs-status {
+    border-left: thick #42e8ff;
+}
+
+#logs-table-title {
+    border-left: thick #42e8ff;
+    border-bottom: solid #174b5a;
+    background: #040d12;
+    color: #6feeff;
+    text-style: bold;
+}
+
+#logs-filter-row {
+    width: 100%;
+    height: 5;
+    margin-top: 1;
+}
+
+
+/* KEEP SIDEBAR COMPACT AFTER EXPANDING LIVE STATE */
+
+#sidebar-hotkey {
+    height: 2;
+    min-height: 2;
+    padding: 0 1;
+}
+
+
+/* =========================================================
+   HELM v1.0 — SIGNATURE IDENTITY PASS
+   ========================================================= */
+
+
+/* SIGNATURE HUD */
+
+#signature-rail {
+    width: 100%;
+    height: 3;
+    min-height: 3;
+    margin: 0 0 1 0;
+    padding: 0;
+    border-bottom: solid #10343e;
+    background: #02080c;
+}
+
+#signature-mark {
+    width: 18;
+    min-width: 18;
+    height: 2;
+    padding: 0 1;
+    border-left: thick #42e8ff;
+    background: #061219;
+    color: #42e8ff;
+    text-style: bold;
+    content-align: left middle;
+}
+
+#signature-module {
+    width: 1fr;
+    height: 2;
+    padding: 0 2;
+    border-left: solid #10343e;
+    background: #030b10;
+    color: #b8eaf5;
+    content-align: left middle;
+}
+
+#signature-state {
+    width: 38;
+    min-width: 38;
+    height: 2;
+    padding: 0 2;
+    border-left: solid #10343e;
+    background: #030b10;
+    color: #6f9da8;
+    content-align: right middle;
+}
+
+
+/* DYNAMIC CORE STATE */
+
+#main-layout.core-nominal #screen-title,
+#main-layout.core-nominal #signature-mark {
+    border-left: thick #58f6d0;
+}
+
+#main-layout.core-nominal #sidebar-brand {
+    border-top: solid #58f6d0;
+}
+
+#main-layout.core-degraded #screen-title,
+#main-layout.core-degraded #signature-mark,
+#main-layout.core-processing #screen-title,
+#main-layout.core-processing #signature-mark {
+    border-left: thick #ffbd59;
+}
+
+#main-layout.core-degraded #sidebar-brand,
+#main-layout.core-processing #sidebar-brand {
+    border-top: solid #ffbd59;
+}
+
+#main-layout.core-critical #screen-title,
+#main-layout.core-critical #signature-mark {
+    border-left: thick #ff4365;
+}
+
+#main-layout.core-critical #sidebar-brand {
+    border-top: solid #ff4365;
+}
+
+
+/* QUIETER SECONDARY PANELS */
+
+.network-graph,
+.storage-graph,
+.resource-history-graph,
+.system-detail-card,
+.project-editor-column,
+.mode-editor-column,
+#cpu-core-grid,
+#system-actions,
+#selected-device-details,
+#logs-details,
+.settings-panel {
+    border: solid #10343e;
+    background: #030b10;
+}
+
+.network-graph:hover,
+.storage-graph:hover,
+.resource-history-graph:hover,
+.system-detail-card:hover,
+.project-editor-column:hover,
+.mode-editor-column:hover,
+#cpu-core-grid:hover,
+#system-actions:hover,
+#selected-device-details:hover,
+#logs-details:hover,
+.settings-panel:hover {
+    border: solid #29788b;
+    background: #061219;
+}
+
+
+/* PRIMARY TELEMETRY AND SUMMARY CARDS */
+
+MetricCard,
+.network-card,
+.network-rate-card,
+.network-diagnostic-card,
+.network-total-card,
+.storage-card,
+.devices-card,
+.project-card,
+.mode-summary-card,
+.logs-card,
+.ai-card,
+.settings-card {
+    border: solid #174b5a;
+    border-top: solid #42e8ff;
+    background: #050f15;
+}
+
+MetricCard:hover,
+.network-card:hover,
+.network-rate-card:hover,
+.network-diagnostic-card:hover,
+.network-total-card:hover,
+.storage-card:hover,
+.devices-card:hover,
+.project-card:hover,
+.mode-summary-card:hover,
+.logs-card:hover,
+.ai-card:hover,
+.settings-card:hover {
+    border: solid #42e8ff;
+    border-top: solid #a4f7ff;
+    background: #081a22;
+}
+
+
+/* ONE HERO SURFACE PER MODULE */
+
+#system-panel,
+#network-health,
+#storage-health,
+#device-health,
+#project-focus,
+#mode-status,
+#logs-status,
+#ai-transcript,
+#settings-diagnostics {
+    border-left: thick #42e8ff;
+    border-top: solid #246e80;
+    background: #051118;
+}
+
+#system-panel:hover,
+#network-health:hover,
+#storage-health:hover,
+#device-health:hover,
+#project-focus:hover,
+#mode-status:hover,
+#logs-status:hover,
+#ai-transcript:hover,
+#settings-diagnostics:hover {
+    border-left: thick #8cf5ff;
+    border-top: solid #42e8ff;
+    background: #071922;
+}
+
+
+/* MODULE-SPECIFIC HERO DETAILS */
+
+.module-system #signature-module,
+.module-system #system-panel {
+    border-bottom: solid #174b5a;
+}
+
+.module-ai #signature-module,
+.module-ai #ai-transcript {
+    border-bottom: solid #225d70;
+}
+
+.module-modes #signature-module,
+.module-modes #mode-status {
+    border-bottom: solid #1f7187;
+}
+
+.module-projects #signature-module,
+.module-projects #project-focus {
+    border-bottom: solid #286445;
+}
+
+.module-logs #signature-module,
+.module-logs #logs-status {
+    border-bottom: solid #5c4a17;
+}
+
+
+/* HELM BRAND */
+
+#sidebar-brand {
+    border-top: solid #42e8ff;
+    text-style: bold;
+}
+
+#boot-logo {
+    border-top: solid #8cf5ff;
+    text-style: bold;
+}
+
+
+/* MORE CONTROLLED ACTIVE NAVIGATION */
+
+#sidebar .nav-button {
+    color: #6f9da8;
+}
+
+#sidebar .nav-button:hover {
+    color: #c9f8ff;
+}
+
+#sidebar .nav-button.selected {
+    border-left: thick #42e8ff;
+    border-bottom: solid #42e8ff;
+    background: #0d303a;
+    color: #ffffff;
+}
+
+
+/* HERO VALUES */
+
+.metric-value {
+    color: #e8fcff;
+    text-style: bold;
+}
+
+.ai-card,
+.mode-summary-card,
+.logs-card {
+    text-style: bold;
+}
+
+
+/* SUBTLE DEPTH BETWEEN UI LAYERS */
+
+#screen-header {
+    background: #040d12;
+}
+
+#screen-switcher {
+    background: #010507;
+}
+
+#content-area {
+    background: #010507;
+}

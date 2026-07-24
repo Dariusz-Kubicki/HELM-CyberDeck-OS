@@ -28,7 +28,7 @@ from app.screens.system import SystemScreen
 from app.sidebar import Sidebar
 from app.signature_rail import SignatureRail
 from app.system_actions import SystemActions
-from services.alert_service import SystemAlert
+from services.alert_service import AlertService, SystemAlert
 from services.data_service import (
     DataService,
     SystemSnapshot,
@@ -123,6 +123,7 @@ class Helm(App):
         self.mode_service = ModeService()
         self.workspace_service = WorkspaceService()
         self.system_action_service = SystemActionService()
+        self.alert_service = AlertService()
 
         self.health_service = HealthService(
             settings_service=self.settings_service,
@@ -133,6 +134,12 @@ class Helm(App):
         self.settings = self.settings_service.load()
         self.modes = self.mode_service.load_modes()
         self.active_mode_id = self.mode_service.load_active_mode()
+
+        self._active_navigation_id = (
+            self.settings.start_screen
+            if self.settings.start_screen in self.NAVIGATION
+            else "system"
+        )
 
         self.refresh_timer: Timer | None = None
         self._active_system_alerts: dict[str, str] = {}
@@ -483,9 +490,21 @@ class Helm(App):
                 self._last_snapshot = snapshot
 
                 try:
-                    system_alerts = self.query_one(
-                        SystemScreen
-                    ).update_snapshot(snapshot)
+                    if (
+                        self._active_navigation_id
+                        == "system"
+                    ):
+                        system_alerts = self.query_one(
+                            SystemScreen
+                        ).update_snapshot(
+                            snapshot
+                        )
+                    else:
+                        system_alerts = (
+                            self.alert_service.analyze(
+                                snapshot
+                            )
+                        )
 
                     self._process_system_alerts(
                         system_alerts
@@ -499,41 +518,22 @@ class Helm(App):
                         )
                     )
 
-                screen_updates = (
-                    (
-                        "UI NETWORK",
-                        NetworkScreen,
-                    ),
-                    (
-                        "UI STORAGE",
-                        StorageScreen,
-                    ),
-                    (
-                        "UI DEVICES",
-                        DevicesScreen,
-                    ),
-                    (
-                        "UI PROJECTS",
-                        ProjectsScreen,
-                    ),
-                    (
-                        "UI AI",
-                        AIScreen,
-                    ),
-                )
-
-                for source, screen_type in screen_updates:
+                if (
+                    self._active_navigation_id
+                    != "system"
+                ):
                     try:
-                        self.query_one(
-                            screen_type
-                        ).update_snapshot(
+                        self._update_active_snapshot_screen(
                             snapshot
                         )
 
                     except Exception as error:
                         ui_issues.append(
                             self._make_ui_issue(
-                                source,
+                                (
+                                    "UI "
+                                    + self._active_navigation_id.upper()
+                                ),
                                 error,
                             )
                         )
@@ -631,7 +631,67 @@ class Helm(App):
             current_state
         )
 
-    def _refresh_log_screen(self) -> None:
+    def _update_active_snapshot_screen(
+        self,
+        snapshot: SystemSnapshot,
+    ) -> None:
+        screen_type = {
+            "network": NetworkScreen,
+            "storage": StorageScreen,
+            "devices": DevicesScreen,
+            "projects": ProjectsScreen,
+            "ai": AIScreen,
+        }.get(
+            self._active_navigation_id
+        )
+
+        if screen_type is None:
+            return
+
+        self.query_one(
+            screen_type
+        ).update_snapshot(
+            snapshot
+        )
+
+    def _refresh_active_screen_from_cache(
+        self,
+    ) -> None:
+        if self._active_navigation_id == "logs":
+            self._refresh_log_screen(
+                force=True
+            )
+            return
+
+        snapshot = self._last_snapshot
+
+        if snapshot is None:
+            return
+
+        if self._active_navigation_id == "system":
+            self.query_one(
+                SystemScreen
+            ).update_snapshot(
+                snapshot
+            )
+            return
+
+        self._update_active_snapshot_screen(
+            snapshot
+        )
+
+    def _refresh_log_screen(
+        self,
+        *,
+        force: bool = False,
+    ) -> None:
+        if (
+            not force
+            and self._active_navigation_id
+            != "logs"
+        ):
+            return
+
         try:
             self.query_one(
                 LogsScreen
@@ -723,9 +783,31 @@ class Helm(App):
         else:
             visual_state = "nominal"
 
+        # Najważniejsza optymalizacja:
+        # nie dotykaj klas CSS, dopóki stan się nie zmieni.
+        if (
+            getattr(
+                self,
+                "_core_visual_state",
+                None,
+            )
+            == visual_state
+        ):
+            return
+
         layout = self.query_one(
             "#main-layout"
         )
+
+        target_class = (
+            f"core-{visual_state}"
+        )
+
+        # Chroni także przed stanem, w którym klasa
+        # została już ustawiona przed zapisaniem cache.
+        if layout.has_class(target_class):
+            self._core_visual_state = visual_state
+            return
 
         for class_name in (
             "core-nominal",
@@ -733,13 +815,17 @@ class Helm(App):
             "core-processing",
             "core-critical",
         ):
-            layout.remove_class(
-                class_name
-            )
+            if layout.has_class(class_name):
+                layout.remove_class(
+                    class_name
+                )
 
         layout.add_class(
-            f"core-{visual_state}"
+            target_class
         )
+
+        self._core_visual_state = visual_state
+
 
     @staticmethod
     def _make_ui_issue(
@@ -1323,12 +1409,20 @@ class Helm(App):
         if navigation_id not in self.NAVIGATION:
             navigation_id = "system"
 
+        self._active_navigation_id = navigation_id
+
         screen_id, title = self.NAVIGATION[navigation_id]
 
         self.query_one(
             "#screen-switcher",
             ContentSwitcher,
         ).current = screen_id
+
+        try:
+            self._refresh_active_screen_from_cache()
+        except Exception:
+            # Cached refresh must never break navigation.
+            pass
 
         screen_code = self.SCREEN_CODES.get(
             navigation_id,

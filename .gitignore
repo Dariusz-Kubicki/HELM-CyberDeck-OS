@@ -1,18 +1,32 @@
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
 venv/
+.venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
 
 # HELM runtime logs
 logs/*.log
 logs/*.log.*
 !logs/.gitkeep
+logs/exports/
 
-# Active HELM runtime mode
+# Mutable runtime state and exports
 config/mode_state.json
 config/mode_state.json.tmp
-*.py[cod]
-*.before-*
-*.bak
 config/backups/
 config/exports/
-logs/exports/
+
+# Development snapshots
+*.before-*
+*.bak
+*.bundle

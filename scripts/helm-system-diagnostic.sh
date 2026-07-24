@@ -86,4 +86,5 @@ fi
 section "DIAGNOSTIC COMPLETE"
 
 printf 'Generated: %s\n' "$(date '+%Y-%m-%d %H:%M:%S')"
-printf 'HELM project: %s\n' "$HOME/.cyberdeck/nexus"
+PROJECT_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+printf 'HELM project: %s\n' "$PROJECT_ROOT"

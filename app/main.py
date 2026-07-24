@@ -32,6 +32,7 @@ from services.data_service import (
     TelemetryIssue,
     TelemetryResult,
 )
+from services.health_service import HealthReport, HealthService
 from services.log_service import LogService
 from services.mode_service import ModeService
 from services.settings_service import HelmSettings, SettingsService
@@ -96,6 +97,12 @@ class Helm(App):
         self.workspace_service = WorkspaceService()
         self.system_action_service = SystemActionService()
 
+        self.health_service = HealthService(
+            settings_service=self.settings_service,
+            mode_service=self.mode_service,
+            log_service=self.log_service,
+        )
+
         self.settings = self.settings_service.load()
         self.modes = self.mode_service.load_modes()
         self.active_mode_id = self.mode_service.load_active_mode()
@@ -114,6 +121,13 @@ class Helm(App):
         self._last_snapshot: SystemSnapshot | None = None
 
         self._telemetry_issue_state: dict[str, str] = {}
+
+        self._telemetry_state = "STARTING"
+        self._health_state = "STARTING"
+        self._startup_health_requested = False
+
+        self._health_worker: Worker[None] | None = None
+        self._last_health_report: HealthReport | None = None
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -199,6 +213,27 @@ class Helm(App):
             ),
         )
 
+        yield SystemCommand(
+            "Run HELM health diagnostic",
+            (
+                "Check telemetry, configuration, tools, "
+                "Ollama, Git and the previous session."
+            ),
+            self._run_health_check,
+        )
+
+        yield SystemCommand(
+            "Show last HELM health report",
+            "Open the most recent core health report.",
+            self._show_last_health_report,
+        )
+
+        yield SystemCommand(
+            "Export last HELM health report",
+            "Save the current health report as Markdown.",
+            self._export_last_health_report,
+        )
+
     def on_mount(self) -> None:
         self.log_service.info(
             "HELM",
@@ -240,13 +275,15 @@ class Helm(App):
         if self.refresh_timer is not None:
             self.refresh_timer.stop()
 
-        worker = self._telemetry_worker
-
-        if (
-            worker is not None
-            and not worker.is_finished
+        for worker in (
+            self._telemetry_worker,
+            self._health_worker,
         ):
-            worker.cancel()
+            if (
+                worker is not None
+                and not worker.is_finished
+            ):
+                worker.cancel()
 
         self.log_service.info(
             "HELM",
@@ -430,6 +467,14 @@ class Helm(App):
                 engine_state
             )
 
+            if not self._startup_health_requested:
+                self._startup_health_requested = True
+
+                self._request_health_check(
+                    display=False,
+                    export=True,
+                )
+
         finally:
             self._telemetry_in_flight = False
             self._refresh_log_screen()
@@ -512,8 +557,14 @@ class Helm(App):
         self,
         state: str,
     ) -> None:
+        self._telemetry_state = state
+        self._refresh_core_subtitle()
+
+    def _refresh_core_subtitle(self) -> None:
         self.sub_title = (
-            f"TELEMETRY {state}"
+            f"HEALTH {self._health_state}"
+            f"  //  TELEMETRY "
+            f"{self._telemetry_state}"
             f"  //  "
             f"{self._telemetry_last_duration_ms:.0f} ms"
             f"  //  SKIPPED "
@@ -538,6 +589,298 @@ class Helm(App):
             ),
             fallback_used=True,
         )
+
+    def _run_health_check(self) -> None:
+        self._request_health_check(
+            display=True,
+            export=True,
+        )
+
+    def _show_last_health_report(self) -> None:
+        if self._last_health_report is None:
+            self._request_health_check(
+                display=True,
+                export=False,
+            )
+            return
+
+        self._display_health_report(
+            self._last_health_report,
+            export_path=None,
+        )
+
+    def _export_last_health_report(self) -> None:
+        report = self._last_health_report
+
+        if report is None:
+            self._request_health_check(
+                display=True,
+                export=True,
+            )
+            return
+
+        try:
+            export_path = (
+                self.health_service
+                .export_report(report)
+            )
+
+            self.log_service.info(
+                "HEALTH",
+                f"Health report exported: {export_path}",
+            )
+
+            self._open_screen(
+                "ai",
+                log_event=False,
+            )
+
+            self.query_one(
+                AIScreen
+            ).display_system_report(
+                "HELM HEALTH EXPORT",
+                f"Report exported to:\n{export_path}",
+            )
+
+        except OSError as error:
+            self.log_service.error(
+                "HEALTH",
+                (
+                    f"Export failed: "
+                    f"{type(error).__name__}: {error}"
+                ),
+            )
+
+    def _request_health_check(
+        self,
+        *,
+        display: bool,
+        export: bool,
+    ) -> None:
+        if self._telemetry_shutdown:
+            return
+
+        current_worker = self._health_worker
+
+        if (
+            current_worker is not None
+            and not current_worker.is_finished
+        ):
+            current_worker.cancel()
+
+        self._health_state = "SCANNING"
+        self._refresh_core_subtitle()
+
+        self._health_worker = (
+            self._collect_health_worker(
+                self.settings,
+                self.active_mode_id,
+                self._telemetry_state,
+                self._telemetry_last_duration_ms,
+                self._telemetry_skipped_cycles,
+                display,
+                export,
+            )
+        )
+
+    @work(
+        name="health-check",
+        group="health",
+        thread=True,
+        exclusive=True,
+        exit_on_error=False,
+    )
+    def _collect_health_worker(
+        self,
+        settings: HelmSettings,
+        active_mode_id: str,
+        telemetry_state: str,
+        telemetry_duration_ms: float,
+        telemetry_skipped_cycles: int,
+        display: bool,
+        export: bool,
+    ) -> None:
+        worker = get_current_worker()
+
+        if (
+            worker.is_cancelled
+            or self._telemetry_shutdown
+        ):
+            return
+
+        try:
+            report = self.health_service.collect(
+                settings=settings,
+                active_mode_id=active_mode_id,
+                telemetry_state=telemetry_state,
+                telemetry_duration_ms=(
+                    telemetry_duration_ms
+                ),
+                telemetry_skipped_cycles=(
+                    telemetry_skipped_cycles
+                ),
+            )
+
+            export_path: str | None = None
+
+            if export:
+                export_path = str(
+                    self.health_service
+                    .export_report(report)
+                )
+
+            if (
+                worker.is_cancelled
+                or self._telemetry_shutdown
+            ):
+                return
+
+            self.call_from_thread(
+                self._apply_health_report,
+                report,
+                display,
+                export_path,
+            )
+
+        except Exception as error:
+            if (
+                worker.is_cancelled
+                or self._telemetry_shutdown
+            ):
+                return
+
+            try:
+                self.call_from_thread(
+                    self._apply_health_failure,
+                    display,
+                    (
+                        f"{type(error).__name__}: "
+                        f"{error}"
+                    ),
+                )
+            except RuntimeError:
+                return
+
+    def _apply_health_report(
+        self,
+        report: HealthReport,
+        display: bool,
+        export_path: str | None,
+    ) -> None:
+        self._last_health_report = report
+        self._health_state = report.state
+        self._health_worker = None
+
+        self._refresh_core_subtitle()
+        self._log_health_report(report)
+
+        if display:
+            self._display_health_report(
+                report,
+                export_path=export_path,
+            )
+
+    def _apply_health_failure(
+        self,
+        display: bool,
+        detail: str,
+    ) -> None:
+        self._health_state = "DEGRADED"
+        self._health_worker = None
+
+        self._refresh_core_subtitle()
+
+        self.log_service.error(
+            "HEALTH",
+            f"Health check failed: {detail}",
+        )
+
+        if display:
+            self._open_screen(
+                "ai",
+                log_event=False,
+            )
+
+            self.query_one(
+                AIScreen
+            ).display_system_report(
+                "HELM HEALTH CHECK ERROR",
+                detail,
+            )
+
+    def _display_health_report(
+        self,
+        report: HealthReport,
+        *,
+        export_path: str | None,
+    ) -> None:
+        content = report.to_text()
+
+        if export_path:
+            content += (
+                "\n\nEXPORTED REPORT\n"
+                f"{export_path}"
+            )
+
+        self._open_screen(
+            "ai",
+            log_event=False,
+        )
+
+        self.query_one(
+            AIScreen
+        ).display_system_report(
+            "HELM CORE HEALTH REPORT",
+            content,
+        )
+
+    def _log_health_report(
+        self,
+        report: HealthReport,
+    ) -> None:
+        summary = (
+            f"state={report.state}; "
+            f"checks={len(report.checks)}; "
+            f"warnings={report.warning_count}; "
+            f"critical={report.critical_count}; "
+            f"duration={report.duration_ms:.1f}ms"
+        )
+
+        if report.state == "CRITICAL":
+            self.log_service.critical(
+                "HEALTH",
+                summary,
+            )
+        elif report.state == "DEGRADED":
+            self.log_service.warning(
+                "HEALTH",
+                summary,
+            )
+        else:
+            self.log_service.info(
+                "HEALTH",
+                summary,
+            )
+
+        for check in report.problem_checks:
+            message = (
+                f"{check.code}: "
+                f"{check.title}; "
+                f"{check.detail}"
+            )
+
+            if check.status == "CRITICAL":
+                self.log_service.critical(
+                    "HEALTH",
+                    message,
+                )
+            else:
+                self.log_service.warning(
+                    "HEALTH",
+                    message,
+                )
+
+        self._refresh_log_screen()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id

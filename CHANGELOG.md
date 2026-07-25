@@ -1,3 +1,12 @@
+## [1.1.0] - 2026-07-25
+
+### Added
+
+- Complete HELM CyberDeck Desktop integration.
+- Access Gate, Security Lock and animated Early Boot.
+- Desktop snapshot, installer, doctor, backup and recovery tools.
+- Command cheat sheet and desktop recovery documentation.
+
 # Changelog
 
 All notable changes to HELM CyberDeck OS are documented here.

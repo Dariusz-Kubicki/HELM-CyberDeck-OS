@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=HELM Data Vault
+GenericName=CyberDeck File Manager
+Comment=Browse projects, hardware data and system archives
+Exec=dolphin %U
+Icon=system-file-manager
+Terminal=false
+Categories=System;FileTools;FileManager;
+MimeType=inode/directory;
+StartupNotify=true

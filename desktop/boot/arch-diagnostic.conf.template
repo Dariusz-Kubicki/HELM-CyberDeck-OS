@@ -1,0 +1,5 @@
+title Arch Linux (diagnostic)
+linux /vmlinuz-linux
+initrd /amd-ucode.img
+initrd /initramfs-linux.img
+options root=UUID=__ROOT_UUID__ rw nvidia_drm.modeset=1 plymouth.enable=0 disablehooks=plymouth systemd.show_status=yes

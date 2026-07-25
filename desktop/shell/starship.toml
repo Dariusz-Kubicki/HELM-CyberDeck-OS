@@ -1,0 +1,26 @@
+format = """
+$directory$git_branch
+$username$hostname $character
+"""
+
+[username]
+show_always = true
+style_user = "bold cyan"
+format = "[$user]($style)"
+
+[hostname]
+ssh_only = false
+format = "@[$hostname](bold purple)"
+
+[directory]
+style = "bold blue"
+format = "[$path]($style) "
+
+[git_branch]
+symbol = "󰘬 "
+style = "bold green"
+format = "[$symbol$branch]($style) "
+
+[character]
+success_symbol = "[╰─❯](bold cyan)"
+error_symbol = "[╰─❯](bold red)"

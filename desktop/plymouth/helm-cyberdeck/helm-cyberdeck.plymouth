@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=HELM CyberDeck
+Description=HELM CyberDeck early boot interface based on Breeze
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/helm-cyberdeck
+ScriptFile=/usr/share/plymouth/themes/helm-cyberdeck/helm-cyberdeck.script

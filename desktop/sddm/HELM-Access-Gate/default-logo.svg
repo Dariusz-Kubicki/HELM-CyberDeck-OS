@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="420"
+     height="110"
+     viewBox="0 0 420 110">
+
+  <rect x="1"
+        y="1"
+        width="418"
+        height="108"
+        fill="#02070b"
+        fill-opacity="0.90"
+        stroke="#42e8ff"
+        stroke-width="2"/>
+
+  <rect x="1"
+        y="1"
+        width="8"
+        height="108"
+        fill="#42e8ff"/>
+
+  <text x="30"
+        y="48"
+        fill="#8cf5ff"
+        font-family="monospace"
+        font-size="26"
+        font-weight="bold">
+    ◈ H E L M
+  </text>
+
+  <text x="31"
+        y="77"
+        fill="#d9f3ff"
+        font-family="monospace"
+        font-size="14">
+    CYBERDECK AUTHENTICATION NODE
+  </text>
+
+  <text x="31"
+        y="98"
+        fill="#58f6d0"
+        font-family="monospace"
+        font-size="11">
+    ACCESS CHANNEL READY
+  </text>
+</svg>

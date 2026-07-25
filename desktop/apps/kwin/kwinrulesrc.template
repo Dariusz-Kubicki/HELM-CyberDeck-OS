@@ -1,0 +1,15 @@
+[73fafc6c-046c-4f24-997c-38b74ee00ff1]
+Description=Window settings for org.kde.konsole
+opacityactive=96
+opacityactiverule=2
+opacityinactive=92
+opacityinactiverule=2
+title=nexus : bash — Konsole
+types=1
+wmclass=konsole org.kde.konsole
+wmclasscomplete=true
+wmclassmatch=1
+
+[General]
+count=1
+rules=73fafc6c-046c-4f24-997c-38b74ee00ff1

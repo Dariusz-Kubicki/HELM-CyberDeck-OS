@@ -1,0 +1,12 @@
+python 3.14.6-1
+python-psutil 7.2.2-1
+plasma-workspace 6.7.3-1
+plasma-desktop 6.7.3-1
+kwin 6.7.3-1
+sddm 0.21.0-7
+plymouth 26.134.222-2
+mkinitcpio 41-4
+systemd 261.1-1
+dolphin 26.04.3-1
+konsole 26.04.3-1
+firefox 153.0-1

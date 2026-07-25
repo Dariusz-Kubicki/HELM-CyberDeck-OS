@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=HELM Desktop Node
+Comment=CyberDeck desktop telemetry HUD
+Exec=/home/dariusz/.local/bin/helm-conky-start
+Icon=utilities-system-monitor
+Terminal=false
+OnlyShowIn=KDE;
+X-KDE-autostart-after=panel
+X-KDE-StartupNotify=false

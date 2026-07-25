@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+ENV_FILE="$HOME/.config/helm/environment"
+
+if [[ -r "$ENV_FILE" ]]; then
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+fi
+
+PROJECT="${HELM_PROJECT_DIR:-$HOME/.cyberdeck/nexus}"
+PYTHON="$PROJECT/venv/bin/python"
+
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+LOCK_FILE="$RUNTIME_DIR/helm-cyberdeck-${UID}.lock"
+
+mkdir -p "$RUNTIME_DIR"
+
+if [[ ! -d "$PROJECT" ]]; then
+    printf 'ERROR: project directory missing: %s\n' "$PROJECT"
+    read -r -p "Press Enter to close..."
+    exit 1
+fi
+
+if [[ ! -x "$PYTHON" ]]; then
+    printf 'ERROR: Python interpreter missing: %s\n' "$PYTHON"
+    read -r -p "Press Enter to close..."
+    exit 1
+fi
+
+cd "$PROJECT"
+
+printf '\033]0;HELM // CYBERDECK OS\007'
+
+exec flock \
+    --exclusive \
+    --nonblock \
+    --conflict-exit-code 73 \
+    "$LOCK_FILE" \
+    "$PYTHON" -m app.main

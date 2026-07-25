@@ -1,0 +1,476 @@
+#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import copy
+import json
+import os
+import re
+import shutil
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+
+HOME = Path.home()
+
+SOURCE = (
+    HOME
+    / ".local/share/aurorae/themes/Graphite-dark"
+)
+
+TARGET = (
+    HOME
+    / ".local/share/aurorae/themes/HELM-Graphite"
+)
+
+ACTIVE_OPACITY = float(
+    os.environ.get(
+        "HELM_ACTIVE_OPACITY",
+        "0.90",
+    )
+)
+
+INACTIVE_OPACITY = float(
+    os.environ.get(
+        "HELM_INACTIVE_OPACITY",
+        "0.76",
+    )
+)
+
+SIDES = (
+    "center",
+    "top",
+    "bottom",
+    "left",
+    "right",
+    "topleft",
+    "topright",
+    "bottomleft",
+    "bottomright",
+)
+
+
+def validate_opacity(
+    name: str,
+    value: float,
+) -> None:
+    if not 0.20 <= value <= 1.0:
+        raise SystemExit(
+            f"{name} musi mieścić się "
+            f"w zakresie 0.20–1.00: {value}"
+        )
+
+
+def read_style(
+    element: ET.Element,
+) -> dict[str, str]:
+    result: dict[str, str] = {}
+
+    for item in element.attrib.get(
+        "style",
+        "",
+    ).split(";"):
+        if ":" not in item:
+            continue
+
+        key, value = item.split(
+            ":",
+            1,
+        )
+
+        result[key.strip()] = value.strip()
+
+    return result
+
+
+def write_style(
+    element: ET.Element,
+    style: dict[str, str],
+) -> None:
+    element.set(
+        "style",
+        ";".join(
+            f"{key}:{value}"
+            for key, value in style.items()
+        ),
+    )
+
+
+def set_style_value(
+    element: ET.Element,
+    key: str,
+    value: str,
+) -> None:
+    style = read_style(element)
+    style[key] = value
+    write_style(element, style)
+
+    # Presentation attribute as an additional
+    # fallback for different SVG renderers.
+    element.set(key, value)
+
+
+def remove_style_value(
+    element: ET.Element,
+    key: str,
+) -> None:
+    style = read_style(element)
+    style.pop(key, None)
+
+    if style:
+        write_style(element, style)
+    else:
+        element.attrib.pop("style", None)
+
+    element.attrib.pop(key, None)
+
+
+def replace_desktop_value(
+    text: str,
+    key: str,
+    value: str,
+) -> str:
+    pattern = rf"^{re.escape(key)}=.*$"
+    replacement = f"{key}={value}"
+
+    if re.search(
+        pattern,
+        text,
+        flags=re.MULTILINE,
+    ):
+        return re.sub(
+            pattern,
+            replacement,
+            text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+
+    return (
+        text.rstrip()
+        + "\n"
+        + replacement
+        + "\n"
+    )
+
+
+validate_opacity(
+    "HELM_ACTIVE_OPACITY",
+    ACTIVE_OPACITY,
+)
+
+validate_opacity(
+    "HELM_INACTIVE_OPACITY",
+    INACTIVE_OPACITY,
+)
+
+if not SOURCE.is_dir():
+    raise SystemExit(
+        f"Brak źródłowego motywu: {SOURCE}"
+    )
+
+if TARGET.exists():
+    shutil.rmtree(TARGET)
+
+shutil.copytree(
+    SOURCE,
+    TARGET,
+)
+
+# ---------------------------------------------------------
+# Rename configuration file
+# ---------------------------------------------------------
+
+old_rc = TARGET / "Graphite-darkrc"
+new_rc = TARGET / "HELM-Graphiterc"
+
+if not old_rc.exists():
+    raise SystemExit(
+        f"Brak pliku konfiguracji: {old_rc}"
+    )
+
+old_rc.rename(new_rc)
+
+# ---------------------------------------------------------
+# metadata.desktop
+# ---------------------------------------------------------
+
+desktop_path = TARGET / "metadata.desktop"
+desktop_text = desktop_path.read_text(
+    encoding="utf-8",
+)
+
+desktop_values = {
+    "Name": "HELM Graphite",
+    "Comment": (
+        "Transparent HELM CyberDeck "
+        "window decoration based on Graphite-dark"
+    ),
+    "X-KDE-PluginInfo-Name": "HELM-Graphite",
+    "X-KDE-PluginInfo-Version": "1.0.0",
+}
+
+for key, value in desktop_values.items():
+    desktop_text = replace_desktop_value(
+        desktop_text,
+        key,
+        value,
+    )
+
+desktop_path.write_text(
+    desktop_text,
+    encoding="utf-8",
+)
+
+# ---------------------------------------------------------
+# metadata.json
+# ---------------------------------------------------------
+
+json_path = TARGET / "metadata.json"
+
+metadata = json.loads(
+    json_path.read_text(
+        encoding="utf-8",
+    )
+)
+
+plugin = metadata.setdefault(
+    "KPlugin",
+    {},
+)
+
+plugin["Name"] = "HELM Graphite"
+plugin["Id"] = "HELM-Graphite"
+plugin["Version"] = "1.0.0"
+plugin["Description"] = (
+    "Transparent HELM CyberDeck window "
+    "decoration based on Graphite-dark"
+)
+plugin["X-KDE-PluginInfo-blur"] = True
+
+json_path.write_text(
+    json.dumps(
+        metadata,
+        indent=4,
+        ensure_ascii=False,
+    )
+    + "\n",
+    encoding="utf-8",
+)
+
+# ---------------------------------------------------------
+# Theme rc
+# ---------------------------------------------------------
+
+rc_text = new_rc.read_text(
+    encoding="utf-8",
+)
+
+rc_values = {
+    "ActiveFocusedTabColor": "78,78,78",
+    "ActiveUnfocusedTabColor": "120,120,120",
+    "InactiveFocusedTabColor": "120,120,120",
+    "InactiveUnfocusedTabColor": "120,120,120",
+    "ActiveTextColor": "225,225,225",
+    "InactiveTextColor": "186,186,186",
+    "ActiveTextShadowColor": "255,255,255",
+    "InactiveTextShadowColor": "255,255,255",
+}
+
+for key, value in rc_values.items():
+    rc_text = re.sub(
+        rf"^{re.escape(key)}=.*$",
+        f"{key}={value}",
+        rc_text,
+        count=1,
+        flags=re.MULTILINE,
+    )
+
+new_rc.write_text(
+    rc_text,
+    encoding="utf-8",
+)
+
+# ---------------------------------------------------------
+# SVG transparency and blur mask
+# ---------------------------------------------------------
+
+svg_path = TARGET / "decoration.svg"
+
+if not svg_path.exists():
+    raise SystemExit(
+        f"Brak decoration.svg: {svg_path}"
+    )
+
+# Preserve namespaces used by the original file.
+try:
+    for _, namespace in ET.iterparse(
+        svg_path,
+        events=("start-ns",),
+    ):
+        prefix, uri = namespace
+
+        try:
+            ET.register_namespace(
+                prefix or "",
+                uri,
+            )
+        except ValueError:
+            pass
+except ET.ParseError as error:
+    raise SystemExit(
+        f"Błąd parsowania SVG: {error}"
+    ) from error
+
+tree = ET.parse(svg_path)
+root = tree.getroot()
+
+parent_map = {
+    child: parent
+    for parent in root.iter()
+    for child in parent
+}
+
+elements_by_id = {
+    element.attrib["id"]: element
+    for element in root.iter()
+    if "id" in element.attrib
+}
+
+active_ids = {
+    f"decoration-{side}"
+    for side in SIDES
+}
+
+inactive_ids = {
+    f"decoration-inactive-{side}"
+    for side in SIDES
+}
+
+found_active: set[str] = set()
+found_inactive: set[str] = set()
+
+for element_id, element in elements_by_id.items():
+    if element_id in active_ids:
+        set_style_value(
+            element,
+            "opacity",
+            f"{ACTIVE_OPACITY:.3f}",
+        )
+
+        found_active.add(element_id)
+
+    elif element_id in inactive_ids:
+        set_style_value(
+            element,
+            "opacity",
+            f"{INACTIVE_OPACITY:.3f}",
+        )
+
+        found_inactive.add(element_id)
+
+missing_active = active_ids - found_active
+
+if missing_active:
+    raise SystemExit(
+        "Brakuje elementów aktywnej dekoracji: "
+        + ", ".join(
+            sorted(missing_active)
+        )
+    )
+
+# Create a complete mask FrameSvg when the
+# original theme does not contain one.
+created_masks: list[str] = []
+
+for side in SIDES:
+    mask_id = f"mask-{side}"
+
+    if mask_id in elements_by_id:
+        continue
+
+    source_id = f"decoration-{side}"
+    source_element = elements_by_id[source_id]
+    parent = parent_map[source_element]
+
+    clone = copy.deepcopy(
+        source_element
+    )
+
+    clone.set(
+        "id",
+        mask_id,
+    )
+
+    # Blur masks should describe the complete
+    # decoration region without transparency.
+    for descendant in clone.iter():
+        set_style_value(
+            descendant,
+            "opacity",
+            "1",
+        )
+
+        style = read_style(descendant)
+
+        if (
+            "fill-opacity" in style
+            or "fill-opacity"
+            in descendant.attrib
+        ):
+            set_style_value(
+                descendant,
+                "fill-opacity",
+                "1",
+            )
+
+        if (
+            "stroke-opacity" in style
+            or "stroke-opacity"
+            in descendant.attrib
+        ):
+            set_style_value(
+                descendant,
+                "stroke-opacity",
+                "1",
+            )
+
+        remove_style_value(
+            descendant,
+            "filter",
+        )
+
+    parent.append(clone)
+    created_masks.append(mask_id)
+
+try:
+    ET.indent(
+        tree,
+        space="  ",
+    )
+except AttributeError:
+    pass
+
+tree.write(
+    svg_path,
+    encoding="utf-8",
+    xml_declaration=True,
+)
+
+print("HELM Graphite generated.")
+print(
+    f"Active opacity:   {ACTIVE_OPACITY:.0%}"
+)
+print(
+    f"Inactive opacity: {INACTIVE_OPACITY:.0%}"
+)
+print(
+    f"Active elements:  {len(found_active)}"
+)
+print(
+    f"Inactive elements:{len(found_inactive)}"
+)
+print(
+    f"Blur masks added: {len(created_masks)}"
+)
+print(f"Theme path:       {TARGET}")

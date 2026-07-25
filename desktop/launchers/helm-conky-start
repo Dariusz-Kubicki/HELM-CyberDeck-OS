@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+CONFIG="$HOME/.config/conky/cyberdeck.conf"
+STATE_DIR="$HOME/.local/state/helm"
+LOG_FILE="$STATE_DIR/desktop-node.log"
+PID_FILE="$STATE_DIR/desktop-node.pid"
+
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+LAUNCH_LOCK="$RUNTIME_DIR/helm-desktop-node-launch-${UID}.lock"
+
+mkdir -p "$STATE_DIR" "$RUNTIME_DIR"
+
+if [[ ! -r "$CONFIG" ]]; then
+    printf 'ERROR: Desktop Node config missing: %s\n' "$CONFIG" >&2
+    exit 1
+fi
+
+if ! command -v conky >/dev/null 2>&1; then
+    printf 'ERROR: Conky is not installed.\n' >&2
+    exit 1
+fi
+
+find_desktop_node_pid() {
+    local pid
+    local command_line
+
+    while IFS= read -r pid; do
+        [[ -r "/proc/$pid/cmdline" ]] || continue
+
+        command_line="$(
+            tr '\0' ' ' < "/proc/$pid/cmdline"
+        )"
+
+        if [[ "$command_line" == *"$CONFIG"* ]]; then
+            printf '%s\n' "$pid"
+            return 0
+        fi
+    done < <(
+        pgrep \
+            -u "$UID" \
+            -x conky \
+            2>/dev/null || true
+    )
+
+    return 1
+}
+
+# Chroni tylko moment uruchamiania przed dwoma równoczesnymi wywołaniami.
+exec 9>"$LAUNCH_LOCK"
+
+if ! flock -n 9; then
+    printf 'Desktop Node launch is already in progress.\n'
+    exit 0
+fi
+
+if existing_pid="$(find_desktop_node_pid)"; then
+    printf '%s\n' "$existing_pid" > "$PID_FILE"
+    printf '◈ HELM Desktop Node is already online. PID %s\n' \
+        "$existing_pid"
+    exit 0
+fi
+
+rm -f "$PID_FILE"
+
+printf '\n[%s] Starting HELM Desktop Node.\n' \
+    "$(date --iso-8601=seconds)" \
+    >> "$LOG_FILE"
+
+# Conky odłącza się od terminala we własnym trybie daemon.
+conky \
+    -d \
+    -c "$CONFIG" \
+    >> "$LOG_FILE" \
+    2>&1 \
+    </dev/null
+
+# Czekamy maksymalnie cztery sekundy na pojawienie się procesu.
+for _ in {1..40}; do
+    if node_pid="$(find_desktop_node_pid)"; then
+        printf '%s\n' "$node_pid" > "$PID_FILE"
+
+        printf '◈ HELM Desktop Node started in background. PID %s\n' \
+            "$node_pid"
+
+        exit 0
+    fi
+
+    sleep 0.1
+done
+
+printf 'ERROR: Desktop Node process did not appear.\n' >&2
+printf 'Log: %s\n' "$LOG_FILE" >&2
+
+tail -n 15 "$LOG_FILE" >&2 || true
+exit 1

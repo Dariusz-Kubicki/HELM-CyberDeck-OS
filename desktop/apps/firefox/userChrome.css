@@ -1,0 +1,464 @@
+/* =========================================================
+   HELM CYBERDECK BROWSER
+   Firefox userChrome.css
+   ========================================================= */
+
+:root {
+    --helm-bg-0: #02070b;
+    --helm-bg-1: #040d12;
+    --helm-bg-2: #061219;
+    --helm-bg-3: #081a22;
+
+    --helm-border: #174b5a;
+    --helm-border-strong: #246e80;
+
+    --helm-cyan: #42e8ff;
+    --helm-cyan-bright: #8cf5ff;
+    --helm-text: #d9f3ff;
+    --helm-muted: #6f9da8;
+
+    --helm-green: #58f6d0;
+    --helm-amber: #ffbd59;
+    --helm-red: #ff4365;
+    --helm-magenta: #cf4bff;
+
+    --toolbar-bgcolor: var(--helm-bg-0) !important;
+    --toolbar-color: var(--helm-text) !important;
+
+    --lwt-accent-color: var(--helm-bg-0) !important;
+    --lwt-text-color: var(--helm-text) !important;
+
+    --toolbar-field-background-color: var(--helm-bg-2) !important;
+    --toolbar-field-color: var(--helm-text) !important;
+    --toolbar-field-border-color: var(--helm-border) !important;
+    --toolbar-field-focus-background-color: var(--helm-bg-1) !important;
+    --toolbar-field-focus-color: #ffffff !important;
+    --toolbar-field-focus-border-color: var(--helm-cyan) !important;
+
+    --tab-selected-bgcolor: #0b2a34 !important;
+    --tab-selected-textcolor: #ffffff !important;
+    --tab-hover-background-color: var(--helm-bg-3) !important;
+
+    --button-hover-bgcolor: rgba(66, 232, 255, 0.13) !important;
+    --button-active-bgcolor: rgba(66, 232, 255, 0.22) !important;
+
+    --arrowpanel-background: var(--helm-bg-1) !important;
+    --arrowpanel-color: var(--helm-text) !important;
+    --arrowpanel-border-color: var(--helm-border-strong) !important;
+
+    --focus-outline-color: var(--helm-cyan) !important;
+}
+
+
+/* ---------------------------------------------------------
+   MAIN BROWSER FRAME
+   --------------------------------------------------------- */
+
+#main-window,
+#navigator-toolbox,
+#browser,
+#browser-panel {
+    background-color: var(--helm-bg-0) !important;
+    color: var(--helm-text) !important;
+}
+
+#navigator-toolbox {
+    border-bottom: 1px solid var(--helm-cyan) !important;
+    box-shadow:
+        0 2px 12px rgba(66, 232, 255, 0.10),
+        inset 0 -1px rgba(66, 232, 255, 0.18) !important;
+}
+
+
+/* ---------------------------------------------------------
+   TABS
+   --------------------------------------------------------- */
+
+#TabsToolbar {
+    background:
+        linear-gradient(
+            90deg,
+            #02070b 0%,
+            #061219 50%,
+            #02070b 100%
+        ) !important;
+
+    border-bottom: 1px solid #10343e !important;
+}
+
+#tabbrowser-tabs {
+    --tab-min-height: 34px !important;
+    --tab-border-radius: 0 !important;
+}
+
+.tabbrowser-tab {
+    color: var(--helm-muted) !important;
+}
+
+.tabbrowser-tab .tab-background {
+    margin-block: 3px !important;
+
+    border: 1px solid transparent !important;
+    border-radius: 0 !important;
+
+    background: transparent !important;
+}
+
+.tabbrowser-tab:hover .tab-background {
+    border-color: #10343e !important;
+    background: var(--helm-bg-3) !important;
+}
+
+.tabbrowser-tab[selected] .tab-background {
+    border:
+        1px solid var(--helm-border-strong)
+        !important;
+
+    border-top:
+        2px solid var(--helm-cyan)
+        !important;
+
+    background:
+        linear-gradient(
+            180deg,
+            #0c303b 0%,
+            #071a21 100%
+        ) !important;
+
+    box-shadow:
+        inset 0 1px rgba(140, 245, 255, 0.22),
+        0 0 10px rgba(66, 232, 255, 0.10)
+        !important;
+}
+
+.tabbrowser-tab[selected] .tab-label {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+.tabbrowser-tab[attention] .tab-background {
+    border-top-color: var(--helm-amber) !important;
+}
+
+.tab-close-button {
+    border-radius: 0 !important;
+}
+
+.tab-close-button:hover {
+    color: var(--helm-red) !important;
+    background: rgba(255, 67, 101, 0.18) !important;
+}
+
+
+/* NEW TAB BUTTON */
+
+#tabs-newtab-button,
+#new-tab-button {
+    color: var(--helm-cyan) !important;
+}
+
+#tabs-newtab-button:hover,
+#new-tab-button:hover {
+    background:
+        rgba(66, 232, 255, 0.13)
+        !important;
+}
+
+
+/* ---------------------------------------------------------
+   NAVIGATION BAR
+   --------------------------------------------------------- */
+
+#nav-bar {
+    min-height: 42px !important;
+
+    background:
+        linear-gradient(
+            180deg,
+            #061219 0%,
+            #030b10 100%
+        ) !important;
+
+    border-bottom: 1px solid #10343e !important;
+    box-shadow: none !important;
+}
+
+#nav-bar toolbarbutton {
+    color: var(--helm-muted) !important;
+}
+
+#nav-bar toolbarbutton:hover {
+    color: var(--helm-cyan-bright) !important;
+}
+
+
+/* ---------------------------------------------------------
+   ADDRESS BAR
+   --------------------------------------------------------- */
+
+#urlbar {
+    font-family:
+        "Hack",
+        "JetBrains Mono",
+        monospace !important;
+
+    font-size: 12px !important;
+}
+
+#urlbar-background {
+    border:
+        1px solid var(--helm-border)
+        !important;
+
+    border-left:
+        3px solid var(--helm-border-strong)
+        !important;
+
+    border-radius: 0 !important;
+
+    background:
+        linear-gradient(
+            90deg,
+            #061219 0%,
+            #030b10 100%
+        ) !important;
+
+    box-shadow:
+        inset 0 0 10px rgba(0, 0, 0, 0.40)
+        !important;
+}
+
+#urlbar[focused] > #urlbar-background,
+#urlbar[open] > #urlbar-background {
+    border-color: var(--helm-cyan) !important;
+    border-left-color: var(--helm-cyan-bright) !important;
+
+    box-shadow:
+        inset 0 0 10px rgba(66, 232, 255, 0.05),
+        0 0 8px rgba(66, 232, 255, 0.16)
+        !important;
+}
+
+#urlbar-input {
+    color: var(--helm-text) !important;
+}
+
+#identity-box,
+#tracking-protection-icon-container {
+    border-radius: 0 !important;
+    color: var(--helm-cyan) !important;
+}
+
+.urlbarView {
+    border:
+        1px solid var(--helm-border-strong)
+        !important;
+
+    border-radius: 0 !important;
+
+    background: var(--helm-bg-1) !important;
+}
+
+.urlbarView-row {
+    border-left:
+        2px solid transparent
+        !important;
+}
+
+.urlbarView-row:hover,
+.urlbarView-row[selected] {
+    border-left-color: var(--helm-cyan) !important;
+    background:
+        rgba(66, 232, 255, 0.09)
+        !important;
+}
+
+.urlbarView-title {
+    color: var(--helm-text) !important;
+}
+
+.urlbarView-url {
+    color: var(--helm-muted) !important;
+}
+
+
+/* ---------------------------------------------------------
+   BOOKMARKS TOOLBAR
+   --------------------------------------------------------- */
+
+#PersonalToolbar {
+    min-height: 28px !important;
+
+    background: #030b10 !important;
+
+    border-bottom:
+        1px solid #10343e
+        !important;
+}
+
+#PersonalToolbar toolbarbutton {
+    color: var(--helm-muted) !important;
+}
+
+#PersonalToolbar toolbarbutton:hover {
+    color: var(--helm-cyan-bright) !important;
+    background:
+        rgba(66, 232, 255, 0.08)
+        !important;
+}
+
+
+/* ---------------------------------------------------------
+   MENUS AND PANELS
+   --------------------------------------------------------- */
+
+menupopup,
+panel,
+panelview,
+#appMenu-popup,
+#downloadsPanel,
+#protections-popup {
+    --panel-background: var(--helm-bg-1) !important;
+    --panel-color: var(--helm-text) !important;
+    --panel-border-color: var(--helm-border-strong) !important;
+}
+
+menupopup {
+    border:
+        1px solid var(--helm-border-strong)
+        !important;
+
+    border-radius: 0 !important;
+}
+
+menupopup > menu,
+menupopup > menuitem {
+    border-left:
+        2px solid transparent
+        !important;
+}
+
+menupopup > menu:hover,
+menupopup > menuitem:hover,
+menupopup > menu[_moz-menuactive="true"],
+menupopup > menuitem[_moz-menuactive="true"] {
+    border-left-color: var(--helm-cyan) !important;
+    background:
+        rgba(66, 232, 255, 0.10)
+        !important;
+
+    color: #ffffff !important;
+}
+
+panelview {
+    background: var(--helm-bg-1) !important;
+}
+
+.subviewbutton:hover {
+    border-radius: 0 !important;
+    color: #ffffff !important;
+
+    background:
+        rgba(66, 232, 255, 0.10)
+        !important;
+}
+
+
+/* ---------------------------------------------------------
+   SIDEBAR
+   --------------------------------------------------------- */
+
+#sidebar-box {
+    background: var(--helm-bg-1) !important;
+
+    border-inline-end:
+        1px solid var(--helm-cyan)
+        !important;
+}
+
+#sidebar-header {
+    color: var(--helm-cyan-bright) !important;
+    background: var(--helm-bg-0) !important;
+
+    border-bottom:
+        1px solid var(--helm-border-strong)
+        !important;
+}
+
+
+/* ---------------------------------------------------------
+   FINDBAR
+   --------------------------------------------------------- */
+
+findbar {
+    color: var(--helm-text) !important;
+    background: var(--helm-bg-1) !important;
+
+    border-top:
+        1px solid var(--helm-cyan)
+        !important;
+}
+
+findbar textbox {
+    border-radius: 0 !important;
+}
+
+
+/* ---------------------------------------------------------
+   STATUS PANEL
+   --------------------------------------------------------- */
+
+#statuspanel-label {
+    border:
+        1px solid var(--helm-border-strong)
+        !important;
+
+    border-left:
+        3px solid var(--helm-cyan)
+        !important;
+
+    border-radius: 0 !important;
+
+    color: var(--helm-text) !important;
+    background: rgba(2, 7, 11, 0.95) !important;
+
+    font-family:
+        "Hack",
+        "JetBrains Mono",
+        monospace !important;
+}
+
+
+/* ---------------------------------------------------------
+   WINDOW CONTROLS
+   --------------------------------------------------------- */
+
+.titlebar-button {
+    color: var(--helm-muted) !important;
+}
+
+.titlebar-button:hover {
+    color: #ffffff !important;
+    background:
+        rgba(66, 232, 255, 0.12)
+        !important;
+}
+
+.titlebar-close:hover {
+    color: #ffffff !important;
+    background: var(--helm-red) !important;
+}
+
+
+/* ---------------------------------------------------------
+   SCROLLBARS INSIDE FIREFOX UI
+   --------------------------------------------------------- */
+
+* {
+    scrollbar-color:
+        var(--helm-border-strong)
+        var(--helm-bg-0)
+        !important;
+
+    scrollbar-width: thin !important;
+}

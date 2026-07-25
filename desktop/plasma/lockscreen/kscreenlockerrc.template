@@ -1,0 +1,6 @@
+[Greeter]
+Theme=org.kde.plasma.desktop
+
+[Greeter][Wallpaper][org.kde.image][General]
+Image=file://__HOME__/Pobrane/wp12228105-cyberpunk-ultrawide-wallpapers.png
+PreviewImage=file://__HOME__/Pobrane/wp12228105-cyberpunk-ultrawide-wallpapers.png

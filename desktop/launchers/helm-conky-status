@@ -1,0 +1,248 @@
+#!/usr/bin/env bash
+
+set -u
+
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+NET_STATE="$RUNTIME_DIR/helm-conky-network-${UID}.state"
+
+print_unavailable() {
+    printf '%s' '--'
+}
+
+nvidia_value() {
+    local query="$1"
+    local value=""
+
+    if ! command -v nvidia-smi >/dev/null 2>&1; then
+        print_unavailable
+        return
+    fi
+
+    value="$(
+        nvidia-smi \
+            --query-gpu="$query" \
+            --format=csv,noheader,nounits \
+            2>/dev/null \
+        | head -n 1 \
+        | tr -d '[:space:]'
+    )"
+
+    if [[ "$value" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+        printf '%.0f' "$value"
+    else
+        print_unavailable
+    fi
+}
+
+cpu_temperature() {
+    local value=""
+
+    if ! command -v sensors >/dev/null 2>&1; then
+        print_unavailable
+        return
+    fi
+
+    value="$(
+        sensors 2>/dev/null |
+        awk '
+            /Tctl:/ {
+                gsub(/[+°C]/, "", $2)
+                printf "%.0f", $2
+                exit
+            }
+
+            /Package id 0:/ {
+                gsub(/[+°C]/, "", $4)
+                printf "%.0f", $4
+                exit
+            }
+        '
+    )"
+
+    if [[ -n "$value" ]]; then
+        printf '%s' "$value"
+    else
+        print_unavailable
+    fi
+}
+
+helm_state() {
+    if pgrep \
+        -u "$UID" \
+        -f '[p]ython.*-m app\.main' \
+        >/dev/null 2>&1
+    then
+        printf '${color3}LINKED${color}'
+    else
+        printf '${color4}STANDBY${color}'
+    fi
+}
+
+human_rate() {
+    local bytes="${1:-0}"
+
+    awk -v value="$bytes" '
+        BEGIN {
+            if (value >= 1073741824) {
+                printf "%.1f GiB", value / 1073741824
+            } else if (value >= 1048576) {
+                printf "%.1f MiB", value / 1048576
+            } else if (value >= 1024) {
+                printf "%.1f KiB", value / 1024
+            } else {
+                printf "%.0f B", value
+            }
+        }
+    '
+}
+
+network_state() {
+    local iface=""
+    local ip_address="--"
+    local operstate="OFFLINE"
+
+    local rx=0
+    local tx=0
+    local now_ns=0
+
+    local previous_iface=""
+    local previous_rx=0
+    local previous_tx=0
+    local previous_ns=0
+
+    local rx_rate=0
+    local tx_rate=0
+    local delta_ns=0
+
+    iface="$(
+        ip route show default 2>/dev/null |
+        awk 'NR == 1 { print $5 }'
+    )"
+
+    if [[ -z "$iface" ]] ||
+       [[ ! -r "/sys/class/net/$iface/statistics/rx_bytes" ]]
+    then
+        printf '${color1}NETWORK${alignr}${color4}OFFLINE${color}\n'
+        printf '${color2}NO DEFAULT ROUTE${color}\n'
+        return
+    fi
+
+    rx="$(cat "/sys/class/net/$iface/statistics/rx_bytes")"
+    tx="$(cat "/sys/class/net/$iface/statistics/tx_bytes")"
+    now_ns="$(date +%s%N)"
+
+    ip_address="$(
+        ip -4 -o addr show \
+            dev "$iface" \
+            scope global \
+            2>/dev/null |
+        awk '
+            NR == 1 {
+                split($4, address, "/")
+                print address[1]
+            }
+        '
+    )"
+
+    [[ -n "$ip_address" ]] || ip_address="--"
+
+    if [[ -r "/sys/class/net/$iface/operstate" ]] &&
+       [[ "$(cat "/sys/class/net/$iface/operstate")" == "up" ]]
+    then
+        operstate="LINKED"
+    fi
+
+    if [[ -r "$NET_STATE" ]]; then
+        read -r \
+            previous_iface \
+            previous_rx \
+            previous_tx \
+            previous_ns \
+            < "$NET_STATE" || true
+    fi
+
+    if [[ "$previous_iface" == "$iface" ]] &&
+       [[ "$now_ns" -gt "$previous_ns" ]] &&
+       [[ "$rx" -ge "$previous_rx" ]] &&
+       [[ "$tx" -ge "$previous_tx" ]]
+    then
+        delta_ns=$((now_ns - previous_ns))
+
+        rx_rate="$(
+            awk \
+                -v bytes="$((rx - previous_rx))" \
+                -v elapsed="$delta_ns" \
+                'BEGIN {
+                    if (elapsed > 0) {
+                        printf "%.0f", bytes * 1000000000 / elapsed
+                    } else {
+                        print 0
+                    }
+                }'
+        )"
+
+        tx_rate="$(
+            awk \
+                -v bytes="$((tx - previous_tx))" \
+                -v elapsed="$delta_ns" \
+                'BEGIN {
+                    if (elapsed > 0) {
+                        printf "%.0f", bytes * 1000000000 / elapsed
+                    } else {
+                        print 0
+                    }
+                }'
+        )"
+    fi
+
+    printf '%s %s %s %s\n' \
+        "$iface" \
+        "$rx" \
+        "$tx" \
+        "$now_ns" \
+        > "$NET_STATE"
+
+    printf \
+        '${color1}NETWORK // %s${alignr}${color3}%s${color}\n' \
+        "${iface^^}" \
+        "$operstate"
+
+    printf \
+        '${color2}DOWN${color}${alignr}%s/s\n' \
+        "$(human_rate "$rx_rate")"
+
+    printf \
+        '${color2}UP${color}${alignr}%s/s\n' \
+        "$(human_rate "$tx_rate")"
+
+    printf \
+        '${color2}LOCAL IP${color}${alignr}%s\n' \
+        "$ip_address"
+}
+
+case "${1:-}" in
+    helm)
+        helm_state
+        ;;
+
+    cpu-temp)
+        cpu_temperature
+        ;;
+
+    gpu-util)
+        nvidia_value "utilization.gpu"
+        ;;
+
+    gpu-temp)
+        nvidia_value "temperature.gpu"
+        ;;
+
+    network)
+        network_state
+        ;;
+
+    *)
+        printf 'UNKNOWN'
+        exit 1
+        ;;
+esac

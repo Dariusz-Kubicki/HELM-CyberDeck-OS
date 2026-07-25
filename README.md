@@ -206,3 +206,20 @@ Released under the [MIT License](LICENSE).
 - [pySerial](https://pyserial.readthedocs.io/) for UART communication.
 - [Ollama](https://ollama.com/) for local model execution.
 - ChatGPT by OpenAI for iterative architecture, implementation and documentation generation.
+
+<!-- HELM-DESKTOP-START -->
+## CyberDeck Desktop integration
+
+Version 1.1 extends HELM beyond the terminal interface into a complete KDE
+Plasma workstation: Desktop Node HUD, HELM Plasma styling, Access Gate,
+Security Lock, Early Boot, Data Vault and maintenance tooling.
+
+```bash
+helm doctor
+helm commands
+```
+
+See [Desktop architecture](docs/DESKTOP.md),
+[command cheat sheet](docs/COMMANDS.md), and
+[recovery guide](docs/RECOVERY.md).
+<!-- HELM-DESKTOP-END -->

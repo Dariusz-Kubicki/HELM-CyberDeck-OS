@@ -1,0 +1,6 @@
+[General]
+type=image
+color=#42E8FF
+fontSize=11
+background=background.png
+showClock=true

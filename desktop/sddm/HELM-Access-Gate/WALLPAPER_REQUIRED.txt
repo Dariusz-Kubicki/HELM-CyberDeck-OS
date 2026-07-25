@@ -1,0 +1,2 @@
+A wallpaper is intentionally not stored in the public repository.
+Run scripts/desktop/install.sh --wallpaper /absolute/path/image.png.

@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+STATE_DIR="$HOME/.local/state/helm"
+LOG_FILE="$STATE_DIR/autostart.log"
+
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+APP_LOCK="$RUNTIME_DIR/helm-cyberdeck-${UID}.lock"
+LAUNCH_LOCK="$RUNTIME_DIR/helm-cyberdeck-launch-${UID}.lock"
+
+mkdir -p "$STATE_DIR" "$RUNTIME_DIR"
+
+{
+    printf '\n[%s] HELM launch requested\n' \
+        "$(date --iso-8601=seconds)"
+
+    if ! command -v flock >/dev/null 2>&1; then
+        printf 'ERROR: flock is unavailable.\n'
+        exit 1
+    fi
+
+    if ! command -v konsole >/dev/null 2>&1; then
+        printf 'ERROR: Konsole is unavailable.\n'
+        exit 1
+    fi
+
+    # Chroni przed dwoma żądaniami uruchomienia naraz.
+    exec 8>"$LAUNCH_LOCK"
+
+    if ! flock -n 8; then
+        printf 'Another HELM launch is already in progress.\n'
+        exit 0
+    fi
+
+    # Gdy blokady aplikacji nie można uzyskać,
+    # działający HELM już ją posiada.
+    if ! flock -n "$APP_LOCK" -c true; then
+        printf 'HELM is already running. Launch skipped.\n'
+        exit 0
+    fi
+
+    # Opóźnienie potrzebne podczas startu sesji Plasma.
+    sleep 3
+
+    # Ponowna kontrola po opóźnieniu.
+    if ! flock -n "$APP_LOCK" -c true; then
+        printf 'HELM started during the delay. Launch skipped.\n'
+        exit 0
+    fi
+
+    printf 'Launching HELM.\n'
+
+    konsole \
+        -e "$HOME/.local/bin/helm-run" \
+        >/dev/null 2>&1 &
+
+    # Czekamy, aż helm-run przejmie blokadę aplikacji.
+    for _ in {1..50}; do
+        if ! flock -n "$APP_LOCK" -c true; then
+            printf 'HELM lock acquired successfully.\n'
+            exit 0
+        fi
+
+        sleep 0.1
+    done
+
+    printf 'WARNING: HELM window was requested, but no lock appeared.\n'
+    exit 1
+
+} >>"$LOG_FILE" 2>&1

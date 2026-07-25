@@ -30,3 +30,15 @@ config/exports/
 *.before-*
 *.bak
 *.bundle
+
+# HELM runtime and editor artifacts
+*.backup-*
+config/backups/*
+config/exports/*
+logs/exports/*
+config/settings.json
+config/modes.json
+config/projects.json
+desktop/private/
+desktop/sddm/HELM-Access-Gate/background.png
+desktop/sddm/HELM-Access-Gate/preview.png

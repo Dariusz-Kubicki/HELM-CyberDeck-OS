@@ -1,0 +1,207 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+ENV_FILE="$HOME/.config/helm/environment"
+if [[ -r "$ENV_FILE" ]]; then
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+fi
+
+PROJECT="${HELM_PROJECT_DIR:-$HOME/.cyberdeck/nexus}"
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+HELM_LOCK="$RUNTIME_DIR/helm-cyberdeck-${UID}.lock"
+CONKY_CONFIG="$HOME/.config/conky/cyberdeck.conf"
+PID_FILE="$HOME/.local/state/helm/desktop-node.pid"
+
+helm_running() {
+    pgrep -u "$UID" -f '[p]ython.*-m app\.main' >/dev/null 2>&1 && return 0
+    flock -n "$HELM_LOCK" -c true >/dev/null 2>&1 || return 0
+    return 1
+}
+
+desktop_node_pids() {
+    local pid command_line
+    while IFS= read -r pid; do
+        [[ -r "/proc/$pid/cmdline" ]] || continue
+        command_line="$(tr '\0' ' ' < "/proc/$pid/cmdline")"
+        [[ "$command_line" == *"$CONKY_CONFIG"* ]] && printf '%s\n' "$pid"
+    done < <(pgrep -u "$UID" -x conky 2>/dev/null || true)
+}
+
+desktop_node_running() {
+    [[ -n "$(desktop_node_pids)" ]]
+}
+
+start_helm() {
+    exec "$HOME/.local/bin/helm-start"
+}
+
+stop_helm() {
+    if ! helm_running; then
+        printf 'HELM is not running.\n'
+        return 0
+    fi
+
+    printf 'Stopping HELM...\n'
+    pkill -INT -u "$UID" -f '[p]ython.*-m app\.main' 2>/dev/null || true
+
+    for _ in {1..30}; do
+        if ! helm_running; then
+            printf 'HELM stopped.\n'
+            return 0
+        fi
+        sleep 0.1
+    done
+
+    printf 'HELM did not stop cleanly. Sending SIGTERM.\n'
+    pkill -TERM -u "$UID" -f '[p]ython.*-m app\.main' 2>/dev/null || true
+}
+
+stop_desktop_node() {
+    local pids
+    pids="$(desktop_node_pids)"
+
+    if [[ -z "$pids" ]]; then
+        rm -f "$PID_FILE"
+        printf 'Desktop Node is already offline.\n'
+        return 0
+    fi
+
+    printf 'Stopping Desktop Node...\n'
+    while IFS= read -r pid; do
+        [[ -n "$pid" ]] && kill -TERM "$pid" 2>/dev/null || true
+    done <<< "$pids"
+
+    for _ in {1..30}; do
+        if ! desktop_node_running; then
+            rm -f "$PID_FILE"
+            printf 'Desktop Node stopped.\n'
+            return 0
+        fi
+        sleep 0.1
+    done
+
+    printf 'Desktop Node did not stop cleanly. Sending SIGKILL.\n'
+    while IFS= read -r pid; do
+        [[ -n "$pid" ]] && kill -KILL "$pid" 2>/dev/null || true
+    done <<< "$(desktop_node_pids)"
+    rm -f "$PID_FILE"
+}
+
+show_status() {
+    if helm_running; then
+        printf '◈ HELM CORE: RUNNING\n'
+    else
+        printf '◇ HELM CORE: STANDBY\n'
+    fi
+
+    if desktop_node_running; then
+        printf '◈ DESKTOP NODE: ONLINE // PID %s\n' "$(desktop_node_pids | head -n 1)"
+    else
+        printf '◇ DESKTOP NODE: OFFLINE\n'
+    fi
+
+    printf 'PROJECT: %s\n' "$PROJECT"
+}
+
+show_help() {
+    cat <<'EOF'
+HELM CyberDeck OS command interface
+
+Core:
+  helm                     Start HELM
+  helm start               Start HELM
+  helm stop                Stop HELM
+  helm restart             Restart HELM
+  helm status              Show runtime status
+  helm logs                Follow HELM launcher log
+
+Desktop Node:
+  helm hud                 Start Desktop Node
+  helm hud-stop            Stop Desktop Node
+  helm hud-restart         Restart Desktop Node
+  helm hud-logs            Follow Desktop Node log
+
+Maintenance:
+  helm doctor              Audit the complete CyberDeck
+  helm backup              Create a local recovery archive
+  helm restore ARCHIVE     Show restore plan
+  helm restore ARCHIVE --apply
+                           Restore a recovery archive
+  helm install-desktop --wallpaper PATH
+                           Reinstall desktop integration
+  helm rebuild-lock        Rebuild lock screen after Plasma updates
+  helm commands            Open the complete command cheat sheet
+  helm version             Show HELM version
+  helm help                Show this help
+EOF
+}
+
+case "${1:-start}" in
+    start)
+        start_helm
+        ;;
+    stop)
+        stop_helm
+        ;;
+    restart)
+        stop_helm
+        sleep 1
+        start_helm
+        ;;
+    status)
+        show_status
+        ;;
+    logs)
+        mkdir -p "$HOME/.local/state/helm"
+        touch "$HOME/.local/state/helm/autostart.log"
+        exec tail -n 80 -f "$HOME/.local/state/helm/autostart.log"
+        ;;
+    hud)
+        "$HOME/.local/bin/helm-conky-start"
+        ;;
+    hud-stop)
+        stop_desktop_node
+        ;;
+    hud-restart)
+        stop_desktop_node
+        sleep 1
+        "$HOME/.local/bin/helm-conky-start"
+        ;;
+    hud-logs)
+        mkdir -p "$HOME/.local/state/helm"
+        touch "$HOME/.local/state/helm/desktop-node.log"
+        exec tail -n 80 -f "$HOME/.local/state/helm/desktop-node.log"
+        ;;
+    doctor)
+        exec "$PROJECT/scripts/desktop/doctor.sh"
+        ;;
+    backup)
+        exec "$PROJECT/scripts/desktop/backup.sh"
+        ;;
+    restore)
+        shift
+        exec "$PROJECT/scripts/desktop/restore.sh" "$@"
+        ;;
+    install-desktop)
+        shift
+        exec "$PROJECT/scripts/desktop/install.sh" "$@"
+        ;;
+    rebuild-lock)
+        exec "$PROJECT/scripts/desktop/rebuild-lockscreen.sh"
+        ;;
+    commands)
+        exec "${PAGER:-less}" "$PROJECT/docs/COMMANDS.md"
+        ;;
+    version)
+        cat "$PROJECT/VERSION"
+        ;;
+    help|-h|--help)
+        show_help
+        ;;
+    *)
+        printf 'Unknown command: %s\n\n' "$1" >&2
+        show_help
+        exit 2
+        ;;
+esac

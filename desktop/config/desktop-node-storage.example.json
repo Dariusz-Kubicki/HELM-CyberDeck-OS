@@ -1,0 +1,23 @@
+{
+  "max_volumes": 4,
+  "volumes": [
+    {
+      "label": "ROOT",
+      "path": "/",
+      "device": "/dev/disk/by-uuid/REPLACE_WITH_UUID",
+      "enabled": true
+    },
+    {
+      "label": "DATA",
+      "path": "/data",
+      "device": "/dev/disk/by-uuid/REPLACE_WITH_UUID",
+      "enabled": true
+    },
+    {
+      "label": "EXTERNAL",
+      "path": "/mnt/external",
+      "device": "/dev/disk/by-uuid/REPLACE_WITH_UUID",
+      "enabled": true
+    }
+  ]
+}

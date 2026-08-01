@@ -2,6 +2,16 @@
 set -uo pipefail
 
 REPO="${HELM_PROJECT_DIR:-$HOME/.cyberdeck/nexus}"
+RUNTIME_DIR="${HELM_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/helm}"
+PYTHON_BIN="$REPO/venv/bin/python"
+
+if [[ ! -x "$PYTHON_BIN" ]]; then
+    PYTHON_BIN="$(
+        command -v python3 \
+        || command -v python \
+        || true
+    )"
+fi
 OK=0
 WARN=0
 FAIL=0
@@ -33,6 +43,46 @@ check_contains() {
     fi
 }
 
+# BEGIN HELM RUNTIME STORAGE DIAGNOSTICS
+
+check_json() {
+    local file="$1"
+    local label="$2"
+
+    if [[ ! -f "$file" ]]; then
+        fail "$label — missing: $file"
+        return
+    fi
+
+    if [[ -z "$PYTHON_BIN" ]]; then
+        fail "$label — Python is unavailable"
+        return
+    fi
+
+    if "$PYTHON_BIN" - "$file" >/dev/null 2>&1 <<'PY_JSON'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+payload = json.loads(
+    path.read_text(encoding="utf-8")
+)
+
+if not isinstance(payload, dict):
+    raise SystemExit(
+        "JSON root must be an object"
+    )
+PY_JSON
+    then
+        pass "$label"
+    else
+        fail "$label — invalid JSON: $file"
+    fi
+}
+
+# END HELM RUNTIME STORAGE DIAGNOSTICS
+
 printf '%s◈ HELM CYBERDECK DIAGNOSTIC%s\n\n' "$cyan" "$reset"
 
 check_dir "$REPO/.git" "Repository"
@@ -62,6 +112,83 @@ then
 else
     fail "Python virtual environment or dependencies"
 fi
+
+# BEGIN HELM RUNTIME STORAGE CHECKS
+
+check_dir \
+    "$RUNTIME_DIR" \
+    "HELM runtime data directory"
+
+check_json \
+    "$RUNTIME_DIR/settings.json" \
+    "Runtime settings JSON"
+
+check_json \
+    "$RUNTIME_DIR/modes.json" \
+    "Runtime workspace JSON"
+
+check_json \
+    "$RUNTIME_DIR/mode_state.json" \
+    "Runtime workspace state JSON"
+
+check_json \
+    "$RUNTIME_DIR/projects.json" \
+    "Runtime project JSON"
+
+check_json \
+    "$RUNTIME_DIR/recovery/settings.last-good.json" \
+    "Settings recovery snapshot"
+
+check_json \
+    "$RUNTIME_DIR/recovery/modes.last-good.json" \
+    "Workspace recovery snapshot"
+
+check_json \
+    "$RUNTIME_DIR/recovery/mode_state.last-good.json" \
+    "Workspace state recovery snapshot"
+
+check_json \
+    "$RUNTIME_DIR/recovery/projects.last-good.json" \
+    "Project recovery snapshot"
+
+if [[ -n "$PYTHON_BIN" ]]; then
+    if (
+        cd "$REPO"
+
+        "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_PIPELINE'
+from modules.projects import ProjectMonitor
+from services.mode_service import ModeService
+from services.project_service import ProjectService
+from services.settings_service import SettingsService
+
+settings = SettingsService().load()
+modes = ModeService().load_modes()
+projects = ProjectService()._read_payload()
+sample = ProjectMonitor().sample()
+
+if not modes:
+    raise SystemExit("No workspaces loaded")
+
+if not isinstance(projects.get("projects"), list):
+    raise SystemExit("Invalid projects payload")
+
+if sample.error is not None:
+    raise SystemExit(sample.error)
+
+if not settings.start_screen:
+    raise SystemExit("Invalid settings")
+PY_PIPELINE
+    )
+    then
+        pass "Runtime service recovery pipeline"
+    else
+        fail "Runtime service recovery pipeline"
+    fi
+else
+    fail "Runtime service recovery pipeline — Python unavailable"
+fi
+
+# END HELM RUNTIME STORAGE CHECKS
 
 color_scheme="$(kreadconfig6 --file kdeglobals --group General --key ColorScheme 2>/dev/null || true)"
 plasma_style="$(kreadconfig6 --file plasmarc --group Theme --key name 2>/dev/null || true)"

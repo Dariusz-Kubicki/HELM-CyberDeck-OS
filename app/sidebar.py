@@ -1,9 +1,36 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from rich.markup import escape
 from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.widgets import Button, Static
+
+
+def display_version() -> str:
+    version_path = (
+        Path(__file__).resolve().parents[1]
+        / "VERSION"
+    )
+
+    try:
+        version = version_path.read_text(
+            encoding="utf-8"
+        ).strip()
+    except OSError:
+        return "UNKNOWN"
+
+    if version.endswith("-dev"):
+        release = version.removesuffix("-dev")
+        parts = release.split(".")
+
+        if len(parts) >= 2:
+            return f"{parts[0]}.{parts[1]} DEV"
+
+        return f"{release} DEV"
+
+    return version or "UNKNOWN"
 
 
 class Sidebar(Vertical):
@@ -12,7 +39,7 @@ class Sidebar(Vertical):
     def compose(self) -> ComposeResult:
         yield Static(
             "[b #42e8ff]◈ H E L M[/b #42e8ff]\n"
-            "[#315965]CYBERDECK OS // 1.0[/]",
+            f"[#315965]CYBERDECK OS // {display_version()}[/]",
             id="sidebar-brand",
         )
 

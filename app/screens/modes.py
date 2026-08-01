@@ -388,7 +388,7 @@ class ModesScreen(Vertical):
             )
 
         yield Static(
-            "Workspace database: config/modes.json",
+            "Workspace database: ~/.local/share/helm/modes.json",
             id="mode-config-path",
         )
 

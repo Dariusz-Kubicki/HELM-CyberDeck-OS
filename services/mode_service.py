@@ -11,6 +11,11 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from services.runtime_data import (
+    RuntimeJsonStore,
+    runtime_data_path,
+)
+
 
 @dataclass(frozen=True, slots=True)
 class ApplicationSpec:
@@ -73,15 +78,76 @@ class ModeService:
         self,
         config_path: Path | None = None,
         state_path: Path | None = None,
+        *,
+        legacy_config_path: Path | None = None,
+        example_config_path: Path | None = None,
+        legacy_state_path: Path | None = None,
+        example_state_path: Path | None = None,
     ) -> None:
         project_root = Path(__file__).resolve().parents[1]
+        repository_config = project_root / "config"
 
-        self.config_path = config_path or (
-            project_root / "config" / "modes.json"
+        using_default_config = config_path is None
+        using_default_state = state_path is None
+
+        self.config_path = (
+            Path(config_path)
+            if config_path is not None
+            else runtime_data_path("modes.json")
         )
 
-        self.state_path = state_path or (
-            project_root / "config" / "mode_state.json"
+        self.state_path = (
+            Path(state_path)
+            if state_path is not None
+            else runtime_data_path("mode_state.json")
+        )
+
+        resolved_legacy_config = (
+            Path(legacy_config_path)
+            if legacy_config_path is not None
+            else (
+                repository_config / "modes.json"
+                if using_default_config
+                else None
+            )
+        )
+
+        resolved_example_config = (
+            Path(example_config_path)
+            if example_config_path is not None
+            else repository_config / "modes.example.json"
+        )
+
+        resolved_legacy_state = (
+            Path(legacy_state_path)
+            if legacy_state_path is not None
+            else (
+                repository_config / "mode_state.json"
+                if using_default_state
+                else None
+            )
+        )
+
+        resolved_example_state = (
+            Path(example_state_path)
+            if example_state_path is not None
+            else repository_config / "mode_state.example.json"
+        )
+
+        self._mode_store = RuntimeJsonStore(
+            filename="modes.json",
+            target_path=self.config_path,
+            legacy_path=resolved_legacy_config,
+            example_path=resolved_example_config,
+            default_factory=self._default_modes_payload,
+        )
+
+        self._state_store = RuntimeJsonStore(
+            filename="mode_state.json",
+            target_path=self.state_path,
+            legacy_path=resolved_legacy_state,
+            example_path=resolved_example_state,
+            default_factory=self._default_state_payload,
         )
 
         self._modes: tuple[WorkMode, ...] = ()
@@ -649,10 +715,8 @@ class ModeService:
 
     def load_active_mode(self) -> str:
         try:
-            payload = json.loads(
-                self.state_path.read_text(
-                    encoding="utf-8"
-                )
+            payload = self._state_store.read(
+                self._validate_state_payload
             )
 
             return str(
@@ -664,6 +728,9 @@ class ModeService:
 
         except (
             OSError,
+            ValueError,
+            TypeError,
+            RuntimeError,
             json.JSONDecodeError,
         ):
             return "command"
@@ -672,31 +739,11 @@ class ModeService:
         self,
         mode_id: str,
     ) -> None:
-        self.state_path.parent.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
-
-        temporary_path = self.state_path.with_name(
-            f".{self.state_path.name}.tmp"
-        )
-
-        with temporary_path.open(
-            "w",
-            encoding="utf-8",
-        ) as file:
-            json.dump(
-                {"active_mode": mode_id},
-                file,
-                indent=2,
-            )
-            file.write("\n")
-            file.flush()
-            os.fsync(file.fileno())
-
-        os.replace(
-            temporary_path,
-            self.state_path,
+        self._state_store.write(
+            {
+                "active_mode": mode_id,
+            },
+            self._validate_state_payload,
         )
 
     def get_current_power_profile(self) -> str:
@@ -1127,28 +1174,41 @@ class ModeService:
             "applications": applications,
         }
 
-    def _read_payload(
-        self,
-    ) -> dict[str, Any]:
-        try:
-            payload = json.loads(
-                self.config_path.read_text(
-                    encoding="utf-8"
-                )
-            )
-        except (
-            OSError,
-            json.JSONDecodeError,
-        ) as error:
-            raise RuntimeError(
-                f"Cannot load workspaces: {error}"
-            ) from error
+    @staticmethod
+    def _default_modes_payload() -> dict[str, Any]:
+        return {
+            "modes": [
+                {
+                    "id": "command",
+                    "name": "COMMAND",
+                    "description": (
+                        "Recovered default HELM workspace."
+                    ),
+                    "telemetry_interval": 1.0,
+                    "target_screen": "system",
+                    "navigation_logging": True,
+                    "workload_profile": "BALANCED",
+                    "power_profile": "unchanged",
+                    "objective": (
+                        "Keep HELM operational after "
+                        "runtime data recovery."
+                    ),
+                    "features": [],
+                    "applications": [],
+                }
+            ]
+        }
 
-        if not isinstance(payload, dict):
-            raise ValueError(
-                "Workspace database root must be an object."
-            )
+    @staticmethod
+    def _default_state_payload() -> dict[str, Any]:
+        return {
+            "active_mode": "command",
+        }
 
+    @staticmethod
+    def _validate_modes_payload(
+        payload: dict[str, Any],
+    ) -> None:
         modes = payload.get("modes")
 
         if not isinstance(modes, list):
@@ -1156,48 +1216,71 @@ class ModeService:
                 "'modes' must be a list."
             )
 
-        return payload
+        valid_modes = [
+            mode
+            for mode in modes
+            if isinstance(mode, dict)
+        ]
+
+        if not valid_modes:
+            raise ValueError(
+                "At least one workspace is required."
+            )
+
+        mode_ids = [
+            str(mode.get("id", "")).strip()
+            for mode in valid_modes
+        ]
+
+        if (
+            any(not mode_id for mode_id in mode_ids)
+            or len(mode_ids) != len(set(mode_ids))
+        ):
+            raise ValueError(
+                "Workspace IDs must be present and unique."
+            )
+
+    @staticmethod
+    def _validate_state_payload(
+        payload: dict[str, Any],
+    ) -> None:
+        active_mode = payload.get("active_mode")
+
+        if (
+            not isinstance(active_mode, str)
+            or not active_mode.strip()
+        ):
+            raise ValueError(
+                "'active_mode' must be a non-empty string."
+            )
+
+    def _read_payload(
+        self,
+    ) -> dict[str, Any]:
+        try:
+            return self._mode_store.read(
+                self._validate_modes_payload
+            )
+
+        except (
+            OSError,
+            ValueError,
+            TypeError,
+            RuntimeError,
+            json.JSONDecodeError,
+        ) as error:
+            raise RuntimeError(
+                f"Cannot load workspaces: {error}"
+            ) from error
 
     def _write_payload(
         self,
         payload: dict[str, Any],
     ) -> None:
-        self.config_path.parent.mkdir(
-            parents=True,
-            exist_ok=True,
+        self._mode_store.write(
+            payload,
+            self._validate_modes_payload,
         )
-
-        temporary_path = self.config_path.with_name(
-            f".{self.config_path.name}.tmp"
-        )
-
-        try:
-            with temporary_path.open(
-                "w",
-                encoding="utf-8",
-            ) as file:
-                json.dump(
-                    payload,
-                    file,
-                    ensure_ascii=False,
-                    indent=2,
-                )
-                file.write("\n")
-                file.flush()
-                os.fsync(file.fileno())
-
-            os.replace(
-                temporary_path,
-                self.config_path,
-            )
-
-        finally:
-            try:
-                temporary_path.unlink(
-                    missing_ok=True
-                )
-            except OSError:
-                pass
 
     @staticmethod
     def _find_raw_mode(

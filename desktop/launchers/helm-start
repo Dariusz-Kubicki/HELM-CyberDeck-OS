@@ -6,7 +6,7 @@ LOG_FILE="$STATE_DIR/autostart.log"
 
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 APP_LOCK="$RUNTIME_DIR/helm-cyberdeck-${UID}.lock"
-LAUNCH_LOCK="$RUNTIME_DIR/helm-cyberdeck-launch-${UID}.lock"
+LAUNCH_LOCK="$RUNTIME_DIR/helm-cyberdeck-launch-v2-${UID}.lock"
 
 mkdir -p "$STATE_DIR" "$RUNTIME_DIR"
 
@@ -51,7 +51,9 @@ mkdir -p "$STATE_DIR" "$RUNTIME_DIR"
     printf 'Launching HELM.\n'
 
     konsole \
+        --separate \
         -e "$HOME/.local/bin/helm-run" \
+        8>&- \
         >/dev/null 2>&1 &
 
     # Czekamy, aż helm-run przejmie blokadę aplikacji.

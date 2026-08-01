@@ -15,6 +15,8 @@ from typing import Any
 
 from services.log_service import LogEntry, LogService
 from services.mode_service import ModeService
+
+from services.runtime_data import runtime_data_path
 from services.settings_service import (
     HelmSettings,
     SettingsService,
@@ -536,10 +538,8 @@ class HealthService:
                 )
             )
 
-        projects_path = (
-            self.project_root
-            / "config"
-            / "projects.json"
+        projects_path = runtime_data_path(
+            "projects.json"
         )
 
         try:

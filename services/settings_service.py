@@ -8,6 +8,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from services.runtime_data import (
+    RuntimeJsonStore,
+    runtime_data_path,
+)
+
 
 @dataclass(frozen=True, slots=True)
 class HelmSettings:
@@ -84,12 +89,44 @@ class SettingsService:
     def __init__(
         self,
         path: Path | None = None,
+        *,
+        legacy_path: Path | None = None,
+        example_path: Path | None = None,
     ) -> None:
         project_root = Path(__file__).resolve().parents[1]
+        repository_config = project_root / "config"
+        using_default_path = path is None
 
         self.path = (
-            path
-            or project_root / "config" / "settings.json"
+            Path(path)
+            if path is not None
+            else runtime_data_path("settings.json")
+        )
+
+        resolved_legacy_path = (
+            Path(legacy_path)
+            if legacy_path is not None
+            else (
+                repository_config / "settings.json"
+                if using_default_path
+                else None
+            )
+        )
+
+        resolved_example_path = (
+            Path(example_path)
+            if example_path is not None
+            else repository_config / "settings.example.json"
+        )
+
+        self._store = RuntimeJsonStore(
+            filename="settings.json",
+            target_path=self.path,
+            legacy_path=resolved_legacy_path,
+            example_path=resolved_example_path,
+            default_factory=lambda: asdict(
+                self.defaults()
+            ),
         )
 
         self.backup_directory = (
@@ -100,29 +137,20 @@ class SettingsService:
             self.path.parent / "exports"
         )
 
-        self.path.parent.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
-
     @staticmethod
     def defaults() -> HelmSettings:
         return HelmSettings()
 
-    def load(self) -> HelmSettings:
-        if not self.path.exists():
-            settings = self.defaults()
-            self.save(settings)
-            return settings
+    def _validate_runtime_payload(
+        self,
+        payload: dict[str, Any],
+    ) -> None:
+        self._payload_to_settings(payload)
 
-        try:
-            payload = self._read_json(self.path)
-        except (
-            OSError,
-            json.JSONDecodeError,
-            ValueError,
-        ):
-            return self.defaults()
+    def load(self) -> HelmSettings:
+        payload = self._store.read(
+            self._validate_runtime_payload
+        )
 
         return self._payload_to_settings(payload)
 
@@ -140,9 +168,9 @@ class SettingsService:
     ) -> None:
         validated = self.validate(settings)
 
-        self._atomic_write_json(
-            self.path,
+        self._store.write(
             asdict(validated),
+            self._validate_runtime_payload,
         )
 
     def create_backup(self) -> Path:

@@ -330,9 +330,9 @@ class SettingsScreen(Vertical):
             )
 
         yield Static(
-            "Runtime configuration: config/settings.json"
-            "    //    Backups: config/backups/"
-            "    //    Exports: config/exports/",
+            "Runtime: ~/.local/share/helm/settings.json"
+            "    //    Backups: ~/.local/share/helm/backups/"
+            "    //    Exports: ~/.local/share/helm/exports/",
             id="settings-path",
         )
 

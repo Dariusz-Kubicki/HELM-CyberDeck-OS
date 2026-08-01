@@ -109,31 +109,37 @@ class ProjectsScreen(Vertical):
                 "EDIT SELECTED",
                 id="project-edit",
                 classes="project-control-button",
+                flat=True,
             )
             yield Button(
                 "NEW PROJECT",
                 id="project-new",
                 classes="project-control-button",
+                flat=True,
             )
             yield Button(
                 "STATUS ◀",
                 id="project-status-prev-quick",
                 classes="project-control-button",
+                flat=True,
             )
             yield Button(
                 "STATUS ▶",
                 id="project-status-next-quick",
                 classes="project-control-button",
+                flat=True,
             )
             yield Button(
                 "PROGRESS -5%",
                 id="project-progress-minus-quick",
                 classes="project-control-button",
+                flat=True,
             )
             yield Button(
                 "PROGRESS +5%",
                 id="project-progress-plus-quick",
                 classes="project-control-button",
+                flat=True,
             )
 
         with Horizontal(id="project-workspace-actions"):
@@ -141,21 +147,25 @@ class ProjectsScreen(Vertical):
                 "OPEN FOLDER",
                 id="project-open-folder",
                 classes="project-control-button",
+                flat=True,
             )
             yield Button(
                 "OPEN TERMINAL",
                 id="project-open-terminal",
                 classes="project-control-button",
+                flat=True,
             )
             yield Button(
                 "OPEN EDITOR",
                 id="project-open-editor",
                 classes="project-control-button",
+                flat=True,
             )
             yield Button(
                 "OPEN GITHUB",
                 id="project-open-github",
                 classes="project-control-button",
+                flat=True,
             )
             yield Button(
                 "DELETE PROJECT",
@@ -313,6 +323,7 @@ class ProjectsScreen(Vertical):
                 id="project-save",
                 variant="primary",
                 disabled=True,
+                flat=True,
             )
             yield Button(
                 "CANCEL",

@@ -169,26 +169,31 @@ class NetworkScreen(Vertical):
                 "PING GATEWAY",
                 id="network-action-ping-gateway",
                 classes="network-action-button",
+                flat=True,
             )
             yield Button(
                 "PING INTERNET",
                 id="network-action-ping-internet",
                 classes="network-action-button",
+                flat=True,
             )
             yield Button(
                 "TRACE ROUTE",
                 id="network-action-trace",
                 classes="network-action-button",
+                flat=True,
             )
             yield Button(
                 "DNS QUERY",
                 id="network-action-dns",
                 classes="network-action-button",
+                flat=True,
             )
             yield Button(
                 "SOCKET MONITOR",
                 id="network-action-sockets",
                 classes="network-action-button",
+                flat=True,
             )
 
         yield Static(

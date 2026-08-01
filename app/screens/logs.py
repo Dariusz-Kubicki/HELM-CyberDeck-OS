@@ -153,6 +153,7 @@ class LogsScreen(Vertical):
                 "PAUSE STREAM",
                 id="logs-pause",
                 classes="logs-control-button",
+                flat=True,
             )
 
         with Horizontal(id="logs-actions"):
@@ -160,21 +161,25 @@ class LogsScreen(Vertical):
                 "RESET FILTERS",
                 id="logs-reset-filters",
                 classes="logs-control-button",
+                flat=True,
             )
             yield Button(
                 "JUMP TO NEWEST",
                 id="logs-jump-newest",
                 classes="logs-control-button",
+                flat=True,
             )
             yield Button(
                 "CLEAR VIEW",
                 id="logs-clear-view",
                 classes="logs-control-button",
+                flat=True,
             )
             yield Button(
                 "EXPORT FILTERED",
                 id="logs-export",
                 classes="logs-control-button",
+                flat=True,
             )
             yield Button(
                 "CLEAR LOG FILE",

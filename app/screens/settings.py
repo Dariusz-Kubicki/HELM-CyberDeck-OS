@@ -302,16 +302,19 @@ class SettingsScreen(Vertical):
                 "SAVE AND APPLY",
                 id="settings-save",
                 variant="primary",
+                flat=True,
             )
             yield Button(
                 "CREATE BACKUP",
                 id="settings-backup",
                 classes="settings-control-button",
+                flat=True,
             )
             yield Button(
                 "EXPORT PROFILE",
                 id="settings-export",
                 classes="settings-control-button",
+                flat=True,
             )
 
         with Horizontal(id="settings-danger-actions"):

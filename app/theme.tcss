@@ -3731,3 +3731,274 @@ MetricCard:hover,
 #content-area {
     background: #010507;
 }
+
+/* BEGIN HELM V1.2 CONTROL GEOMETRY */
+
+/*
+ * Keep control geometry identical between normal, hover and focus states.
+ * Borders may change colour, but must not consume additional content space.
+ */
+
+#system-action-buttons {
+    width: 100%;
+    height: 5;
+    margin: 0;
+}
+
+.system-action-button {
+    width: 1fr;
+    height: 4;
+    min-height: 4;
+    margin-right: 1;
+    padding: 0 1;
+
+    border: solid #174b5a;
+    background: #07151b;
+    color: #77cddd;
+
+    text-style: bold;
+    content-align: center middle;
+}
+
+.system-action-button:hover,
+.system-action-button:focus {
+    border: solid #42e8ff;
+    background: #0d3541;
+    color: #ffffff;
+}
+
+/*
+ * Reserve the left navigation rail in every state so selection does not
+ * change the position of the label.
+ */
+
+#sidebar .nav-button {
+    height: 3;
+    min-height: 3;
+    padding: 0 1;
+
+    border: none;
+    border-left: thick #071116;
+    border-bottom: none;
+
+    color: #6f9da8;
+    content-align: left middle;
+}
+
+#sidebar .nav-button:hover,
+#sidebar .nav-button:focus {
+    border-left: thick #246e80;
+    border-bottom: none;
+
+    background: #092028;
+    color: #c9f8ff;
+}
+
+#sidebar .nav-button.selected {
+    border-left: thick #42e8ff;
+    border-bottom: none;
+
+    background: #0b2731;
+    color: #ffffff;
+}
+
+/* END HELM V1.2 CONTROL GEOMETRY */
+
+/* BEGIN HELM V1.2 FLAT BUTTONS */
+
+/*
+ * These widgets use Button(flat=True).
+ * Every state keeps the same border geometry, so labels remain centered.
+ */
+
+Button.ai-action,
+Button.ai-stop-action,
+Button.system-action-button,
+Button.network-action-button,
+Button.storage-action-button,
+Button.device-action-button,
+Button.project-control-button,
+Button.mode-control-button,
+Button.logs-control-button,
+Button.settings-control-button,
+Button.mode-choice {
+    height: 3;
+    min-height: 3;
+    padding: 0 1;
+
+    border: solid #174b5a;
+    background: #07151b;
+    color: #77cddd;
+
+    text-align: center;
+    content-align: center middle;
+    text-style: bold;
+}
+
+Button.ai-action:hover,
+Button.ai-action:focus,
+Button.ai-action.-active,
+Button.ai-stop-action:hover,
+Button.ai-stop-action:focus,
+Button.ai-stop-action.-active,
+Button.system-action-button:hover,
+Button.system-action-button:focus,
+Button.system-action-button.-active,
+Button.network-action-button:hover,
+Button.network-action-button:focus,
+Button.network-action-button.-active,
+Button.storage-action-button:hover,
+Button.storage-action-button:focus,
+Button.storage-action-button.-active,
+Button.device-action-button:hover,
+Button.device-action-button:focus,
+Button.device-action-button.-active,
+Button.project-control-button:hover,
+Button.project-control-button:focus,
+Button.project-control-button.-active,
+Button.mode-control-button:hover,
+Button.mode-control-button:focus,
+Button.mode-control-button.-active,
+Button.logs-control-button:hover,
+Button.logs-control-button:focus,
+Button.logs-control-button.-active,
+Button.settings-control-button:hover,
+Button.settings-control-button:focus,
+Button.settings-control-button.-active,
+Button.mode-choice:hover,
+Button.mode-choice:focus,
+Button.mode-choice.-active {
+    border: solid #42e8ff;
+    background: #0d3541;
+    color: #ffffff;
+
+    text-align: center;
+    content-align: center middle;
+}
+
+/* Disabled controls retain the same physical dimensions. */
+
+Button.ai-stop-action:disabled,
+Button.device-action-button:disabled,
+Button.project-control-button:disabled,
+Button.mode-control-button:disabled,
+Button.settings-control-button:disabled {
+    border: solid #10343e;
+    background: #040d12;
+    color: #36545c;
+}
+
+/* Primary actions use the same geometry with stronger emphasis. */
+
+Button#ai-execute,
+Button#mode-activate,
+Button#settings-save,
+Button#project-save,
+Button#device-action-send,
+Button#mode-web-app-add {
+    height: 3;
+    min-height: 3;
+    padding: 0 1;
+
+    border: solid #42e8ff;
+    background: #0b2e38;
+    color: #dffbff;
+
+    text-align: center;
+    content-align: center middle;
+    text-style: bold;
+}
+
+Button#ai-execute:hover,
+Button#ai-execute:focus,
+Button#ai-execute.-active,
+Button#mode-activate:hover,
+Button#mode-activate:focus,
+Button#mode-activate.-active,
+Button#settings-save:hover,
+Button#settings-save:focus,
+Button#settings-save.-active,
+Button#project-save:hover,
+Button#project-save:focus,
+Button#project-save.-active,
+Button#device-action-send:hover,
+Button#device-action-send:focus,
+Button#device-action-send.-active,
+Button#mode-web-app-add:hover,
+Button#mode-web-app-add:focus,
+Button#mode-web-app-add.-active {
+    border: solid #8cf5ff;
+    background: #125265;
+    color: #ffffff;
+
+    text-align: center;
+    content-align: center middle;
+}
+
+/* END HELM V1.2 FLAT BUTTONS */
+
+/* BEGIN HELM V1.2 SIGNATURE ALIGNMENT */
+
+/*
+ * The rail is three rows high, so every child also receives
+ * three rows. This gives the text a true vertical center.
+ */
+
+#signature-rail {
+    width: 100%;
+    height: 3;
+    min-height: 3;
+    padding: 0;
+    margin: 0 0 1 0;
+
+    border-bottom: solid #174b5a;
+    background: #02080c;
+}
+
+#signature-mark {
+    width: 20;
+    min-width: 20;
+    height: 3;
+    min-height: 3;
+    padding: 0 1;
+
+    border-left: thick #42e8ff;
+    border-right: solid #10343e;
+
+    background: #061219;
+    color: #42e8ff;
+
+    text-style: bold;
+    content-align: left middle;
+}
+
+#signature-module {
+    width: 1fr;
+    height: 3;
+    min-height: 3;
+    padding: 0 2;
+
+    border-left: none;
+
+    background: #030b10;
+    color: #b8eaf5;
+
+    content-align: left middle;
+}
+
+#signature-state {
+    width: 38;
+    min-width: 38;
+    height: 3;
+    min-height: 3;
+    padding: 0 2;
+
+    border-left: solid #10343e;
+
+    background: #030b10;
+    color: #6f9da8;
+
+    content-align: right middle;
+}
+
+/* END HELM V1.2 SIGNATURE ALIGNMENT */

@@ -20,21 +20,25 @@ class SystemActions(Vertical):
                 "BTOP MONITOR",
                 id="system-action-btop",
                 classes="system-action-button",
+                flat=True,
             )
             yield Button(
                 "TEMPERATURES",
                 id="system-action-sensors",
                 classes="system-action-button",
+                flat=True,
             )
             yield Button(
                 "NVIDIA MONITOR",
                 id="system-action-gpu",
                 classes="system-action-button",
+                flat=True,
             )
             yield Button(
                 "FULL DIAGNOSTIC",
                 id="system-action-diagnostic",
                 classes="system-action-button",
+                flat=True,
             )
 
         yield Static(

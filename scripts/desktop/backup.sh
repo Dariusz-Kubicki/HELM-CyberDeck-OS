@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 REPO="${HELM_PROJECT_DIR:-$HOME/.cyberdeck/nexus}"
+RUNTIME_DIR="${HELM_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/helm}"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 DEST_DIR="$HOME/.cyberdeck/backups"
 ARCHIVE="$DEST_DIR/helm-cyberdeck-$STAMP.tar.gz"
@@ -49,6 +50,19 @@ copy_user "$HOME/.local/share/plasma/shells/org.kde.plasma.desktop" ".local/shar
 copy_user "$HOME/.local/share/konsole" ".local/share/konsole"
 copy_user "$HOME/.local/share/kxmlgui5/dolphin" ".local/share/kxmlgui5/dolphin"
 copy_user "$HOME/.local/share/user-places.xbel" ".local/share/user-places.xbel"
+
+printf '%s\n' "$RUNTIME_DIR" > "$STAGE/meta/runtime-data-path.txt"
+
+if [[ -d "$RUNTIME_DIR" ]]; then
+    if [[ "$RUNTIME_DIR" == "$HOME/"* ]]; then
+        copy_user \
+            "$RUNTIME_DIR" \
+            "${RUNTIME_DIR#"$HOME/"}"
+    else
+        mkdir -p "$STAGE/runtime-data"
+        cp -a "$RUNTIME_DIR"/. "$STAGE/runtime-data/"
+    fi
+fi
 
 firefox_css="$(find "$HOME/.config/mozilla/firefox" -maxdepth 3 \
     -type f -path '*/chrome/userChrome.css' -print -quit 2>/dev/null || true)"

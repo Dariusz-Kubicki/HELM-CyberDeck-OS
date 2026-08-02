@@ -302,16 +302,19 @@ class SettingsScreen(Vertical):
                 "SAVE AND APPLY",
                 id="settings-save",
                 variant="primary",
+                flat=True,
             )
             yield Button(
                 "CREATE BACKUP",
                 id="settings-backup",
                 classes="settings-control-button",
+                flat=True,
             )
             yield Button(
                 "EXPORT PROFILE",
                 id="settings-export",
                 classes="settings-control-button",
+                flat=True,
             )
 
         with Horizontal(id="settings-danger-actions"):
@@ -327,9 +330,9 @@ class SettingsScreen(Vertical):
             )
 
         yield Static(
-            "Runtime configuration: config/settings.json"
-            "    //    Backups: config/backups/"
-            "    //    Exports: config/exports/",
+            "Runtime: ~/.local/share/helm/settings.json"
+            "    //    Backups: ~/.local/share/helm/backups/"
+            "    //    Exports: ~/.local/share/helm/exports/",
             id="settings-path",
         )
 

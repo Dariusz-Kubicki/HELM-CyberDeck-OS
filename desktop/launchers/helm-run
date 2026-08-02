@@ -32,9 +32,42 @@ cd "$PROJECT"
 
 printf '\033]0;HELM // CYBERDECK OS\007'
 
-exec flock \
+STATE_DIR="$HOME/.local/state/helm"
+RUN_LOG="$STATE_DIR/run.log"
+
+mkdir -p "$STATE_DIR"
+
+printf '[%s] HELM Core requested\\n' \
+    "$(date --iso-8601=seconds)" \
+    >>"$RUN_LOG"
+
+set +e
+
+flock \
     --exclusive \
     --nonblock \
     --conflict-exit-code 73 \
     "$LOCK_FILE" \
     "$PYTHON" -m app.main
+
+CODE=$?
+
+set -e
+
+printf '[%s] HELM Core exited with code %s\\n' \
+    "$(date --iso-8601=seconds)" \
+    "$CODE" \
+    >>"$RUN_LOG"
+
+if (( CODE == 73 )); then
+    printf 'HELM is already running.\\n'
+    exit 0
+fi
+
+if (( CODE != 0 )); then
+    printf '\\nHELM terminated with exit code %s.\\n' "$CODE"
+    printf 'Log: %s\\n' "$RUN_LOG"
+    read -r -p 'Press Enter to close...'
+fi
+
+exit "$CODE"

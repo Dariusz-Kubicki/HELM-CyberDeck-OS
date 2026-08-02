@@ -20,6 +20,7 @@ echo "  • HELM launchers and autostart"
 echo "  • Plasma, lock screen, Dolphin and Konsole configuration"
 echo "  • SDDM Access Gate"
 echo "  • Plymouth Early Boot and systemd-boot entries"
+echo "  • HELM runtime settings, workspaces and projects"
 echo "  • Repository bundle stored inside the archive"
 echo
 
@@ -46,6 +47,26 @@ cp -a "$HOME/.local/bin/helm" "$before/" 2>/dev/null || true
 
 if [[ -d "$STAGE/user-home" ]]; then
     cp -a "$STAGE/user-home"/. "$HOME"/
+fi
+
+if [[ -d "$STAGE/runtime-data" ]]; then
+    runtime_path_file="$STAGE/meta/runtime-data-path.txt"
+    [[ -f "$runtime_path_file" ]] || {
+        echo "Runtime data path metadata is missing." >&2
+        exit 1
+    }
+
+    runtime_target="$(<"$runtime_path_file")"
+
+    [[ "$runtime_target" == /* \
+        && "$runtime_target" != "/" \
+        && "$runtime_target" != "$HOME" ]] || {
+        echo "Unsafe runtime data target: $runtime_target" >&2
+        exit 1
+    }
+
+    mkdir -p "$runtime_target"
+    cp -a "$STAGE/runtime-data"/. "$runtime_target"/
 fi
 
 sudo cp -a "$STAGE/system/sddm.conf.d"/. /etc/sddm.conf.d/

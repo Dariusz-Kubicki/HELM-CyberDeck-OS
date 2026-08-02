@@ -146,16 +146,19 @@ class ModesScreen(Vertical):
                 "EDIT MODE",
                 id="mode-edit",
                 classes="mode-control-button",
+                flat=True,
             )
             yield Button(
                 "NEW MODE",
                 id="mode-new",
                 classes="mode-control-button",
+                flat=True,
             )
             yield Button(
                 "CLONE MODE",
                 id="mode-clone",
                 classes="mode-control-button",
+                flat=True,
             )
             yield Button(
                 "DELETE MODE",
@@ -182,11 +185,13 @@ class ModesScreen(Vertical):
                 "ENABLE / DISABLE",
                 id="mode-app-toggle",
                 classes="mode-control-button",
+                flat=True,
             )
             yield Button(
                 "LAUNCH SELECTED",
                 id="mode-app-launch",
                 classes="mode-control-button",
+                flat=True,
             )
             yield Button(
                 "REMOVE SELECTED",
@@ -210,6 +215,7 @@ class ModesScreen(Vertical):
                 "ADD WEB APP",
                 id="mode-web-app-add",
                 classes="mode-control-button",
+                flat=True,
             )
 
         yield Static(
@@ -222,6 +228,7 @@ class ModesScreen(Vertical):
                 "ACTIVATE WORKSPACE",
                 id="mode-activate",
                 variant="primary",
+                flat=True,
             )
 
         yield Static(
@@ -381,7 +388,7 @@ class ModesScreen(Vertical):
             )
 
         yield Static(
-            "Workspace database: config/modes.json",
+            "Workspace database: ~/.local/share/helm/modes.json",
             id="mode-config-path",
         )
 

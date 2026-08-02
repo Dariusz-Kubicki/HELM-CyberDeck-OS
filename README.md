@@ -13,6 +13,7 @@
   <a href="docs/INSTALLATION.md">Installation</a> ·
   <a href="docs/FEATURES.md">Features</a> ·
   <a href="docs/ARCHITECTURE.md">Architecture</a> ·
+  <a href="docs/RUNTIME_DATA.md">Runtime data</a> ·
   <a href="AI_DISCLOSURE.md">AI disclosure</a>
 </p>
 
@@ -111,7 +112,8 @@ flowchart LR
     Main --> AI[Local AI Service]
     Data --> Modules[Linux data collectors<br/>modules/]
     AI --> Ollama[Ollama localhost API]
-    Settings --> JSON[(config/*.json)]
+    Settings --> JSON[(XDG runtime JSON)]
+    Examples[config/*.example.json] --> Settings
     Main --> Logs[(logs/helm.log)]
     Main --> Actions[Approved action services]
     Actions --> Tools[Linux tools and desktop apps]
@@ -156,14 +158,20 @@ Press **Ctrl+K** to open the global command matrix. It exposes:
 
 ## Configuration
 
-HELM stores human-readable JSON in `config/`:
+HELM stores mutable human-readable JSON outside the Git working tree. The
+resolution order is `HELM_DATA_DIR`, `$XDG_DATA_HOME/helm`, then
+`~/.local/share/helm`.
 
 - `settings.json` — runtime and local AI settings;
 - `modes.json` — operational workspaces and application manifests;
 - `projects.json` — project records;
-- `mode_state.json` — generated runtime state and intentionally ignored by Git.
+- `mode_state.json` — active workspace state;
+- `recovery/*.last-good.json` — validated recovery snapshots;
+- `recovery/*.broken.json` — quarantined invalid files.
 
-Backups and exports are created under ignored runtime directories. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md).
+`config/` contains public `*.example.json` templates and legacy migration sources,
+not active writable configuration. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md)
+and [docs/RUNTIME_DATA.md](docs/RUNTIME_DATA.md).
 
 ## Safety model
 
@@ -182,18 +190,23 @@ More details: [SECURITY.md](SECURITY.md).
 app/                 Textual widgets, screens, main application and TCSS
 modules/             Read-only collectors for Linux and project data
 services/            Telemetry, health, AI, persistence and action services
-config/              Editable JSON configuration
-scripts/             Launcher and standalone diagnostic script
-docs/                Installation, architecture and feature documentation
-logs/                 Runtime log directory; log data is ignored
+config/              Versioned JSON examples and legacy migration sources
+desktop/             KDE/SDDM/Plymouth/Desktop Node source snapshots
+scripts/             Launcher, release checks and desktop maintenance
+docs/                Architecture, runtime, recovery and development guides
+logs/                 Ignored runtime log/export directory
+tests/                Runtime storage and service recovery tests
 requirements.txt     Pinned Python dependencies
 ```
 
-## Development status
+## Release status
 
-**Current release: v1.0.0**
+**Current stable release: v1.2.0**
 
-The first release is feature-complete for the original CyberDeck workstation. Future work is tracked in [CHANGELOG.md](CHANGELOG.md) and may include automated tests, packaging, plugin APIs and alternate platform adapters.
+v1.2 introduces resilient runtime storage, migration/recovery tests, expanded diagnostics,
+configurable Desktop Node volumes and a maintainer handoff set. See
+[CHANGELOG.md](CHANGELOG.md), [RELEASE_NOTES_v1.2.0.md](RELEASE_NOTES_v1.2.0.md)
+and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ## License
 

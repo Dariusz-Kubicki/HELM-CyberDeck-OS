@@ -113,3 +113,22 @@ sensors
 python -m serial.tools.list_ports -v
 python -m compileall -q app modules services
 ```
+
+## Runtime data directory
+
+On first start HELM creates or migrates mutable JSON under:
+
+```text
+~/.local/share/helm
+```
+
+Use an isolated location for testing:
+
+```bash
+export HELM_DATA_DIR="$HOME/.local/share/helm-test"
+./scripts/run-helm.sh
+```
+
+Do not copy live `config/*.json` into the repository for normal operation. The
+tracked `config/*.example.json` files are templates; migration from old ignored
+files is automatic and non-destructive.

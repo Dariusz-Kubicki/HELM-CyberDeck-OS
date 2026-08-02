@@ -18,7 +18,7 @@ UEFI
 ## Components
 
 - **HELM Core** — Textual control center and telemetry engine.
-- **Desktop Node** — lightweight Conky HUD.
+- **Desktop Node** — lightweight Conky HUD with configurable storage volumes.
 - **HELM-Plasma** — dark cyan Plasma style.
 - **HELMCyberdeck** — KDE color scheme.
 - **HELM Access Gate** — SDDM authentication theme.
@@ -53,3 +53,17 @@ When in doubt:
 sudo mkinitcpio -P
 helm doctor
 ```
+
+
+## Desktop Node storage configuration
+
+The tracked example is `desktop/config/desktop-node-storage.example.json`; the
+installed user file is `~/.config/helm/desktop-node-storage.json`. It controls the
+maximum number of storage rows and their labels, mount paths and stable device
+identifiers.
+
+## Backup boundary
+
+`helm backup` captures desktop/user/system integration, a Git repository bundle
+and, in v1.2, the active HELM runtime data root. Application logs are still
+separate runtime artifacts and should be exported intentionally when needed.

@@ -11,7 +11,8 @@ class SignatureRail(Horizontal):
 
     def compose(self) -> ComposeResult:
         yield Static(
-            "[b #42e8ff]◈ HELM // SIG[/]",
+            "[b #42e8ff]◈ HELM // SIG[/]\n"
+            "[#456d78]IDENTITY BUS[/]",
             id="signature-mark",
         )
 

@@ -4,6 +4,7 @@ set -u
 
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 NET_STATE="$RUNTIME_DIR/helm-conky-network-${UID}.state"
+STORAGE_CONFIG="${HELM_STORAGE_CONFIG:-$HOME/.config/helm/desktop-node-storage.json}"
 
 print_unavailable() {
     printf '%s' '--'
@@ -220,6 +221,128 @@ network_state() {
         "$ip_address"
 }
 
+
+# HELM STORAGE FABRIC
+storage_state() {
+    local config="$STORAGE_CONFIG"
+
+    if [[ ! -r "$config" ]]; then
+        printf '${color1}STORAGE FABRIC${alignr}'
+        printf '${color4}NO CONFIG${color}\n'
+        printf '${color2}%s${color}\n' "$config"
+        return
+    fi
+
+    python - "$config" <<'PY_STORAGE'
+from __future__ import annotations
+
+import json
+import os
+import sys
+from pathlib import Path
+
+config_path = Path(sys.argv[1])
+
+
+def clean_label(value: object) -> str:
+    label = str(value or "VOLUME").upper()
+    label = (
+        label.replace("$", "")
+        .replace("{", "")
+        .replace("}", "")
+        .replace("\n", " ")
+    )
+    return label[:18]
+
+
+def clean_path(value: object) -> str | None:
+    path = str(value or "")
+
+    if (
+        not path.startswith("/")
+        or "\n" in path
+        or "{" in path
+        or "}" in path
+    ):
+        return None
+
+    return path
+
+
+try:
+    payload = json.loads(
+        config_path.read_text(encoding="utf-8")
+    )
+except Exception:
+    print(
+        "${color1}STORAGE FABRIC${alignr}"
+        "${color4}CONFIG ERROR${color}"
+    )
+    print(
+        "${color2}INVALID STORAGE JSON${color}"
+    )
+    raise SystemExit(0)
+
+volumes = payload.get("volumes", [])
+
+try:
+    maximum = int(payload.get("max_volumes", 4))
+except (TypeError, ValueError):
+    maximum = 4
+
+maximum = max(1, min(maximum, 6))
+
+selected = [
+    volume
+    for volume in volumes
+    if isinstance(volume, dict)
+    and volume.get("enabled", True)
+][:maximum]
+
+print(
+    "${color1}STORAGE FABRIC${alignr}"
+    f"${{color3}}{len(selected)} VOLUMES${{color}}"
+)
+
+for volume in selected:
+    label = clean_label(volume.get("label"))
+    path = clean_path(volume.get("path"))
+    device = str(volume.get("device") or "")
+
+    device_online = (
+        not device
+        or os.path.exists(device)
+    )
+
+    mountpoint_valid = (
+        path is not None
+        and os.path.isdir(path)
+    )
+
+    if not device_online or not mountpoint_valid:
+        print(
+            f"${{color2}}{label}${{alignr}}"
+            "${color4}OFFLINE${color}"
+        )
+        print(
+            "${color2}DEVICE NOT PRESENT${color}"
+        )
+        continue
+
+    print(
+        f"${{color2}}{label}${{alignr}}"
+        f"${{color5}}${{fs_used_perc {path}}}%"
+        f" // ${{fs_free {path}}} FREE${{color}}"
+    )
+
+    print(
+        f"${{color1}}"
+        f"${{fs_bar 5,282 {path}}}"
+        f"${{color}}"
+    )
+PY_STORAGE
+}
+
 case "${1:-}" in
     helm)
         helm_state
@@ -235,6 +358,10 @@ case "${1:-}" in
 
     gpu-temp)
         nvidia_value "temperature.gpu"
+        ;;
+
+    storage)
+        storage_state
         ;;
 
     network)

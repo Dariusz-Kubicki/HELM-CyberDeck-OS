@@ -1,6 +1,28 @@
 # Configuration Reference
 
-Configuration lives in `config/`. Stop HELM before manual editing.
+HELM v1.2 stores mutable application data outside the repository. Stop HELM
+before manual editing.
+
+## Locations
+
+Runtime root resolution:
+
+1. `HELM_DATA_DIR`;
+2. `$XDG_DATA_HOME/helm`;
+3. `~/.local/share/helm`.
+
+The repository `config/` directory contains examples and migration sources only:
+
+```text
+config/settings.example.json
+config/modes.example.json
+config/mode_state.example.json
+config/projects.example.json
+```
+
+Live files are `settings.json`, `modes.json`, `mode_state.json` and
+`projects.json` under the runtime root. See [RUNTIME_DATA.md](RUNTIME_DATA.md)
+for fallback and recovery behavior.
 
 ## `settings.json`
 
@@ -16,11 +38,24 @@ Configuration lives in `config/`. Stop HELM before manual editing.
 }
 ```
 
-Allowed intervals: `0.5`, `1`, `2`, `5`, `10`. Screens: `system`, `network`, `storage`, `devices`, `modes`, `projects`, `logs`, `ai`, `settings`. Log rows: `50`, `100`, `200`, `500`, `1000`. Context: `2048`, `4096`, `8192`, `16384`. Keep-alive: `0`, `5m`, `10m`, `30m`, `1h`.
+Allowed telemetry intervals: `0.5`, `1`, `2`, `5`, `10`.
+
+Allowed screens: `system`, `network`, `storage`, `devices`, `modes`,
+`projects`, `logs`, `ai`, `settings`.
+
+Allowed log rows: `50`, `100`, `200`, `500`, `1000`.
+
+Allowed AI contexts: `2048`, `4096`, `8192`, `16384`.
+
+Allowed keep-alive values: `0`, `5m`, `10m`, `30m`, `1h`.
+
+SETTINGS backups are placed in `DATA_ROOT/backups/` and pruned to the newest ten.
+Profile exports are placed in `DATA_ROOT/exports/`.
 
 ## `modes.json`
 
-Each workspace defines an ID/name, telemetry interval, target screen, navigation logging, workload and power profiles, objective, features and applications.
+Each workspace defines an ID/name, telemetry interval, target screen, navigation
+logging, workload and power profiles, objective, features and applications.
 
 Native application example:
 
@@ -51,26 +86,52 @@ Browser application example:
 }
 ```
 
-Placeholders: `{project_root}` and `{home}`. Power profiles: `balanced`, `performance`, `power-saver`, `unchanged`.
+Placeholders: `{project_root}` and `{home}`.
+
+Power profiles: `balanced`, `performance`, `power-saver`, `unchanged`.
+
+## `mode_state.json`
+
+```json
+{
+  "active_mode": "command"
+}
+```
+
+This small file stores the active workspace independently of the workspace
+definitions. A missing file is created from the example/default path.
 
 ## `projects.json`
 
-Fields: `id`, `name`, `category`, `status`, `priority`, `progress`, `tech`, `next_action`, `description`, `path`, `github_url`, `updated_at`.
+Fields: `id`, `name`, `category`, `status`, `priority`, `progress`, `tech`,
+`next_action`, `description`, `path`, `github_url`, `updated_at`.
 
-Status order:
+Status progression:
 
 ```text
 CONCEPT → PLANNING → ACTIVE → BUILDING → TESTING → BLOCKED
 → PAUSED → STABLE → DONE
 ```
 
-`STABLE` and `DONE` appear in the completed table. GitHub URLs must use HTTPS and the GitHub host. `{project_root}` is a portable path value.
+`STABLE`, `DONE` and legacy `COMPLETED` records appear in the completed table.
+GitHub URLs must use HTTPS and a GitHub host. `{project_root}` is supported as a
+portable path value.
 
-## Runtime files
+## Desktop Node storage
 
-- `mode_state.json` — generated active mode; defaults to `command` when absent.
-- `config/backups/` — settings backups.
-- `config/exports/` — settings profiles.
-- `logs/exports/` — log, AI and health exports.
+The example is `desktop/config/desktop-node-storage.example.json`. The installed
+user configuration is normally:
 
-These paths are ignored by Git. Example files are included as `*.example.json`.
+```text
+~/.config/helm/desktop-node-storage.json
+```
+
+`max_volumes` limits visible rows. Each enabled volume defines a label, mount path
+and optional stable device path such as `/dev/disk/by-uuid/...`.
+
+## Other runtime paths
+
+- `logs/helm.log` — rotating application log, ignored by Git;
+- `logs/exports/` — log, AI and health exports;
+- `~/.local/state/helm/` — launcher/autostart state;
+- `~/.config/helm/` — Desktop Node and desktop integration configuration.

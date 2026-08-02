@@ -1,4 +1,56 @@
-# HELM CyberDeck recovery
+# HELM CyberDeck Recovery
+
+## Runtime JSON recovery
+
+HELM v1.2 automatically quarantines invalid active JSON and restores the newest
+valid source in this order: last-good snapshot, legacy repository file, example,
+code default.
+
+Default paths:
+
+```text
+~/.local/share/helm/*.json
+~/.local/share/helm/recovery/*.last-good.json
+~/.local/share/helm/recovery/*.broken.json
+```
+
+Inspect the active data root:
+
+```bash
+DATA_ROOT="${HELM_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/helm}"
+find "$DATA_ROOT" -maxdepth 2 -type f -printf '%p\n' | sort
+```
+
+Validate all active JSON:
+
+```bash
+DATA_ROOT="${HELM_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/helm}"
+for file in settings modes mode_state projects; do
+    python -m json.tool "$DATA_ROOT/$file.json" >/dev/null
+done
+```
+
+Run the integrated audit:
+
+```bash
+helm doctor
+```
+
+### Restore one last-good file manually
+
+Stop HELM first:
+
+```bash
+helm stop
+DATA_ROOT="${HELM_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/helm}"
+cp -a "$DATA_ROOT/recovery/projects.last-good.json" \
+      "$DATA_ROOT/projects.json"
+helm start
+helm doctor
+```
+
+The same pattern applies to settings, modes and mode_state. Keep any
+`*.broken.json` file until reviewed.
 
 ## Diagnostic boot
 
@@ -65,7 +117,19 @@ Apply:
 helm restore /path/to/helm-cyberdeck-YYYYMMDD-HHMMSS.tar.gz --apply
 ```
 
+The v1.2 archive includes runtime data, launchers, desktop configuration,
+SDDM/Plymouth/boot assets and a Git repository bundle. The restore creates a small
+pre-restore safety copy before changing the workstation.
+
+After restore:
+
+```bash
+helm doctor
+```
+
+Review the result before rebooting.
+
 ## TTY access
 
-Use `Ctrl+Alt+F3`, sign in, and perform recovery commands there when the
-graphical session cannot start.
+Use `Ctrl+Alt+F3`, sign in, and perform recovery commands there when the graphical
+session cannot start.

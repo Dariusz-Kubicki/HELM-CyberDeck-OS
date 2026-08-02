@@ -109,21 +109,25 @@ class AIScreen(Vertical):
                 "FULL DIAGNOSTIC",
                 id="ai-diagnostic",
                 classes="ai-action",
+                flat=True,
             )
             yield Button(
                 "SYSTEM STATUS",
                 id="ai-status",
                 classes="ai-action",
+                flat=True,
             )
             yield Button(
                 "CPU ANALYSIS",
                 id="ai-cpu",
                 classes="ai-action",
+                flat=True,
             )
             yield Button(
                 "GPU ANALYSIS",
                 id="ai-gpu",
                 classes="ai-action",
+                flat=True,
             )
 
         with Horizontal(id="ai-session-actions"):
@@ -131,22 +135,26 @@ class AIScreen(Vertical):
                 "CORE: DIAGNOSTIC",
                 id="ai-toggle-core",
                 classes="ai-action",
+                flat=True,
             )
             yield Button(
                 "STOP GENERATION",
                 id="ai-stop",
                 classes="ai-stop-action",
                 disabled=True,
+                flat=True,
             )
             yield Button(
                 "EXPORT SESSION",
                 id="ai-export",
                 classes="ai-action",
+                flat=True,
             )
             yield Button(
                 "CLEAR SESSION",
                 id="ai-clear",
                 classes="ai-action",
+                flat=True,
             )
 
         yield RichLog(
@@ -177,6 +185,7 @@ class AIScreen(Vertical):
                 "EXECUTE",
                 id="ai-execute",
                 variant="primary",
+                flat=True,
             )
 
         yield Static(

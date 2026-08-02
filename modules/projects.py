@@ -5,6 +5,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from time import monotonic
 
+from services.runtime_data import (
+    RuntimeJsonStore,
+    runtime_data_path,
+)
+
 
 @dataclass(frozen=True, slots=True)
 class Project:
@@ -54,11 +59,46 @@ class ProjectMonitor:
     def __init__(
         self,
         config_path: Path | None = None,
+        *,
+        legacy_path: Path | None = None,
+        example_path: Path | None = None,
     ) -> None:
-        self.config_path = config_path or (
-            Path(__file__).resolve().parents[1]
-            / "config"
-            / "projects.json"
+        project_root = Path(__file__).resolve().parents[1]
+        repository_config = project_root / "config"
+        using_default_path = config_path is None
+
+        self.config_path = (
+            Path(config_path)
+            if config_path is not None
+            else runtime_data_path("projects.json")
+        )
+
+        resolved_legacy_path = (
+            Path(legacy_path)
+            if legacy_path is not None
+            else (
+                repository_config / "projects.json"
+                if using_default_path
+                else None
+            )
+        )
+
+        resolved_example_path = (
+            Path(example_path)
+            if example_path is not None
+            else repository_config / "projects.example.json"
+        )
+
+        self._store = RuntimeJsonStore(
+            filename="projects.json",
+            target_path=self.config_path,
+            legacy_path=resolved_legacy_path,
+            example_path=resolved_example_path,
+            default_factory=self._default_payload,
+        )
+
+        self._store.ensure(
+            self._validate_payload
         )
 
         self._cached_sample = ProjectSample(
@@ -94,18 +134,11 @@ class ProjectMonitor:
             return self._cached_sample
 
         try:
-            payload = json.loads(
-                self.config_path.read_text(
-                    encoding="utf-8"
-                )
+            payload = self._store.read(
+                self._validate_payload
             )
 
             raw_projects = payload.get("projects", [])
-
-            if not isinstance(raw_projects, list):
-                raise ValueError(
-                    "'projects' must be a list"
-                )
 
             projects = tuple(
                 self._parse_project(item)
@@ -180,6 +213,7 @@ class ProjectMonitor:
             OSError,
             ValueError,
             TypeError,
+            RuntimeError,
             json.JSONDecodeError,
         ) as error:
             self._cached_sample = self._error_sample(
@@ -187,6 +221,23 @@ class ProjectMonitor:
             )
 
         return self._cached_sample
+
+    @staticmethod
+    def _default_payload() -> dict:
+        return {
+            "projects": [],
+        }
+
+    @staticmethod
+    def _validate_payload(
+        payload: dict,
+    ) -> None:
+        projects = payload.get("projects")
+
+        if not isinstance(projects, list):
+            raise ValueError(
+                "'projects' must be a list."
+            )
 
     @staticmethod
     def _parse_project(item: dict) -> Project:

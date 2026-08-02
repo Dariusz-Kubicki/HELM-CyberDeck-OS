@@ -121,26 +121,31 @@ class StorageScreen(Vertical):
                 "SMART SELECTED",
                 id="storage-action-smart",
                 classes="storage-action-button",
+                flat=True,
             )
             yield Button(
                 "DRIVE MAP",
                 id="storage-action-map",
                 classes="storage-action-button",
+                flat=True,
             )
             yield Button(
                 "HOME USAGE",
                 id="storage-action-home",
                 classes="storage-action-button",
+                flat=True,
             )
             yield Button(
                 "OPEN LOCATION",
                 id="storage-action-open",
                 classes="storage-action-button",
+                flat=True,
             )
             yield Button(
                 "REFRESH",
                 id="storage-action-refresh",
                 classes="storage-action-button",
+                flat=True,
             )
 
         yield Static(

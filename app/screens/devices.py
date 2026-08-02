@@ -102,31 +102,37 @@ class DevicesScreen(Vertical):
                 "ARDUINO IDE",
                 id="device-action-arduino",
                 classes="device-action-button",
+                flat=True,
             )
             yield Button(
                 "CONNECT UART",
                 id="device-action-connect",
                 classes="device-action-button",
+                flat=True,
             )
             yield Button(
                 "DISCONNECT",
                 id="device-action-disconnect",
                 classes="device-action-button",
+                flat=True,
             )
             yield Button(
                 "PORT INFO",
                 id="device-action-info",
                 classes="device-action-button",
+                flat=True,
             )
             yield Button(
                 "REFRESH",
                 id="device-action-refresh",
                 classes="device-action-button",
+                flat=True,
             )
             yield Button(
                 "CLEAR CONSOLE",
                 id="device-action-clear",
                 classes="device-action-button",
+                flat=True,
             )
 
         yield Static(
@@ -207,6 +213,7 @@ class DevicesScreen(Vertical):
                 "SEND",
                 id="device-action-send",
                 variant="primary",
+                flat=True,
             )
 
         yield Static(

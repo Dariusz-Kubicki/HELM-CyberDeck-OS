@@ -7,6 +7,8 @@ from textual.screen import ModalScreen
 from textual.timer import Timer
 from textual.widgets import Static
 
+from app.sidebar import display_version
+
 
 class BootScreen(ModalScreen):
     """Animated HELM CyberDeck startup sequence."""
@@ -47,7 +49,7 @@ class BootScreen(ModalScreen):
 
         yield Static(
             "LOCAL SYSTEM INITIALIZATION"
-            "    //    BUILD 1.0",
+            f"    //    BUILD {display_version()}",
             id="boot-build",
         )
 

@@ -9,6 +9,11 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from services.runtime_data import (
+    RuntimeJsonStore,
+    runtime_data_path,
+)
+
 
 @dataclass(frozen=True, slots=True)
 class ProjectMutationResult:
@@ -36,12 +41,60 @@ class ProjectService:
     def __init__(
         self,
         config_path: Path | None = None,
+        *,
+        legacy_path: Path | None = None,
+        example_path: Path | None = None,
     ) -> None:
-        self.config_path = config_path or (
-            Path(__file__).resolve().parents[1]
-            / "config"
-            / "projects.json"
+        project_root = Path(__file__).resolve().parents[1]
+        repository_config = project_root / "config"
+        using_default_path = config_path is None
+
+        self.config_path = (
+            Path(config_path)
+            if config_path is not None
+            else runtime_data_path("projects.json")
         )
+
+        resolved_legacy_path = (
+            Path(legacy_path)
+            if legacy_path is not None
+            else (
+                repository_config / "projects.json"
+                if using_default_path
+                else None
+            )
+        )
+
+        resolved_example_path = (
+            Path(example_path)
+            if example_path is not None
+            else repository_config / "projects.example.json"
+        )
+
+        self._store = RuntimeJsonStore(
+            filename="projects.json",
+            target_path=self.config_path,
+            legacy_path=resolved_legacy_path,
+            example_path=resolved_example_path,
+            default_factory=self._default_payload,
+        )
+
+    @staticmethod
+    def _default_payload() -> dict[str, Any]:
+        return {
+            "projects": [],
+        }
+
+    @staticmethod
+    def _validate_payload(
+        payload: dict[str, Any],
+    ) -> None:
+        projects = payload.get("projects")
+
+        if not isinstance(projects, list):
+            raise ValueError(
+                "'projects' must be a list."
+            )
 
     def create_project(
         self,
@@ -331,66 +384,18 @@ class ProjectService:
         return None
 
     def _read_payload(self) -> dict[str, Any]:
-        payload = json.loads(
-            self.config_path.read_text(
-                encoding="utf-8"
-            )
+        return self._store.read(
+            self._validate_payload
         )
-
-        if not isinstance(payload, dict):
-            raise ValueError(
-                "Project database root must be an object."
-            )
-
-        projects = payload.get("projects")
-
-        if not isinstance(projects, list):
-            raise ValueError(
-                "'projects' must be a list."
-            )
-
-        return payload
 
     def _write_payload(
         self,
         payload: dict[str, Any],
     ) -> None:
-        self.config_path.parent.mkdir(
-            parents=True,
-            exist_ok=True,
+        self._store.write(
+            payload,
+            self._validate_payload,
         )
-
-        temporary_path = self.config_path.with_name(
-            f".{self.config_path.name}.tmp"
-        )
-
-        try:
-            with temporary_path.open(
-                "w",
-                encoding="utf-8",
-            ) as file:
-                json.dump(
-                    payload,
-                    file,
-                    ensure_ascii=False,
-                    indent=2,
-                )
-                file.write("\n")
-                file.flush()
-                os.fsync(file.fileno())
-
-            os.replace(
-                temporary_path,
-                self.config_path,
-            )
-
-        finally:
-            try:
-                temporary_path.unlink(
-                    missing_ok=True
-                )
-            except OSError:
-                pass
 
     def _normalise_project(
         self,

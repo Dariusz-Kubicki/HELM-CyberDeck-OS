@@ -93,3 +93,18 @@ scripts/mobile/doctor.sh
 At this stage, SDDM and Plymouth are expected to be installed but inactive. The
 diagnostic will warn if either was activated before the controlled visual and
 recovery stages.
+
+## Stage 2A — Plasma Field Shell foundation
+
+CyberDeck Mobile adopts a new wallpaper direction for the ThinkPad:
+a minimalist netrunner / field-terminal aesthetic rather than a franchise-style
+character illustration. The visual layer for this stage establishes:
+
+- dark graphite / near-black background,
+- restrained cyan HUD accents,
+- subtle technical lines and scan detail,
+- a lightweight mobile cyberdeck identity,
+- safe live application through `scripts/mobile/apply-stage2a-visual-foundation.sh`.
+
+This stage intentionally does not reconfigure SDDM, Plymouth or a hard-coded
+Plasma panel layout yet.

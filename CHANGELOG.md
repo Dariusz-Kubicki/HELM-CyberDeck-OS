@@ -6,6 +6,12 @@ All notable changes to HELM CyberDeck OS are documented here.
 
 ### Added
 
+- CyberDeck Mobile Stage 2A visual foundation with a minimalist field-node wallpaper
+  and a safe Plasma appearance application script.
+
+
+### Added
+
 - Initial CyberDeck Mobile Node foundation for the ThinkPad field system.
 - Mobile hardware, power and package manifest.
 - Read-only Mobile Node diagnostic covering the Stage 1 foundation.

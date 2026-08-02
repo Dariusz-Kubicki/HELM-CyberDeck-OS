@@ -199,12 +199,11 @@ tests/                Runtime storage and service recovery tests
 requirements.txt     Pinned Python dependencies
 ```
 
-## Development status
+## Release status
 
-**Current stable release: v1.1.0**<br>
-**Development line: v1.2.0-dev**
+**Current stable release: v1.2.0**
 
-v1.2 adds resilient runtime storage, migration/recovery tests, expanded diagnostics,
+v1.2 introduces resilient runtime storage, migration/recovery tests, expanded diagnostics,
 configurable Desktop Node volumes and a maintainer handoff set. See
 [CHANGELOG.md](CHANGELOG.md), [RELEASE_NOTES_v1.2.0.md](RELEASE_NOTES_v1.2.0.md)
 and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).

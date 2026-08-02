@@ -92,12 +92,11 @@ Każdy plik jest walidowany i zapisywany atomowo. HELM utrzymuje kopię
 
 Szczegóły: [docs/RUNTIME_DATA.md](docs/RUNTIME_DATA.md).
 
-## Stan rozwoju
+## Status wydania
 
-**Aktualne stabilne wydanie: v1.1.0**<br>
-**Gałąź rozwojowa: v1.2.0-dev**
+**Aktualne stabilne wydanie: v1.2.0**
 
-v1.2 dodaje odporny magazyn danych runtime, migrację starej konfiguracji, testy
+v1.2 wprowadza odporny magazyn danych runtime, migrację starej konfiguracji, testy
 odzyskiwania, rozszerzony `helm doctor` i dokumentację przekazania projektu.
 
 ## Bezpieczeństwo

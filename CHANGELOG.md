@@ -4,11 +4,7 @@ All notable changes to HELM CyberDeck OS are documented here.
 
 ## [Unreleased]
 
-### Release preparation
-
-- Final screenshot capture and release metadata for v1.2.0.
-
-## [1.2.0] - unreleased
+## [1.2.0] - 2026-08-02
 
 ### Added
 

@@ -39,7 +39,7 @@ class Sidebar(Vertical):
     def compose(self) -> ComposeResult:
         yield Static(
             "[b #42e8ff]◈ H E L M[/b #42e8ff]\n"
-            f"[#315965]CYBERDECK OS // {display_version()}[/]",
+            f"[#315965]CYBERDECK OS //{display_version()}[/]",
             id="sidebar-brand",
         )
 

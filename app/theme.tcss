@@ -3161,12 +3161,12 @@ BootScreen {
 #boot-build {
     width: 78;
     height: 3;
-    padding: 1 2;
+    padding: 0 2;
     border-left: solid #174b5a;
     border-right: solid #174b5a;
     border-bottom: solid #174b5a;
     background: #030b10;
-    color: #477683;
+    color: #6f9da8;
     text-style: bold;
     content-align: center middle;
 }
@@ -3208,7 +3208,7 @@ BootScreen {
 #boot-hint {
     width: 78;
     height: 3;
-    padding: 1;
+    padding: 0 1;
     border-left: solid #174b5a;
     border-right: solid #174b5a;
     border-bottom: solid #42e8ff;

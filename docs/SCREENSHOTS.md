@@ -8,6 +8,7 @@ versions.
 
 - Target workstation: supported Arch Linux + KDE Plasma session.
 - HELM version: final release candidate, not an earlier tagged build.
+- Sidebar and boot modal: both display the exact target release version.
 - Terminal: approximately 122 × 57 cells or a larger window with the same layout.
 - Theme: HELM/Graphite dark desktop state with cyan accents.
 - Runtime data: reviewed demo-safe projects, modes and settings.

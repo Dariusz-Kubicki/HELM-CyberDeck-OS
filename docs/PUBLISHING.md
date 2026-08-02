@@ -36,9 +36,9 @@ git log --oneline --decorate -n 12
 
 Nie kontynuuj z nierozpoznanymi zmianami lokalnymi.
 
-## 4. Dokumentacja i screenshoty
+## 4. Dokumentacja i przygotowanie screenshotów
 
-Sprawdź zgodność:
+Sprawdź zgodność dokumentacji oraz danych demonstracyjnych przed sesją:
 
 - `README.md` i `README.pl.md`;
 - `CHANGELOG.md`;
@@ -50,18 +50,20 @@ Sprawdź zgodność:
 - `docs/SCREENSHOTS.md`;
 - wszystkie obrazy użyte przez README.
 
-Screenshoty wykonaj zgodnie z [SCREENSHOTS.md](SCREENSHOTS.md).
+Nie wykonuj jeszcze finalnych screenshotów z oznaczeniem `-dev`.
 
-## 5. Finalna zmiana wersji
+## 5. Finalna zmiana wersji i screenshoty
 
-Dopiero po zatwierdzeniu dokumentacji i screenshotów:
+Po zatwierdzeniu dokumentacji, lecz przed finalną sesją screenshotów:
 
 ```bash
 printf '1.2.0\n' > VERSION
 ```
 
 W `CHANGELOG.md` zmień sekcję `Unreleased` na datę wydania. W README zmień stan
-`v1.2.0-dev` na finalne `v1.2.0`.
+`v1.2.0-dev` na finalne `v1.2.0`. Uruchom HELM ponownie z finalnego commita i
+dopiero wtedy wykonaj obrazy zgodnie z [SCREENSHOTS.md](SCREENSHOTS.md). Numer
+w sidebarze i modalu bootowania musi odpowiadać plikowi `VERSION`.
 
 ## 6. Walidacja release candidate
 

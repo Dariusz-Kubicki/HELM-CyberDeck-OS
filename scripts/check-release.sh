@@ -30,6 +30,20 @@ printf '==================\n\n'
 
 printf '[PASS] Python sources compile.\n'
 
+mapfile -t SHELL_SCRIPTS < <(
+    find scripts \
+        -type f \
+        -name '*.sh' \
+        -print \
+        | sort
+)
+
+if (( ${#SHELL_SCRIPTS[@]} > 0 )); then
+    bash -n "${SHELL_SCRIPTS[@]}"
+fi
+
+printf '[PASS] Shell scripts parse.\n'
+
 "$PYTHON_BIN" \
     -m unittest \
     discover \
@@ -47,6 +61,9 @@ paths = tuple(
         (
             *Path("config").glob("*.example.json"),
             *Path("desktop/config").glob(
+                "*.example.json"
+            ),
+            *Path("mobile/config").glob(
                 "*.example.json"
             ),
         )

@@ -4,6 +4,17 @@ All notable changes to HELM CyberDeck OS are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- Initial CyberDeck Mobile Node foundation for the ThinkPad field system.
+- Mobile hardware, power and package manifest.
+- Read-only Mobile Node diagnostic covering the Stage 1 foundation.
+- Dedicated mobile architecture and staged implementation documentation.
+
+### Changed
+
+- Development version advanced to `1.3.0-dev`.
+
 ## [1.2.0] - 2026-08-02
 
 ### Added

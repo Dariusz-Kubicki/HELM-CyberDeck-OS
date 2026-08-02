@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "node": {
+    "role": "mobile",
+    "hostname": "cyberdeck-laptop",
+    "platform": "ThinkPad T14 Gen 2a",
+    "display": {
+      "width": 1920,
+      "height": 1080,
+      "scale": 1.0
+    }
+  },
+  "session": {
+    "desktop": "KDE",
+    "protocol": "wayland"
+  },
+  "graphics": {
+    "vendor": "AMD",
+    "driver": "amdgpu"
+  },
+  "power": {
+    "provider": "power-profiles-daemon",
+    "required_profiles": [
+      "power-saver",
+      "balanced",
+      "performance"
+    ],
+    "conflicting_managers": [
+      "tlp",
+      "tlp-pd",
+      "tuned",
+      "tuned-ppd",
+      "auto-cpufreq",
+      "system76-power"
+    ]
+  },
+  "storage": {
+    "root_filesystem": "btrfs",
+    "encrypted_root": true
+  },
+  "capabilities": {
+    "battery": true,
+    "brightness": true,
+    "wifi": true,
+    "ethernet": true,
+    "suspend": true
+  }
+}

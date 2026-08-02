@@ -6,7 +6,9 @@
 2. Isolate optional Linux integrations.
 3. Retain useful previous data when a collector fails.
 4. Keep AI advisory and read-only.
-5. Store editable state in transparent JSON.
+5. Separate mutable user state from source control.
+6. Make recovery inspectable and non-destructive.
+7. Provide an explicit doctor/recovery path for desktop integration.
 
 ## Runtime flow
 
@@ -34,13 +36,37 @@ sequenceDiagram
 
 ## Failure isolation
 
-`DataService.collect_result()` wraps each collector. An error records its source and fallback state; previous valid data is reused when possible. Required components without a fallback cause a failed snapshot. UI screen failures are also isolated. Logs are emitted when an issue appears, changes or recovers.
+`DataService.collect_result()` wraps each collector. An error records its source
+and fallback state; previous valid data is reused when possible. Required
+components without a fallback cause a failed snapshot. UI screen failures are
+also isolated. Logs are emitted when an issue appears, changes or recovers.
 
 Only one telemetry job runs at a time, and late sequence results are ignored.
 
 ## Workers
 
-Blocking tasks use Textual thread workers: telemetry, Core Health, Ollama streaming, network diagnostics and UART reading. Results return to the UI with `call_from_thread`; shutdown cancels active workers.
+Blocking tasks use Textual thread workers: telemetry, Core Health, Ollama
+streaming, network diagnostics and UART reading. Results return to the UI with
+`call_from_thread`; shutdown cancels active workers.
+
+## Persistence boundary
+
+```mermaid
+flowchart LR
+    Examples[config/*.example.json] --> Store[RuntimeJsonStore]
+    Legacy[legacy config/*.json] --> Store
+    Store --> Active[(DATA_ROOT/*.json)]
+    Active --> LastGood[(recovery/*.last-good.json)]
+    Broken[invalid active JSON] --> Quarantine[(recovery/*.broken.json)]
+    Services[Settings / Modes / Projects] <--> Store
+```
+
+`RuntimeJsonStore` resolves an XDG-compatible root, validates object payloads,
+performs atomic replacement and recovers in this order: active, last-good,
+legacy, example, default factory. Invalid active files are preserved in
+quarantine before recovery.
+
+The complete behavior is documented in [RUNTIME_DATA.md](RUNTIME_DATA.md).
 
 ## Source map
 
@@ -78,31 +104,48 @@ Blocking tasks use Textual thread workers: telemetry, Core Health, Ollama stream
 | `storage.py` | I/O, disks, partitions, temperatures and SMART. |
 | `devices.py` | USB/serial enumeration and events. |
 | `resources.py` | Cores, load, swap and processes. |
-| `projects.py` | Project JSON sample. |
+| `projects.py` | Cached runtime project monitor. |
 
 ### `services/`
 
 | File | Role |
 |---|---|
 | `data_service.py` | Fault-tolerant snapshot assembly. |
+| `runtime_data.py` | XDG data-root resolution, migration, atomic JSON and recovery. |
 | `health_service.py` | Startup checks and report export. |
 | `local_ai_service.py` | Ollama API client. |
 | `assistant_service.py` | Deterministic diagnostics. |
 | `log_service.py` | Persistent rotating logs. |
-| `settings_service.py` | Validation, atomic save, backup/export. |
+| `settings_service.py` | Validation, runtime save, backup/export. |
 | `mode_service.py` | Workspace validation/mutation/state/power. |
 | `workspace_service.py` | Application manifest launching. |
 | `project_service.py` | Project mutation. |
 | `*_action_service.py` | Allow-listed system side effects. |
 | `alert_service.py` | Threshold alerts. |
 
-## Data and persistence
+The expanded file-by-file map is in [CODEBASE.md](CODEBASE.md).
 
-`SystemSnapshot` is passed to all screens and AI context. JSON services validate data and write with temp-file, flush, `fsync` and atomic `os.replace`. Logs are pipe-delimited, locked and rotated. Runtime state and exports are ignored by Git.
+## Desktop runtime chain
+
+```text
+UEFI
+  → systemd-boot
+  → HELM Plymouth Early Boot
+  → HELM Access Gate (SDDM)
+  → KDE Plasma / Wayland
+  → HELM Core + Desktop Node
+  → HELM Security Lock
+```
+
+Desktop sources are kept in `desktop/`; installation, audit, backup and recovery
+are implemented in `scripts/desktop/`. The app can run without the full desktop
+layer, but `helm doctor` on the target CyberDeck validates both.
 
 ## Action security
 
-Display code does not construct arbitrary shell commands. Each action service maps known IDs to fixed commands or validated paths/URLs. AI output is not routed to these actions.
+Display code does not construct arbitrary shell commands. Each action service
+maps known IDs to fixed commands or validated paths/URLs. AI output is not routed
+to these actions.
 
 ## Adding a collector
 
@@ -110,4 +153,4 @@ Display code does not construct arbitrary shell commands. Each action service ma
 2. Add collection and fallback logic to `DataService`.
 3. Extend `SystemSnapshot` when global access is needed.
 4. Update the relevant Textual widget/screen.
-5. Add health checks and documentation when appropriate.
+5. Add health checks, tests and documentation when appropriate.

@@ -1,3 +1,37 @@
+# Changelog
+
+All notable changes to HELM CyberDeck OS are documented here.
+
+## [Unreleased]
+
+### Release preparation
+
+- Final screenshot capture and release metadata for v1.2.0.
+
+## [1.2.0] - unreleased
+
+### Added
+
+- XDG-compatible runtime data root with `HELM_DATA_DIR` override.
+- Last-known-good snapshots and corrupt-file quarantine for runtime JSON.
+- Non-destructive migration from legacy repository configuration.
+- Runtime persistence and recovery unit tests.
+- Runtime storage and recovery checks in `helm doctor`.
+- Configurable Desktop Node storage volumes.
+- Codebase, runtime, development, decision and screenshot documentation.
+
+### Changed
+
+- Settings, modes, active mode and projects now write outside the Git working tree.
+- ProjectMonitor reads from the resilient runtime project database.
+- HELM control geometry and signature rail were refined.
+- Release checks now compile tests, run unit tests and validate example JSON.
+- Full CyberDeck backup includes the runtime data root.
+
+### Removed
+
+- Stale tracked local workspace backup artifacts from the public source tree.
+
 ## [1.1.0] - 2026-07-25
 
 ### Added
@@ -7,36 +41,22 @@
 - Desktop snapshot, installer, doctor, backup and recovery tools.
 - Command cheat sheet and desktop recovery documentation.
 
-# Changelog
-
-All notable changes to HELM CyberDeck OS are documented here.
-
-## [Unreleased]
-
-### Planned
-
-- automated unit and Textual snapshot tests;
-- packaged installation and desktop launcher;
-- plugin API for additional telemetry collectors;
-- configurable color themes;
-- broader testing outside Arch Linux/KDE.
-
 ## [1.0.0] - 2026-07-24
 
 ### Added
 
-- cyberpunk boot sequence, sidebar, signature rail and dynamic health accents;
-- threaded, fault-tolerant Telemetry Engine v2;
-- Core Health Service with startup reporting and Markdown export;
-- SYSTEM, NETWORK, STORAGE and DEVICES control centers;
-- PROJECTS Mission Control and MODES Workspace Engine;
-- LOGS control center and hybrid local AI core;
-- SETTINGS backups, restore and profile export;
-- global Ctrl+K command palette integration.
+- Cyberpunk boot sequence, sidebar, signature rail and dynamic health accents.
+- Threaded, fault-tolerant Telemetry Engine v2.
+- Core Health Service with startup reporting and Markdown export.
+- SYSTEM, NETWORK, STORAGE and DEVICES control centers.
+- PROJECTS Mission Control and MODES Workspace Engine.
+- LOGS control center and hybrid local AI core.
+- SETTINGS backups, restore and profile export.
+- Global Ctrl+K command palette integration.
 
 ### Safety
 
-- read-only AI telemetry context and explicit execution boundaries;
-- uncertainty safeguards for missing and unavailable measurements;
-- allow-listed action services and validated external targets;
-- atomic writes and destructive-action confirmations.
+- Read-only AI telemetry context and explicit execution boundaries.
+- Uncertainty safeguards for missing and unavailable measurements.
+- Allow-listed action services and validated external targets.
+- Atomic writes and destructive-action confirmations.

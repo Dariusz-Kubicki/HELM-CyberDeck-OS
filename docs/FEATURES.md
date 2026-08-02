@@ -92,3 +92,12 @@ Predictable reports for system, CPU, GPU, RAM, storage, network, devices, projec
 ## Core Health Service
 
 Runs after the first usable snapshot and checks telemetry state/performance, JSON configuration, workspace consistency, directories, system tools, Python, Ollama service/API/model, Git state and previous-session errors. Reports can be shown in AI and exported as Markdown.
+
+## Runtime Data Service
+
+- XDG-compatible data root with explicit `HELM_DATA_DIR` override.
+- Automatic non-destructive migration from legacy repository JSON.
+- Service-level validation before every write.
+- Atomic active and last-good updates.
+- Corrupt-file quarantine and ordered recovery fallback.
+- Runtime diagnostics in `helm doctor` and dedicated unit tests.

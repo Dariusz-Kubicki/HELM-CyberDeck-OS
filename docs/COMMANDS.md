@@ -63,7 +63,7 @@ bootctl status --no-pager
 cat /proc/cmdline
 ```
 
-The normal `Arch Linux` entry uses the silent HELM Plymouth path.  
+The normal `Arch Linux` entry uses the silent HELM Plymouth path.<br>
 `Arch Linux (diagnostic)` disables Plymouth and restores detailed messages.
 
 ## Logs
@@ -79,12 +79,20 @@ helm hud-logs
 ## Git release workflow
 
 ```bash
-git status --short --branch
-git diff --cached
-git commit -m "Complete HELM CyberDeck Desktop v1.1.0"
+scripts/check-release.sh
+helm doctor
+printf '1.2.0\n' > VERSION
+git add -A
+git commit -m "Prepare HELM CyberDeck OS v1.2.0 release"
+git push origin feature/helm-v1.2.0
+
 git switch master
-git merge --no-ff release/cyberdeck-desktop-v1.1.0
-git tag -a v1.1.0 -m "HELM CyberDeck Desktop v1.1.0"
+git pull --ff-only origin master
+git merge --no-ff feature/helm-v1.2.0 -m "Merge HELM CyberDeck OS v1.2.0"
+git tag -a v1.2.0 -m "HELM CyberDeck OS v1.2.0"
 git push origin master
-git push origin v1.1.0
+git push origin v1.2.0
 ```
+
+Use [PUBLISHING.md](PUBLISHING.md) as the authoritative checklist. Do not force
+push release branches or move existing tags.

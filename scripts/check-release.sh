@@ -96,6 +96,27 @@ done
 
 printf '[PASS] Mutable runtime files are not tracked.\n'
 
+if [[ -d .git ]]; then
+    tracked_artifacts="$({
+        git ls-files \
+            | grep -E '(^|/)([^/]+\.bak|[^/]+\.before-[^/]*|[^/]+\.backup-[^/]*)$' \
+            | while IFS= read -r artifact; do
+                [[ -e "$artifact" ]] \
+                    && printf '%s\n' "$artifact"
+            done \
+            || true
+    })"
+
+    if [[ -n "$tracked_artifacts" ]]; then
+        printf '[FAIL] Local backup artifact is tracked:\n%s\n' \
+            "$tracked_artifacts" \
+            >&2
+        exit 1
+    fi
+fi
+
+printf '[PASS] No local backup artifact is tracked.\n'
+
 if command -v rg >/dev/null 2>&1; then
     if rg \
         -n \

@@ -1,152 +1,152 @@
-# Publikacja repozytorium na GitHubie
+# Wydanie HELM v1.2.0
 
-Ten dokument opisuje publikację istniejącego lokalnego repozytorium HELM z zachowaniem całej historii commitów i taga `v1.0.0`.
+Ten dokument opisuje kontrolowane zakończenie gałęzi
+`feature/helm-v1.2.0`, merge do `master`, utworzenie taga i wydania GitHub.
+Nie przesuwaj istniejących tagów i nie używaj `--force`.
 
-## 1. Zabezpiecz lokalne dane i wgraj pliki publikacyjne
+## 1. Punkt zamrożenia
 
-Najpierw zachowaj własne ustawienia, projekty i tryby, ponieważ paczka zawiera oczyszczoną konfigurację demonstracyjną przeznaczoną do publicznego repozytorium.
+Kod funkcjonalny v1.2 został zamrożony na:
 
-```bash
-mkdir -p ~/HELM-local-config-backup
-cp ~/.cyberdeck/nexus/config/settings.json ~/HELM-local-config-backup/
-cp ~/.cyberdeck/nexus/config/modes.json ~/HELM-local-config-backup/
-cp ~/.cyberdeck/nexus/config/projects.json ~/HELM-local-config-backup/
-cp ~/.cyberdeck/nexus/config/mode_state.json ~/HELM-local-config-backup/ 2>/dev/null || true
+```text
+1d4b9ce Harden runtime diagnostics and release checks
 ```
 
-Rozpakuj paczkę publikacyjną poza katalogiem projektu, a następnie skopiuj jej zawartość do `~/.cyberdeck/nexus`. Nie usuwaj katalogu `.git` ani danych runtime.
+Po tym commicie dozwolone są tylko poprawki dokumentacji, screenshotów, metadanych
+wydania oraz wąskie naprawy wykrytych blokerów bezpieczeństwa/utraty danych.
 
-```bash
-mkdir -p ~/HELM-public-release
-tar -xzf ~/HELM-CyberDeck-OS-public-v1.0.0.tar.gz \
-    -C ~/HELM-public-release \
-    --strip-components=1
-
-rsync -av --delete \
-    --exclude='.git/' \
-    --exclude='venv/' \
-    --exclude='.venv/' \
-    --exclude='logs/*.log' \
-    --exclude='logs/exports/' \
-    --exclude='config/backups/' \
-    --exclude='config/exports/' \
-    --exclude='config/mode_state.json' \
-    ~/HELM-public-release/ \
-    ~/.cyberdeck/nexus/
-```
-
-`--delete` usuwa stare pliki źródłowe, których nie ma w czystej paczce. Wykluczenia chronią historię Git, środowisko wirtualne, logi, eksporty, backupy i aktywny lokalny tryb.
-
-## 2. Uruchom kontrolę wydania
+## 2. Wykonaj pełny backup
 
 ```bash
 cd ~/.cyberdeck/nexus
-source venv/bin/activate
-./scripts/check-release.sh
-git status --short
+helm backup
 ```
 
-Przejrzyj zmiany:
+Zapisz ścieżkę archiwum. Wersja v1.2 obejmuje także aktywny katalog danych
+runtime. Archiwum nie jest szyfrowane.
+
+## 3. Sprawdź gałąź
 
 ```bash
-git diff --stat
-git diff -- README.md README.pl.md .gitignore
+cd ~/.cyberdeck/nexus
+git switch feature/helm-v1.2.0
+git status --short --branch
+git log --oneline --decorate -n 12
 ```
 
-## 3. Zapisz dokumentację w historii
+Nie kontynuuj z nierozpoznanymi zmianami lokalnymi.
+
+## 4. Dokumentacja i screenshoty
+
+Sprawdź zgodność:
+
+- `README.md` i `README.pl.md`;
+- `CHANGELOG.md`;
+- `RELEASE_NOTES_v1.2.0.md`;
+- `docs/CODEBASE.md`;
+- `docs/RUNTIME_DATA.md`;
+- `docs/DEVELOPMENT.md`;
+- `docs/DECISIONS.md`;
+- `docs/SCREENSHOTS.md`;
+- wszystkie obrazy użyte przez README.
+
+Screenshoty wykonaj zgodnie z [SCREENSHOTS.md](SCREENSHOTS.md).
+
+## 5. Finalna zmiana wersji
+
+Dopiero po zatwierdzeniu dokumentacji i screenshotów:
+
+```bash
+printf '1.2.0\n' > VERSION
+```
+
+W `CHANGELOG.md` zmień sekcję `Unreleased` na datę wydania. W README zmień stan
+`v1.2.0-dev` na finalne `v1.2.0`.
+
+## 6. Walidacja release candidate
+
+```bash
+cd ~/.cyberdeck/nexus
+
+scripts/check-release.sh
+scripts/desktop/doctor.sh
+git diff --check
+
+git status --short --branch
+git diff --stat
+git diff
+```
+
+Docelowy pełny CyberDeck powinien zakończyć doctor stanem `SYSTEM STATE: NOMINAL`.
+Każde ostrzeżenie musi być zrozumiane przed wydaniem.
+
+## 7. Commit przygotowania wydania
 
 ```bash
 git add -A
-git commit -m "Prepare public GitHub release documentation"
+git diff --cached --check
+git diff --cached --stat
+git commit -m "Prepare HELM CyberDeck OS v1.2.0 release"
+git push origin feature/helm-v1.2.0
 ```
 
-Istniejący tag `v1.0.0` wskazuje wcześniejszy commit interfejsu. Aby wydanie GitHub zawierało również dokumentację, przesuń tag na nowy commit:
+Po pushu powtórz release check i sprawdź GitHub Actions.
+
+## 8. Merge do `master`
 
 ```bash
-git tag -d v1.0.0
-git tag -a v1.0.0 -m "HELM CyberDeck OS v1.0.0"
+git switch master
+git pull --ff-only origin master
+git merge --no-ff feature/helm-v1.2.0 \
+    -m "Merge HELM CyberDeck OS v1.2.0"
+
+scripts/check-release.sh
+scripts/desktop/doctor.sh
+git status --short --branch
 ```
 
-## 4. Zainstaluj i zaloguj GitHub CLI
+## 9. Tag i push
+
+Tag twórz na sprawdzonym commicie merge:
 
 ```bash
-sudo pacman -S --needed github-cli
-gh auth login
+git tag -a v1.2.0 -m "HELM CyberDeck OS v1.2.0"
+git push origin master
+git push origin v1.2.0
 ```
 
-W kreatorze wybierz GitHub.com, HTTPS i logowanie przez przeglądarkę. Sprawdź sesję:
+Zweryfikuj:
 
 ```bash
-gh auth status
+git show --stat --oneline v1.2.0
+git ls-remote --tags origin v1.2.0
 ```
 
-## 5. Utwórz publiczne repozytorium i wyślij kod
+## 10. GitHub Release
 
 ```bash
-cd ~/.cyberdeck/nexus
-
-gh repo create HELM-CyberDeck-OS \
-    --public \
-    --source=. \
-    --remote=origin \
-    --description "Cyberpunk terminal control center for Arch Linux with telemetry, diagnostics, UART, workspaces and local Ollama AI." \
-    --push
+gh release create v1.2.0 \
+    --title "HELM CyberDeck OS v1.2.0" \
+    --notes-file RELEASE_NOTES_v1.2.0.md
 ```
 
-Wyślij tag:
+Na stronie repozytorium sprawdź:
+
+- poprawne renderowanie README i diagramów Mermaid;
+- wszystkie obrazy;
+- zielony workflow Python checks;
+- tag i release wskazujące ten sam commit;
+- brak plików runtime, backupów, logów i sekretów;
+- poprawny tekst `VERSION`.
+
+## 11. Powrót po błędzie
+
+Przed push/tagiem można przerwać merge:
 
 ```bash
-git push origin v1.0.0 --force
+git merge --abort
 ```
 
-`--force` jest potrzebne tylko dlatego, że lokalny tag został przesunięty z wcześniejszego commita na końcowy commit dokumentacji. Nie używaj go do gałęzi `master`.
-
-## 6. Utwórz wydanie GitHub
-
-```bash
-gh release create v1.0.0 \
-    --title "HELM CyberDeck OS v1.0.0" \
-    --notes-file RELEASE_NOTES_v1.0.0.md
-```
-
-## 7. Ustaw tematy repozytorium
-
-```bash
-gh repo edit \
-    --add-topic arch-linux \
-    --add-topic cyberdeck \
-    --add-topic textual \
-    --add-topic python \
-    --add-topic terminal-ui \
-    --add-topic ollama \
-    --add-topic system-monitor \
-    --add-topic embedded \
-    --add-topic uart
-```
-
-## 8. Końcowa kontrola
-
-```bash
-gh repo view --web
-```
-
-Na stronie sprawdź:
-
-- czy obraz SYSTEM pojawia się na początku README;
-- czy README przełącza się na wersję polską;
-- czy zakładka Actions przechodzi test `Python checks`;
-- czy release `v1.0.0` istnieje;
-- czy w repozytorium nie ma logów, backupów ani `mode_state.json`.
-
-## 9. Opcjonalnie przywróć prywatną konfigurację po publikacji
-
-Publiczny commit powinien zawierać oczyszczone pliki z paczki. Po wysłaniu repozytorium możesz przywrócić własne dane do lokalnej maszyny:
-
-```bash
-cp ~/HELM-local-config-backup/settings.json ~/.cyberdeck/nexus/config/
-cp ~/HELM-local-config-backup/modes.json ~/.cyberdeck/nexus/config/
-cp ~/HELM-local-config-backup/projects.json ~/.cyberdeck/nexus/config/
-cp ~/HELM-local-config-backup/mode_state.json ~/.cyberdeck/nexus/config/ 2>/dev/null || true
-```
-
-Te pliki mogą wtedy pojawić się jako lokalne zmiany w `git status`. Nie wypychaj ich bez ponownego przeglądu.
+Po wypchnięciu `master` nie przepisuj historii. Napraw błąd nowym commitem i, jeśli
+wydanie jest wadliwe, oznacz release jako draft/prerelease lub opublikuj następną
+wersję poprawkową.

@@ -13,6 +13,7 @@
   <a href="docs/INSTALLATION.md">Instalacja</a> ·
   <a href="docs/FEATURES.md">Funkcje</a> ·
   <a href="docs/ARCHITECTURE.md">Architektura</a> ·
+  <a href="docs/RUNTIME_DATA.md">Dane runtime</a> ·
   <a href="AI_DISCLOSURE.md">Informacja o AI</a>
 </p>
 
@@ -76,6 +77,28 @@ Pełna instrukcja wraz z Ollamą i pakietami systemowymi znajduje się w [docs/I
 | **SETTINGS** | Interwał telemetrii, ekran startowy, limity logów, AI, backupy, eksport i reset. |
 
 Szczegółowe wyjaśnienie wszystkich kontrolek i modułów: [docs/FEATURES.md](docs/FEATURES.md).
+
+
+## Dane runtime i odzyskiwanie
+
+Od v1.2 aktywne ustawienia, profile pracy, stan profilu i projekty nie są
+zapisywane w repozytorium. Domyślna lokalizacja to `~/.local/share/helm`, z
+obsługą `XDG_DATA_HOME` oraz `HELM_DATA_DIR`.
+
+Każdy plik jest walidowany i zapisywany atomowo. HELM utrzymuje kopię
+`recovery/*.last-good.json`, a uszkodzony plik zachowuje jako
+`recovery/*.broken.json` przed automatycznym odzyskaniem. Pliki
+`config/*.example.json` są publicznymi szablonami i źródłem pierwszej inicjalizacji.
+
+Szczegóły: [docs/RUNTIME_DATA.md](docs/RUNTIME_DATA.md).
+
+## Stan rozwoju
+
+**Aktualne stabilne wydanie: v1.1.0**<br>
+**Gałąź rozwojowa: v1.2.0-dev**
+
+v1.2 dodaje odporny magazyn danych runtime, migrację starej konfiguracji, testy
+odzyskiwania, rozszerzony `helm doctor` i dokumentację przekazania projektu.
 
 ## Bezpieczeństwo
 

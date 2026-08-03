@@ -108,3 +108,23 @@ character illustration. The visual layer for this stage establishes:
 
 This stage intentionally does not reconfigure SDDM, Plymouth or a hard-coded
 Plasma panel layout yet.
+
+## Firefox Mobile chrome
+
+CyberDeck Mobile carries a compact Firefox 153 interface derived from the
+Desktop Node HELM browser theme. The mobile variant preserves the dark terminal
+palette and restrained cyan accents while reducing tab and navigation chrome
+for the ThinkPad display.
+
+The installer discovers the active Firefox profile under the XDG configuration
+root, enables legacy profile stylesheets, creates a recovery copy and installs
+`mobile/apps/firefox/userChrome.css`. It does not modify Plasma, the wallpaper
+or the global icon theme.
+
+Apply the preview only while Firefox is completely closed:
+
+    scripts/mobile/apply-firefox-preview.sh
+
+Restore the previous profile styling with:
+
+    scripts/mobile/restore-firefox-preview.sh

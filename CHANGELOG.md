@@ -9,6 +9,7 @@ All notable changes to HELM CyberDeck OS are documented here.
 - CyberDeck Mobile Stage 2A visual foundation with a minimalist field-node wallpaper
   and a safe Plasma appearance application script.
 - HELM Mobile Firefox 153 chrome theme with compact cyberdeck styling, XDG profile detection and reversible installation.
+- CyberDeck Mobile Plasma Field Shell with the approved compact floating panel, translucent presentation, dodge-windows behavior and wallpaper v2.
 
 
 ### Added

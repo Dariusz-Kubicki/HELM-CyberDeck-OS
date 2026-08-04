@@ -109,6 +109,33 @@ character illustration. The visual layer for this stage establishes:
 This stage intentionally does not reconfigure SDDM, Plymouth or a hard-coded
 Plasma panel layout yet.
 
+## Stage 2B — Plasma Field Shell
+
+The approved ThinkPad shell uses the versioned target in
+`mobile/plasma/field-shell.json`:
+
+- bottom panel with a 40 px height,
+- centered custom width constrained to 1200 px,
+- floating and translucent presentation,
+- dodge-windows visibility behavior,
+- BreezeDark with the global Breeze icon theme,
+- minimalist field-node wallpaper v2.
+
+The shell intentionally keeps the standard Breeze icon theme so symbolic and
+system icons remain readable. Dedicated HELM launcher icons are a separate
+integration step and do not replace the global icon theme.
+
+Apply the shell with:
+
+    scripts/mobile/apply-stage2-field-shell.sh
+
+Restore the configuration captured by the latest application with:
+
+    scripts/mobile/restore-stage2-field-shell.sh
+
+The restore path uses the Plasma user systemd service and does not call
+`kquitapp6`.
+
 ## Firefox Mobile chrome
 
 CyberDeck Mobile carries a compact Firefox 153 interface derived from the

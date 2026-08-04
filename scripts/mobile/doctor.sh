@@ -358,6 +358,123 @@ else
     pass "No failed user services"
 fi
 
+
+field_shell_manifest="$REPO/mobile/plasma/field-shell.json"
+field_shell_wallpaper="$REPO/mobile/assets/wallpapers/helm-mobile-field-node-v2.svg"
+
+if [[ -f "$field_shell_manifest" ]] \
+    && "$PYTHON_BIN" - "$field_shell_manifest" >/dev/null 2>&1 <<'PY_FIELD_JSON'
+import json
+import sys
+from pathlib import Path
+
+payload = json.loads(
+    Path(sys.argv[1]).read_text(encoding="utf-8")
+)
+
+panel = payload.get("panel", {})
+
+expected = {
+    "location": "bottom",
+    "height": 40,
+    "minimum_length": 1200,
+    "maximum_length": 1200,
+    "length_mode": "custom",
+    "alignment": "center",
+    "offset": 0,
+    "hiding": "dodgewindows",
+    "floating": True,
+    "opacity": "translucent",
+}
+
+if any(panel.get(key) != value for key, value in expected.items()):
+    raise SystemExit("invalid field shell manifest")
+PY_FIELD_JSON
+then
+    pass "Plasma Field Shell manifest"
+else
+    fail "Plasma Field Shell manifest"
+fi
+
+[[ -s "$field_shell_wallpaper" ]] \
+    && pass "Field-node wallpaper v2 source" \
+    || fail "Field-node wallpaper v2 source"
+
+if systemctl --user is-active --quiet plasma-plasmashell.service \
+    && command -v qdbus6 >/dev/null 2>&1
+then
+    panel_state="$(
+        qdbus6 \
+            org.kde.plasmashell \
+            /PlasmaShell \
+            org.kde.PlasmaShell.evaluateScript \
+            '
+            const ids = panelIds;
+            let panel = null;
+
+            for (let i = 0; i < ids.length; ++i) {
+                const candidate = panelById(ids[i]);
+
+                if (
+                    candidate
+                    && candidate.location === "bottom"
+                ) {
+                    panel = candidate;
+                    break;
+                }
+            }
+
+            if (!panel) {
+                throw new Error("Bottom panel not found");
+            }
+
+            print(JSON.stringify({
+                location: panel.location,
+                height: panel.height,
+                minimumLength: panel.minimumLength,
+                maximumLength: panel.maximumLength,
+                lengthMode: panel.lengthMode,
+                alignment: panel.alignment,
+                offset: panel.offset,
+                hiding: panel.hiding,
+                floating: panel.floating,
+                opacity: panel.opacity
+            }));
+            '
+    )"
+
+    if PANEL_STATE="$panel_state" \
+        "$PYTHON_BIN" >/dev/null 2>&1 <<'PY_PANEL_STATE'
+import json
+import os
+
+panel = json.loads(os.environ["PANEL_STATE"])
+
+expected = {
+    "location": "bottom",
+    "height": 40,
+    "minimumLength": 1200,
+    "maximumLength": 1200,
+    "lengthMode": "custom",
+    "alignment": "center",
+    "offset": 0,
+    "hiding": "dodgewindows",
+    "floating": True,
+    "opacity": "translucent",
+}
+
+if any(panel.get(key) != value for key, value in expected.items()):
+    raise SystemExit("field shell differs")
+PY_PANEL_STATE
+    then
+        pass "Live Plasma Field Shell"
+    else
+        warning "Live Plasma Field Shell differs from manifest"
+    fi
+else
+    warning "Live Plasma Field Shell unavailable"
+fi
+
 printf '\n%sSYSTEM STATE%s: ' "$cyan" "$reset"
 if (( FAIL > 0 )); then
     printf '%sDEGRADED%s\n' "$red" "$reset"

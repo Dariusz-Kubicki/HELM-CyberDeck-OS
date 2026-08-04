@@ -1,0 +1,27 @@
+{
+  "stage": "2-field-shell",
+  "version": 1,
+  "target": {
+    "device": "ThinkPad T14 Gen 2a",
+    "resolution": "1920x1080",
+    "scale": 1
+  },
+  "appearance": {
+    "color_scheme": "BreezeDark",
+    "icon_theme": "breeze",
+    "plasma_theme": "default",
+    "wallpaper": "mobile/assets/wallpapers/helm-mobile-field-node-v2.svg"
+  },
+  "panel": {
+    "location": "bottom",
+    "height": 40,
+    "minimum_length": 1200,
+    "maximum_length": 1200,
+    "length_mode": "custom",
+    "alignment": "center",
+    "offset": 0,
+    "hiding": "dodgewindows",
+    "floating": true,
+    "opacity": "translucent"
+  }
+}

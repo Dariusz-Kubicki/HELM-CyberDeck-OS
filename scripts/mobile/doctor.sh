@@ -475,6 +475,273 @@ else
     warning "Live Plasma Field Shell unavailable"
 fi
 
+
+launcher_manifest="$REPO/mobile/apps/launchers/launchers.json"
+launcher_source_icons="$REPO/mobile/icons/launchers"
+launcher_data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+launcher_apps="$launcher_data_home/applications"
+launcher_installed_icons="$launcher_data_home/helm-mobile/icons"
+launcher_expected_order="applications:helm-mobile.desktop,applications:org.kde.konsole.desktop,applications:org.kde.dolphin.desktop,applications:firefox.desktop"
+
+if [[ -f "$launcher_manifest" ]] \
+    && "$PYTHON_BIN" - "$launcher_manifest" >/dev/null 2>&1 <<'PY_LAUNCHER_MANIFEST'
+import json
+import sys
+from pathlib import Path
+
+payload = json.loads(
+    Path(sys.argv[1]).read_text(encoding="utf-8")
+)
+
+expected_order = (
+    "applications:helm-mobile.desktop,"
+    "applications:org.kde.konsole.desktop,"
+    "applications:org.kde.dolphin.desktop,"
+    "applications:firefox.desktop"
+)
+
+expected_launchers = [
+    (
+        "helm-mobile.desktop",
+        "helm-mobile-core.svg",
+        "dedicated",
+    ),
+    (
+        "org.kde.konsole.desktop",
+        "helm-mobile-terminal.svg",
+        "same-id-override",
+    ),
+    (
+        "org.kde.dolphin.desktop",
+        "helm-mobile-files.svg",
+        "same-id-override",
+    ),
+    (
+        "firefox.desktop",
+        "helm-mobile-browser.svg",
+        "same-id-override",
+    ),
+]
+
+if payload.get("stage") != "2c-panel-launchers":
+    raise SystemExit("invalid launcher stage")
+
+if payload.get("global_icon_theme") != "breeze":
+    raise SystemExit("global icon theme is not Breeze")
+
+if payload.get("panel_launchers") != expected_order:
+    raise SystemExit("invalid launcher order")
+
+actual_launchers = [
+    (
+        item.get("desktop_id"),
+        item.get("icon"),
+        item.get("strategy"),
+    )
+    for item in payload.get("launchers", [])
+]
+
+if actual_launchers != expected_launchers:
+    raise SystemExit("invalid launcher manifest entries")
+PY_LAUNCHER_MANIFEST
+then
+    pass "Panel launcher manifest"
+else
+    fail "Panel launcher manifest"
+fi
+
+launcher_sources_ok=1
+
+for icon in \
+    helm-mobile-core.svg \
+    helm-mobile-terminal.svg \
+    helm-mobile-files.svg \
+    helm-mobile-browser.svg
+do
+    if [[ ! -s "$launcher_source_icons/$icon" ]]; then
+        launcher_sources_ok=0
+    fi
+done
+
+if (( launcher_sources_ok == 1 )); then
+    pass "Panel launcher icon sources"
+else
+    fail "Panel launcher icon sources"
+fi
+
+if [[ -x "$HOME/.local/bin/helm-start" ]]; then
+    pass "HELM Mobile launcher command"
+else
+    fail "HELM Mobile launcher command"
+fi
+
+launcher_desktop_entries_ok=1
+
+for desktop_id in \
+    helm-mobile.desktop \
+    org.kde.konsole.desktop \
+    org.kde.dolphin.desktop \
+    firefox.desktop
+do
+    if [[ ! -s "$launcher_apps/$desktop_id" ]]; then
+        launcher_desktop_entries_ok=0
+    fi
+done
+
+if (( launcher_desktop_entries_ok == 1 )); then
+    pass "Panel launcher desktop entries"
+else
+    fail "Panel launcher desktop entries"
+fi
+
+launcher_icon_overrides_ok=1
+
+grep -Fqx \
+    "Icon=$launcher_installed_icons/helm-mobile-core.svg" \
+    "$launcher_apps/helm-mobile.desktop" \
+    2>/dev/null \
+    || launcher_icon_overrides_ok=0
+
+grep -Fqx \
+    "Icon=$launcher_installed_icons/helm-mobile-terminal.svg" \
+    "$launcher_apps/org.kde.konsole.desktop" \
+    2>/dev/null \
+    || launcher_icon_overrides_ok=0
+
+grep -Fqx \
+    "Icon=$launcher_installed_icons/helm-mobile-files.svg" \
+    "$launcher_apps/org.kde.dolphin.desktop" \
+    2>/dev/null \
+    || launcher_icon_overrides_ok=0
+
+grep -Fqx \
+    "Icon=$launcher_installed_icons/helm-mobile-browser.svg" \
+    "$launcher_apps/firefox.desktop" \
+    2>/dev/null \
+    || launcher_icon_overrides_ok=0
+
+if (( launcher_icon_overrides_ok == 1 )); then
+    pass "Panel launcher icon overrides"
+else
+    fail "Panel launcher icon overrides"
+fi
+
+launcher_icons_match=1
+
+for icon in \
+    helm-mobile-core.svg \
+    helm-mobile-terminal.svg \
+    helm-mobile-files.svg \
+    helm-mobile-browser.svg
+do
+    if ! cmp -s \
+        "$launcher_source_icons/$icon" \
+        "$launcher_installed_icons/$icon"
+    then
+        launcher_icons_match=0
+    fi
+done
+
+if (( launcher_icons_match == 1 )); then
+    pass "Installed launcher icons match sources"
+else
+    fail "Installed launcher icons differ from sources"
+fi
+
+if command -v kreadconfig6 >/dev/null 2>&1; then
+    launcher_global_theme="$(
+        kreadconfig6 \
+            --file kdeglobals \
+            --group Icons \
+            --key Theme \
+            2>/dev/null \
+            || true
+    )"
+
+    if [[ "$launcher_global_theme" == "breeze" ]]; then
+        pass "Global icon theme remains Breeze"
+    else
+        fail \
+            "Global icon theme differs: ${launcher_global_theme:-unknown}"
+    fi
+else
+    fail "Global icon theme diagnostic unavailable"
+fi
+
+if systemctl --user is-active --quiet \
+    plasma-plasmashell.service \
+    && command -v qdbus6 >/dev/null 2>&1
+then
+    launcher_live_order="$(
+        qdbus6 \
+            org.kde.plasmashell \
+            /PlasmaShell \
+            org.kde.PlasmaShell.evaluateScript \
+            '
+            const ids = panelIds;
+            let panel = null;
+            let tasks = null;
+
+            for (let i = 0; i < ids.length; ++i) {
+                const candidate = panelById(ids[i]);
+
+                if (
+                    candidate
+                    && candidate.location === "bottom"
+                ) {
+                    panel = candidate;
+                    break;
+                }
+            }
+
+            if (!panel) {
+                throw new Error("Bottom panel not found");
+            }
+
+            for (
+                let i = 0;
+                i < panel.widgetIds.length;
+                ++i
+            ) {
+                const widget = panel.widgetById(
+                    panel.widgetIds[i]
+                );
+
+                if (
+                    widget
+                    && widget.type
+                        === "org.kde.plasma.icontasks"
+                ) {
+                    tasks = widget;
+                    break;
+                }
+            }
+
+            if (!tasks) {
+                throw new Error(
+                    "Icon Tasks widget not found"
+                );
+            }
+
+            tasks.currentConfigGroup = ["General"];
+
+            print(String(
+                tasks.readConfig("launchers", "")
+            ));
+            ' \
+            2>/dev/null \
+            || true
+    )"
+
+    if [[ "$launcher_live_order" == "$launcher_expected_order" ]]; then
+        pass "Live panel launcher order"
+    else
+        warning "Live panel launcher order differs"
+    fi
+else
+    warning "Live panel launcher diagnostic unavailable"
+fi
+
 printf '\n%sSYSTEM STATE%s: ' "$cyan" "$reset"
 if (( FAIL > 0 )); then
     printf '%sDEGRADED%s\n' "$red" "$reset"

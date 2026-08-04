@@ -136,6 +136,33 @@ Restore the configuration captured by the latest application with:
 The restore path uses the Plasma user systemd service and does not call
 `kquitapp6`.
 
+## Stage 2C — Panel launchers
+
+The Mobile Field Shell pins four dedicated applications in this order:
+
+- HELM CyberDeck OS,
+- Konsole as HELM Terminal,
+- Dolphin as HELM Data Vault,
+- Firefox as HELM Browser.
+
+The global icon theme remains Breeze. HELM uses a dedicated desktop entry,
+while Konsole, Dolphin and Firefox use local overrides with their original
+desktop IDs. Keeping those IDs preserves task grouping and prevents duplicate
+running-application icons.
+
+Apply the launcher integration with:
+
+    scripts/mobile/apply-stage2c-launchers.sh
+
+Restore the files and launcher order captured by the latest application with:
+
+    scripts/mobile/restore-stage2c-launchers.sh
+
+The installer copies the HELM start command into `~/.local/bin`, installs the
+four launcher icons under the HELM Mobile data directory, rebuilds the KDE
+application database and restarts Plasma Shell only through the user systemd
+service.
+
 ## Firefox Mobile chrome
 
 CyberDeck Mobile carries a compact Firefox 153 interface derived from the

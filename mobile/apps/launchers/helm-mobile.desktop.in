@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=HELM CyberDeck OS
+GenericName=Mobile Node Control Interface
+Comment=Launch the HELM CyberDeck control interface
+Exec=@HELM_START@
+TryExec=@HELM_START@
+Icon=@HELM_ICON@
+Terminal=true
+Categories=System;
+StartupNotify=true

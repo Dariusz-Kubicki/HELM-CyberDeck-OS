@@ -1,0 +1,32 @@
+{
+  "stage": "2c-panel-launchers",
+  "version": 1,
+  "global_icon_theme": "breeze",
+  "panel_launchers": "applications:helm-mobile.desktop,applications:org.kde.konsole.desktop,applications:org.kde.dolphin.desktop,applications:firefox.desktop",
+  "launchers": [
+    {
+      "name": "HELM CyberDeck OS",
+      "desktop_id": "helm-mobile.desktop",
+      "icon": "helm-mobile-core.svg",
+      "strategy": "dedicated"
+    },
+    {
+      "name": "HELM Terminal",
+      "desktop_id": "org.kde.konsole.desktop",
+      "icon": "helm-mobile-terminal.svg",
+      "strategy": "same-id-override"
+    },
+    {
+      "name": "HELM Data Vault",
+      "desktop_id": "org.kde.dolphin.desktop",
+      "icon": "helm-mobile-files.svg",
+      "strategy": "same-id-override"
+    },
+    {
+      "name": "HELM Browser",
+      "desktop_id": "firefox.desktop",
+      "icon": "helm-mobile-browser.svg",
+      "strategy": "same-id-override"
+    }
+  ]
+}

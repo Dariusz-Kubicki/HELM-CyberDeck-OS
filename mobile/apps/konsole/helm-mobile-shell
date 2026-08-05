@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+RC_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/helm-mobile/terminal.bashrc"
+
+if [[ ! -r "$RC_FILE" ]]; then
+    echo "HELM Mobile shell configuration is missing: $RC_FILE" >&2
+    exec /bin/bash -i
+fi
+
+exec /bin/bash \
+    --noprofile \
+    --rcfile "$RC_FILE" \
+    -i

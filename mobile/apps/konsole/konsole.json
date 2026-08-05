@@ -1,0 +1,28 @@
+{
+  "stage": "3a-konsole",
+  "version": 1,
+  "profile": {
+    "file": "HELMMobile.profile",
+    "template": "HELMMobile.profile.in",
+    "name": "HELM Mobile Terminal",
+    "default": true,
+    "color_scheme": "HELMMobile",
+    "font_family": "Hack",
+    "font_size": 11,
+    "terminal_margin": 8,
+    "cursor_shape": "block",
+    "blinking_cursor": true,
+    "scrollbar_position": "hidden"
+  },
+  "color_scheme": {
+    "file": "HELMMobile.colorscheme",
+    "description": "HELM Mobile",
+    "opacity": 0.92,
+    "blur": false
+  },
+  "shell": {
+    "command": "helm-mobile-shell",
+    "bashrc": "terminal.bashrc",
+    "prompt_label": "HELM MOBILE"
+  }
+}

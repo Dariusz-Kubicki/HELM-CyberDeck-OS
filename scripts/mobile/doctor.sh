@@ -742,6 +742,286 @@ else
     warning "Live panel launcher diagnostic unavailable"
 fi
 
+
+konsole_source_dir="$REPO/mobile/apps/konsole"
+konsole_manifest="$konsole_source_dir/konsole.json"
+konsole_profile_template="$konsole_source_dir/HELMMobile.profile.in"
+konsole_source_scheme="$konsole_source_dir/HELMMobile.colorscheme"
+konsole_source_bashrc="$konsole_source_dir/terminal.bashrc"
+konsole_source_wrapper="$konsole_source_dir/helm-mobile-shell"
+
+konsole_data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+konsole_config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
+
+konsole_installed_profile="$konsole_data_home/konsole/HELMMobile.profile"
+konsole_installed_scheme="$konsole_data_home/konsole/HELMMobile.colorscheme"
+konsole_installed_bashrc="$konsole_config_home/helm-mobile/terminal.bashrc"
+konsole_installed_wrapper="$HOME/.local/bin/helm-mobile-shell"
+
+if [[ -f "$konsole_manifest" ]] \
+    && "$PYTHON_BIN" \
+        - "$konsole_manifest" \
+        >/dev/null 2>&1 \
+        <<'PY_KONSOLE_MANIFEST'
+import json
+import sys
+from pathlib import Path
+
+payload = json.loads(
+    Path(sys.argv[1]).read_text(encoding="utf-8")
+)
+
+if payload.get("stage") != "3a-konsole":
+    raise SystemExit("invalid Konsole stage")
+
+profile = payload.get("profile", {})
+scheme = payload.get("color_scheme", {})
+shell = payload.get("shell", {})
+
+expected_profile = {
+    "file": "HELMMobile.profile",
+    "template": "HELMMobile.profile.in",
+    "name": "HELM Mobile Terminal",
+    "default": True,
+    "color_scheme": "HELMMobile",
+    "font_family": "Hack",
+    "font_size": 11,
+    "terminal_margin": 8,
+    "cursor_shape": "block",
+    "blinking_cursor": True,
+    "scrollbar_position": "hidden",
+}
+
+for key, expected_value in expected_profile.items():
+    if profile.get(key) != expected_value:
+        raise SystemExit(
+            f"invalid Konsole profile value: {key}"
+        )
+
+if scheme.get("file") != "HELMMobile.colorscheme":
+    raise SystemExit("invalid Konsole color scheme")
+
+if scheme.get("description") != "HELM Mobile":
+    raise SystemExit("invalid Konsole scheme description")
+
+if scheme.get("opacity") != 0.92:
+    raise SystemExit("invalid Konsole opacity")
+
+if scheme.get("blur") is not False:
+    raise SystemExit("Konsole blur must remain disabled")
+
+if shell.get("command") != "helm-mobile-shell":
+    raise SystemExit("invalid Konsole shell command")
+
+if shell.get("bashrc") != "terminal.bashrc":
+    raise SystemExit("invalid Konsole shell configuration")
+
+if shell.get("prompt_label") != "HELM MOBILE":
+    raise SystemExit("invalid Konsole prompt label")
+PY_KONSOLE_MANIFEST
+then
+    pass "HELM Mobile Konsole manifest"
+else
+    fail "HELM Mobile Konsole manifest"
+fi
+
+konsole_sources_ok=1
+
+for source in \
+    "$konsole_profile_template" \
+    "$konsole_source_scheme" \
+    "$konsole_source_bashrc" \
+    "$konsole_source_wrapper"
+do
+    if [[ ! -s "$source" ]]; then
+        konsole_sources_ok=0
+    fi
+done
+
+if [[ ! -x "$konsole_source_wrapper" ]]; then
+    konsole_sources_ok=0
+fi
+
+if (( konsole_sources_ok == 1 )); then
+    pass "HELM Mobile Konsole source assets"
+else
+    fail "HELM Mobile Konsole source assets"
+fi
+
+if "$PYTHON_BIN" \
+    - "$konsole_profile_template" \
+      "$konsole_installed_profile" \
+      "$konsole_source_scheme" \
+      "$konsole_installed_scheme" \
+      "$konsole_source_bashrc" \
+      "$konsole_installed_bashrc" \
+      "$konsole_source_wrapper" \
+      "$konsole_installed_wrapper" \
+    >/dev/null 2>&1 \
+    <<'PY_KONSOLE_INSTALLED'
+import sys
+from pathlib import Path
+
+(
+    profile_template,
+    installed_profile,
+    source_scheme,
+    installed_scheme,
+    source_bashrc,
+    installed_bashrc,
+    source_wrapper,
+    installed_wrapper,
+) = map(Path, sys.argv[1:])
+
+for path in (
+    profile_template,
+    installed_profile,
+    source_scheme,
+    installed_scheme,
+    source_bashrc,
+    installed_bashrc,
+    source_wrapper,
+    installed_wrapper,
+):
+    if not path.is_file():
+        raise SystemExit(f"missing file: {path}")
+
+expected_profile = profile_template.read_text(
+    encoding="utf-8"
+).replace(
+    "@HELM_MOBILE_SHELL@",
+    str(installed_wrapper),
+)
+
+if "@HELM_" in expected_profile:
+    raise SystemExit(
+        "unresolved Konsole profile placeholder"
+    )
+
+actual_profile = installed_profile.read_text(
+    encoding="utf-8"
+)
+
+if actual_profile != expected_profile:
+    raise SystemExit(
+        "installed Konsole profile differs"
+    )
+
+comparisons = (
+    (source_scheme, installed_scheme),
+    (source_bashrc, installed_bashrc),
+    (source_wrapper, installed_wrapper),
+)
+
+for source, installed in comparisons:
+    if source.read_bytes() != installed.read_bytes():
+        raise SystemExit(
+            f"installed asset differs: {installed}"
+        )
+PY_KONSOLE_INSTALLED
+then
+    pass "Installed Konsole assets match sources"
+else
+    fail "Installed Konsole assets differ from sources"
+fi
+
+konsole_profile_settings_ok=1
+
+grep -Fqx \
+    'Name=HELM Mobile Terminal' \
+    "$konsole_installed_profile" \
+    2>/dev/null \
+    || konsole_profile_settings_ok=0
+
+grep -Fqx \
+    'ColorScheme=HELMMobile' \
+    "$konsole_installed_profile" \
+    2>/dev/null \
+    || konsole_profile_settings_ok=0
+
+grep -Fqx \
+    'Font=Hack,11,-1,5,50,0,0,0,0,0' \
+    "$konsole_installed_profile" \
+    2>/dev/null \
+    || konsole_profile_settings_ok=0
+
+grep -Fqx \
+    'TerminalMargin=8' \
+    "$konsole_installed_profile" \
+    2>/dev/null \
+    || konsole_profile_settings_ok=0
+
+grep -Fqx \
+    'CursorShape=1' \
+    "$konsole_installed_profile" \
+    2>/dev/null \
+    || konsole_profile_settings_ok=0
+
+grep -Fqx \
+    'BlinkingCursorEnabled=true' \
+    "$konsole_installed_profile" \
+    2>/dev/null \
+    || konsole_profile_settings_ok=0
+
+grep -Fqx \
+    'ScrollBarPosition=2' \
+    "$konsole_installed_profile" \
+    2>/dev/null \
+    || konsole_profile_settings_ok=0
+
+grep -Fqx \
+    'Opacity=0.92' \
+    "$konsole_installed_scheme" \
+    2>/dev/null \
+    || konsole_profile_settings_ok=0
+
+if (( konsole_profile_settings_ok == 1 )); then
+    pass "HELM Mobile Konsole profile settings"
+else
+    fail "HELM Mobile Konsole profile settings"
+fi
+
+if command -v kreadconfig6 >/dev/null 2>&1; then
+    konsole_default_profile="$(
+        kreadconfig6 \
+            --file konsolerc \
+            --group 'Desktop Entry' \
+            --key DefaultProfile \
+            2>/dev/null \
+            || true
+    )"
+
+    if [[ "$konsole_default_profile" == "HELMMobile.profile" ]]; then
+        pass "HELM Mobile default Konsole profile"
+    else
+        fail \
+            "Default Konsole profile differs: ${konsole_default_profile:-not configured}"
+    fi
+else
+    fail "Default Konsole profile diagnostic unavailable"
+fi
+
+if [[ -x "$konsole_installed_wrapper" ]] \
+    && bash -n \
+        "$konsole_installed_wrapper" \
+        "$konsole_installed_bashrc" \
+        >/dev/null 2>&1
+then
+    pass "HELM Mobile terminal shell"
+else
+    fail "HELM Mobile terminal shell"
+fi
+
+if grep -Fq \
+    'HELM MOBILE' \
+    "$konsole_installed_bashrc" \
+    2>/dev/null
+then
+    pass "HELM Mobile terminal prompt"
+else
+    fail "HELM Mobile terminal prompt"
+fi
+
 printf '\n%sSYSTEM STATE%s: ' "$cyan" "$reset"
 if (( FAIL > 0 )); then
     printf '%sDEGRADED%s\n' "$red" "$reset"

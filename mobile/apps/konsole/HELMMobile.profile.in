@@ -1,0 +1,22 @@
+[Appearance]
+BoldIntense=true
+ColorScheme=HELMMobile
+Font=Hack,11,-1,5,50,0,0,0,0,0
+UseFontLineCharacters=true
+
+TerminalMargin=8
+[Cursor Options]
+CursorShape=1
+
+[General]
+Command=@HELM_MOBILE_SHELL@
+Icon=utilities-terminal
+Name=HELM Mobile Terminal
+Parent=FALLBACK/
+
+[Scrolling]
+HistoryMode=2
+ScrollBarPosition=2
+
+[Terminal Features]
+BlinkingCursorEnabled=true

@@ -163,6 +163,34 @@ four launcher icons under the HELM Mobile data directory, rebuilds the KDE
 application database and restarts Plasma Shell only through the user systemd
 service.
 
+## Stage 3A — HELM Mobile Konsole
+
+The approved field-terminal profile uses:
+
+- the Hack typeface at 11 pt,
+- a dark HELM palette with restrained cyan accents,
+- 92 percent terminal opacity with blur disabled,
+- an 8 px terminal margin,
+- a blinking block cursor,
+- hidden scroll bars with persistent history,
+- a compact two-line `HELM MOBILE` Bash prompt.
+
+The profile uses a dedicated shell wrapper rather than modifying the user's
+normal `.bashrc`. It is installed as `HELMMobile.profile` and becomes the
+default Konsole profile, so the existing same-ID panel launcher continues to
+group running terminal windows correctly.
+
+Apply the profile with:
+
+    scripts/mobile/apply-stage3a-konsole.sh
+
+Restore the Konsole configuration and files captured by the latest application
+with:
+
+    scripts/mobile/restore-stage3a-konsole.sh
+
+Already open terminal windows are deliberately left unchanged by both paths.
+
 ## Firefox Mobile chrome
 
 CyberDeck Mobile carries a compact Firefox 153 interface derived from the

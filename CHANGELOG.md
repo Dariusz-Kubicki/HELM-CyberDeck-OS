@@ -12,6 +12,7 @@ All notable changes to HELM CyberDeck OS are documented here.
 - CyberDeck Mobile Plasma Field Shell with the approved compact floating panel, translucent presentation, dodge-windows behavior and wallpaper v2.
 - HELM Mobile panel launchers for HELM, Konsole, Dolphin and Firefox with dedicated cyan icons, preserved Breeze system icons and same-ID window grouping.
 - HELM Mobile Konsole profile with a dedicated cyan terminal palette, Hack 11 font, compact two-line prompt, reversible installation and default-profile integration.
+- HELM Data Vault configuration for Dolphin with full-path navigation, compact Places icons, native current-version toolbar integration and reversible installation.
 
 
 ### Added

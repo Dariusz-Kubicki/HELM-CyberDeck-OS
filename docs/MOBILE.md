@@ -191,6 +191,36 @@ with:
 
 Already open terminal windows are deliberately left unchanged by both paths.
 
+## Stage 3B — HELM Data Vault
+
+Dolphin acts as the Mobile Node data vault. The approved configuration enables:
+
+- an editable location field,
+- complete paths in the location field and window title,
+- externally requested folders opening in new tabs,
+- a hidden menu bar,
+- fixed 22 px icons in the Places panel,
+- integration with the default HELM Mobile Konsole profile.
+
+The toolbar deliberately remains native to the installed Dolphin version.
+The reference Dolphin 26.04.3 emits a `QGridLayout` warning whenever a local
+`dolphinui.rc` override is loaded, even when the override contains only a
+minimal toolbar. The Mobile profile therefore removes local KXMLGUI overrides
+instead of copying the older Desktop Node toolbar definition.
+
+Apply the Data Vault configuration with:
+
+    scripts/mobile/apply-stage3b-dolphin.sh
+
+Restore the Dolphin configuration and KXMLGUI files captured by the latest
+application with:
+
+    scripts/mobile/restore-stage3b-dolphin.sh
+
+Dolphin must be closed while either path runs. The installer performs an
+offscreen startup diagnostic and rejects a configuration that reproduces the
+identified `QGridLayout` warning.
+
 ## Firefox Mobile chrome
 
 CyberDeck Mobile carries a compact Firefox 153 interface derived from the

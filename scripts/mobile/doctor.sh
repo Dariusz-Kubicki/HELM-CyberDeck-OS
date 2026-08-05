@@ -1022,6 +1022,220 @@ else
     fail "HELM Mobile terminal prompt"
 fi
 
+
+dolphin_source_dir="$REPO/mobile/apps/dolphin"
+dolphin_manifest="$dolphin_source_dir/dolphin.json"
+dolphin_source_rc="$dolphin_source_dir/dolphinrc.template"
+
+dolphin_data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+dolphin_config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
+
+dolphin_installed_rc="$dolphin_config_home/dolphinrc"
+dolphin_data_ui="$dolphin_data_home/kxmlgui5/dolphin/dolphinui.rc"
+dolphin_config_ui="$dolphin_config_home/kxmlgui5/dolphin/dolphinui.rc"
+
+if [[ -f "$dolphin_manifest" ]] \
+    && "$PYTHON_BIN" \
+        - "$dolphin_manifest" \
+        >/dev/null 2>&1 \
+        <<'PY_DOLPHIN_MANIFEST'
+import json
+import sys
+from pathlib import Path
+
+payload = json.loads(
+    Path(sys.argv[1]).read_text(encoding="utf-8")
+)
+
+if payload.get("stage") != "3b-dolphin":
+    raise SystemExit("invalid Dolphin stage")
+
+if payload.get("role") != "HELM Data Vault":
+    raise SystemExit("invalid Dolphin role")
+
+configuration = payload.get("configuration", {})
+toolbar = payload.get("toolbar", {})
+appearance = payload.get("appearance", {})
+integration = payload.get("integration", {})
+
+expected_configuration = {
+    "file": "dolphinrc.template",
+    "editable_location": True,
+    "show_full_path": True,
+    "show_full_path_in_titlebar": True,
+    "open_external_folders_in_new_tab": True,
+    "menu_bar": False,
+    "places_icon_size": 22,
+    "places_auto_resize": False,
+}
+
+for key, expected_value in expected_configuration.items():
+    if configuration.get(key) != expected_value:
+        raise SystemExit(
+            f"invalid Dolphin setting: {key}"
+        )
+
+if toolbar.get("strategy") != "native":
+    raise SystemExit(
+        "Dolphin toolbar strategy is not native"
+    )
+
+if toolbar.get("local_kxmlgui_override") is not False:
+    raise SystemExit(
+        "local Dolphin KXMLGUI override enabled"
+    )
+
+if appearance.get("global_color_scheme") != "BreezeDark":
+    raise SystemExit(
+        "invalid Dolphin color scheme"
+    )
+
+if appearance.get("global_icon_theme") != "breeze":
+    raise SystemExit(
+        "invalid Dolphin icon theme"
+    )
+
+if integration.get("terminal_profile") != "HELMMobile.profile":
+    raise SystemExit(
+        "invalid Dolphin terminal integration"
+    )
+
+if integration.get("panel_desktop_id") != "org.kde.dolphin.desktop":
+    raise SystemExit(
+        "invalid Dolphin desktop identifier"
+    )
+PY_DOLPHIN_MANIFEST
+then
+    pass "HELM Data Vault manifest"
+else
+    fail "HELM Data Vault manifest"
+fi
+
+if [[ -s "$dolphin_source_rc" ]]; then
+    pass "HELM Data Vault source configuration"
+else
+    fail "HELM Data Vault source configuration"
+fi
+
+if [[ -s "$dolphin_installed_rc" ]] \
+    && cmp -s \
+        "$dolphin_source_rc" \
+        "$dolphin_installed_rc"
+then
+    pass "Installed Dolphin configuration matches source"
+else
+    fail "Installed Dolphin configuration differs from source"
+fi
+
+dolphin_settings_ok=1
+
+grep -Fqx \
+    'EditableUrl=true' \
+    "$dolphin_installed_rc" \
+    2>/dev/null \
+    || dolphin_settings_ok=0
+
+grep -Fqx \
+    'OpenExternallyCalledFolderInNewTab=true' \
+    "$dolphin_installed_rc" \
+    2>/dev/null \
+    || dolphin_settings_ok=0
+
+grep -Fqx \
+    'ShowFullPath=true' \
+    "$dolphin_installed_rc" \
+    2>/dev/null \
+    || dolphin_settings_ok=0
+
+grep -Fqx \
+    'ShowFullPathInTitlebar=true' \
+    "$dolphin_installed_rc" \
+    2>/dev/null \
+    || dolphin_settings_ok=0
+
+grep -Fqx \
+    'Places Icons Auto-resize=false' \
+    "$dolphin_installed_rc" \
+    2>/dev/null \
+    || dolphin_settings_ok=0
+
+grep -Fqx \
+    'Places Icons Static Size=22' \
+    "$dolphin_installed_rc" \
+    2>/dev/null \
+    || dolphin_settings_ok=0
+
+grep -Fqx \
+    'MenuBar=Disabled' \
+    "$dolphin_installed_rc" \
+    2>/dev/null \
+    || dolphin_settings_ok=0
+
+if (( dolphin_settings_ok == 1 )); then
+    pass "HELM Data Vault settings"
+else
+    fail "HELM Data Vault settings"
+fi
+
+if [[ ! -e "$dolphin_data_ui" ]] \
+    && [[ ! -e "$dolphin_config_ui" ]]
+then
+    pass "Native Dolphin toolbar policy"
+else
+    fail "Local Dolphin KXMLGUI override detected"
+fi
+
+if command -v kreadconfig6 >/dev/null 2>&1; then
+    dolphin_color_scheme="$(
+        kreadconfig6 \
+            --file kdeglobals \
+            --group General \
+            --key ColorScheme \
+            2>/dev/null \
+            || true
+    )"
+
+    dolphin_icon_theme="$(
+        kreadconfig6 \
+            --file kdeglobals \
+            --group Icons \
+            --key Theme \
+            2>/dev/null \
+            || true
+    )"
+
+    if [[ "$dolphin_color_scheme" == "BreezeDark" ]] \
+        && [[ "$dolphin_icon_theme" == "breeze" ]]
+    then
+        pass "HELM Data Vault appearance"
+    else
+        fail \
+            "Dolphin appearance differs: ${dolphin_color_scheme:-unknown}, ${dolphin_icon_theme:-unknown}"
+    fi
+else
+    fail "Dolphin appearance diagnostic unavailable"
+fi
+
+if command -v kreadconfig6 >/dev/null 2>&1; then
+    dolphin_terminal_profile="$(
+        kreadconfig6 \
+            --file konsolerc \
+            --group 'Desktop Entry' \
+            --key DefaultProfile \
+            2>/dev/null \
+            || true
+    )"
+
+    if [[ "$dolphin_terminal_profile" == "HELMMobile.profile" ]]; then
+        pass "HELM Data Vault terminal integration"
+    else
+        fail \
+            "Dolphin terminal profile differs: ${dolphin_terminal_profile:-not configured}"
+    fi
+else
+    fail "Dolphin terminal integration diagnostic unavailable"
+fi
+
 printf '\n%sSYSTEM STATE%s: ' "$cyan" "$reset"
 if (( FAIL > 0 )); then
     printf '%sDEGRADED%s\n' "$red" "$reset"

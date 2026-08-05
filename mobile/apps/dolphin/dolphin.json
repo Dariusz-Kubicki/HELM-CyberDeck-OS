@@ -1,0 +1,28 @@
+{
+  "stage": "3b-dolphin",
+  "version": 1,
+  "role": "HELM Data Vault",
+  "configuration": {
+    "file": "dolphinrc.template",
+    "editable_location": true,
+    "show_full_path": true,
+    "show_full_path_in_titlebar": true,
+    "open_external_folders_in_new_tab": true,
+    "menu_bar": false,
+    "places_icon_size": 22,
+    "places_auto_resize": false
+  },
+  "toolbar": {
+    "strategy": "native",
+    "local_kxmlgui_override": false,
+    "reason": "Dolphin 26.04.3 emits a QGridLayout warning whenever a local dolphinui.rc override is loaded"
+  },
+  "appearance": {
+    "global_color_scheme": "BreezeDark",
+    "global_icon_theme": "breeze"
+  },
+  "integration": {
+    "terminal_profile": "HELMMobile.profile",
+    "panel_desktop_id": "org.kde.dolphin.desktop"
+  }
+}

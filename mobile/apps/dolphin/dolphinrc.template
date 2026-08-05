@@ -1,0 +1,19 @@
+MenuBar=Disabled
+
+[General]
+EditableUrl=true
+OpenExternallyCalledFolderInNewTab=true
+ShowFullPath=true
+ShowFullPathInTitlebar=true
+Version=202
+ViewPropsTimestamp=2026,7,22,0,20,2.983
+
+[KFileDialog Settings]
+Places Icons Auto-resize=false
+Places Icons Static Size=22
+
+[MainWindow]
+MenuBar=Disabled
+
+[PreviewSettings]
+Plugins=appimagethumbnail,cursorthumbnail,fontthumbnail,audiothumbnail,comicbookthumbnail,windowsexethumbnail,svgthumbnail,exrthumbnail,directorythumbnail,opendocumentthumbnail,jpegthumbnail,ebookthumbnail,windowsimagethumbnail,imagethumbnail,kraorathumbnail,djvuthumbnail,glycin-svg,glycin-heif,glycin-image-rs,glycin-jxl

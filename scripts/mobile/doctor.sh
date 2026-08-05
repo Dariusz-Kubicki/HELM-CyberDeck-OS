@@ -1023,6 +1023,155 @@ else
 fi
 
 
+
+firefox_root="${XDG_CONFIG_HOME:-$HOME/.config}/mozilla/firefox"
+firefox_source="$REPO/mobile/apps/firefox/userChrome.css"
+firefox_resolver="$REPO/scripts/mobile/resolve-firefox-profile.py"
+firefox_apply="$REPO/scripts/mobile/apply-firefox-preview.sh"
+firefox_restore="$REPO/scripts/mobile/restore-firefox-preview.sh"
+firefox_state="${XDG_DATA_HOME:-$HOME/.local/share}/helm-mobile/firefox-preview-state.txt"
+
+firefox_profile=""
+firefox_resolution=""
+
+if [[ -s "$firefox_source" ]] \
+    && [[ -x "$firefox_resolver" ]] \
+    && [[ -x "$firefox_apply" ]] \
+    && [[ -x "$firefox_restore" ]]
+then
+    pass "HELM Mobile Firefox source assets"
+else
+    fail "HELM Mobile Firefox source assets"
+fi
+
+if [[ -s "$firefox_root/profiles.ini" ]] \
+    && [[ -x "$firefox_resolver" ]]
+then
+    firefox_profile="$(
+        "$PYTHON_BIN" \
+            "$firefox_resolver" \
+            "$firefox_root" \
+            2>/dev/null \
+            || true
+    )"
+
+    firefox_resolution="$(
+        "$PYTHON_BIN" \
+            "$firefox_resolver" \
+            --method \
+            "$firefox_root" \
+            2>/dev/null \
+            || true
+    )"
+fi
+
+if [[ -n "$firefox_profile" ]] \
+    && [[ -d "$firefox_profile" ]] \
+    && [[ -n "$firefox_resolution" ]]
+then
+    pass \
+        "Firefox installation profile: $firefox_resolution"
+else
+    fail "Firefox installation-aware profile resolution"
+fi
+
+if [[ -n "$firefox_profile" ]] \
+    && [[ -s "$firefox_profile/chrome/userChrome.css" ]] \
+    && cmp -s \
+        "$firefox_source" \
+        "$firefox_profile/chrome/userChrome.css"
+then
+    pass "Installed Firefox chrome matches source"
+else
+    fail "Installed Firefox chrome differs from source"
+fi
+
+if [[ -n "$firefox_profile" ]] \
+    && [[ -s "$firefox_state" ]] \
+    && STATE_FILE="$firefox_state" \
+       EXPECTED_PROFILE="$firefox_profile" \
+       "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_FIREFOX_STATE_PROFILE'
+import os
+from pathlib import Path
+
+values = {}
+
+for line in Path(
+    os.environ["STATE_FILE"]
+).read_text(
+    encoding="utf-8"
+).splitlines():
+    if "=" not in line:
+        continue
+
+    key, value = line.split("=", 1)
+    values[key] = value
+
+if (
+    values.get("profile")
+    != os.environ["EXPECTED_PROFILE"]
+):
+    raise SystemExit(1)
+
+if not values.get("profile_resolution"):
+    raise SystemExit(1)
+PY_FIREFOX_STATE_PROFILE
+then
+    pass "Firefox state identifies installation profile"
+else
+    fail "Firefox state profile differs from resolver"
+fi
+
+firefox_source_sha="$(
+    sha256sum "$firefox_source" \
+        2>/dev/null \
+        | awk '{print $1}'
+)"
+
+firefox_state_sha="$(
+    awk -F= \
+        '$1 == "source_sha256" {print $2; exit}' \
+        "$firefox_state" \
+        2>/dev/null \
+        || true
+)"
+
+if [[ -n "$firefox_source_sha" ]] \
+    && [[ "$firefox_state_sha" == "$firefox_source_sha" ]]
+then
+    pass "Firefox state source checksum"
+else
+    fail "Firefox state source checksum"
+fi
+
+if [[ -n "$firefox_profile" ]] \
+    && [[ -s "$firefox_profile/user.js" ]] \
+    && USER_JS="$firefox_profile/user.js" \
+       "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_FIREFOX_PREF'
+import os
+import re
+from pathlib import Path
+
+text = Path(os.environ["USER_JS"]).read_text(
+    encoding="utf-8",
+    errors="replace",
+)
+
+pattern = re.compile(
+    r'user_pref\(\s*'
+    r'"toolkit\.legacyUserProfileCustomizations\.stylesheets"'
+    r'\s*,\s*(true|false)\s*\)\s*;'
+)
+
+if pattern.findall(text) != ["true"]:
+    raise SystemExit(1)
+PY_FIREFOX_PREF
+then
+    pass "Firefox profile stylesheet support"
+else
+    fail "Firefox profile stylesheet support"
+fi
+
 dolphin_source_dir="$REPO/mobile/apps/dolphin"
 dolphin_manifest="$dolphin_source_dir/dolphin.json"
 dolphin_source_rc="$dolphin_source_dir/dolphinrc.template"

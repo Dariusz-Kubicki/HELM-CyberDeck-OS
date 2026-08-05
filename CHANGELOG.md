@@ -9,6 +9,7 @@ All notable changes to HELM CyberDeck OS are documented here.
 - CyberDeck Mobile Stage 2A visual foundation with a minimalist field-node wallpaper
   and a safe Plasma appearance application script.
 - HELM Mobile Firefox 153 chrome theme with compact cyberdeck styling, XDG profile detection and reversible installation.
+- Correct Firefox Mobile profile resolution by prioritizing the installation-locked profile over a stale `profiles.ini` default, with regression tests and diagnostic coverage.
 - CyberDeck Mobile Plasma Field Shell with the approved compact floating panel, translucent presentation, dodge-windows behavior and wallpaper v2.
 - HELM Mobile panel launchers for HELM, Konsole, Dolphin and Firefox with dedicated cyan icons, preserved Breeze system icons and same-ID window grouping.
 - HELM Mobile Konsole profile with a dedicated cyan terminal palette, Hack 11 font, compact two-line prompt, reversible installation and default-profile integration.

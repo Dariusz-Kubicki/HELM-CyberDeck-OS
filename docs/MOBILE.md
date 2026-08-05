@@ -223,6 +223,22 @@ identified `QGridLayout` warning.
 
 ## Firefox Mobile chrome
 
+### Installation-aware Firefox profile resolution
+
+Firefox can contain both a `profiles.ini` default and a separate profile
+locked to the installed Firefox build through `installs.ini` or an
+`Install...` section. HELM Mobile treats the installation mapping as the
+source of truth. A locked installation profile takes priority over the
+generic `Default=1` profile flag.
+
+The resolver is available at:
+
+    scripts/mobile/resolve-firefox-profile.py
+
+The Firefox apply script records both the resolved profile and the resolution
+method in its state file. Mobile Doctor verifies the resolver result, installed
+`userChrome.css`, state checksum and stylesheet preference.
+
 CyberDeck Mobile carries a compact Firefox 153 interface derived from the
 Desktop Node HELM browser theme. The mobile variant preserves the dark terminal
 palette and restrained cyan accents while reducing tab and navigation chrome

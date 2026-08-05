@@ -1385,6 +1385,233 @@ else
     fail "Dolphin terminal integration diagnostic unavailable"
 fi
 
+
+
+lockscreen_source_dir="$REPO/mobile/plasma/lockscreen"
+lockscreen_manifest="$lockscreen_source_dir/lockscreen.json"
+lockscreen_overlay_source="$lockscreen_source_dir/HELMOverlay.qml"
+
+lockscreen_apply="$REPO/scripts/mobile/apply-stage4b-lockscreen.sh"
+lockscreen_restore="$REPO/scripts/mobile/restore-stage4b-lockscreen.sh"
+
+lockscreen_data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
+lockscreen_config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
+
+lockscreen_target_shell="$lockscreen_data_home/plasma/shells/org.kde.plasma.desktop"
+lockscreen_installed_lock="$lockscreen_target_shell/contents/lockscreen/LockScreen.qml"
+lockscreen_installed_overlay="$lockscreen_target_shell/contents/lockscreen/HELMOverlay.qml"
+
+lockscreen_wallpaper_source="$REPO/mobile/assets/wallpapers/helm-mobile-field-node-v2.svg"
+lockscreen_wallpaper_target="$lockscreen_data_home/helm-mobile/wallpapers/helm-mobile-field-node-v2.svg"
+
+lockscreen_config="$lockscreen_config_home/kscreenlockerrc"
+lockscreen_state="$lockscreen_data_home/helm-mobile/stage4b-lockscreen-last-apply.json"
+
+if [[ -s "$lockscreen_manifest" ]] \
+    && "$PYTHON_BIN" \
+        - "$lockscreen_manifest" \
+        >/dev/null 2>&1 \
+        <<'PY_LOCK_MANIFEST'
+import json
+import sys
+from pathlib import Path
+
+payload = json.loads(
+    Path(sys.argv[1]).read_text(
+        encoding="utf-8"
+    )
+)
+
+if payload.get("stage") != "4b-security-lock":
+    raise SystemExit(1)
+
+if payload.get("role") != "HELM Mobile Security Lock":
+    raise SystemExit(1)
+
+if (
+    payload.get("authentication", {}).get("modified")
+    is not False
+):
+    raise SystemExit(1)
+
+appearance = payload.get("appearance", {})
+
+if appearance.get("security_panel_background") != "#FF02070B":
+    raise SystemExit(1)
+
+if appearance.get("status_panel_background") != "#FC02070B":
+    raise SystemExit(1)
+
+if appearance.get("status_panel_bottom_margin") != 132:
+    raise SystemExit(1)
+PY_LOCK_MANIFEST
+then
+    pass "HELM Mobile Security Lock manifest"
+else
+    fail "HELM Mobile Security Lock manifest"
+fi
+
+if [[ -s "$lockscreen_overlay_source" ]] \
+    && [[ -x "$lockscreen_apply" ]] \
+    && [[ -x "$lockscreen_restore" ]] \
+    && [[ -s "$lockscreen_wallpaper_source" ]]
+then
+    pass "HELM Mobile Security Lock source assets"
+else
+    fail "HELM Mobile Security Lock source assets"
+fi
+
+if pacman -Q kscreenlocker >/dev/null 2>&1 \
+    && systemctl is-active \
+        --quiet \
+        plasmalogin.service
+then
+    pass "Plasma Security Lock runtime"
+else
+    fail "Plasma Security Lock runtime"
+fi
+
+if [[ -s "$lockscreen_installed_overlay" ]] \
+    && cmp -s \
+        "$lockscreen_overlay_source" \
+        "$lockscreen_installed_overlay"
+then
+    pass "Installed Security Lock overlay matches source"
+else
+    fail "Installed Security Lock overlay differs from source"
+fi
+
+if [[ -s "$lockscreen_installed_lock" ]] \
+    && grep -Fq \
+        'HELM MOBILE SECURITY OVERLAY' \
+        "$lockscreen_installed_lock" \
+    && [[ "$(
+        grep -Fc \
+            'HELMOverlay {' \
+            "$lockscreen_installed_lock"
+    )" == "1" ]]
+then
+    pass "Plasma lock-screen overlay integration"
+else
+    fail "Plasma lock-screen overlay integration"
+fi
+
+lockscreen_expected_uri="$(
+    LOCK_WALLPAPER="$lockscreen_wallpaper_target" \
+    "$PYTHON_BIN" - <<'PY_LOCK_URI'
+import os
+from pathlib import Path
+
+print(
+    Path(
+        os.environ["LOCK_WALLPAPER"]
+    ).resolve().as_uri()
+)
+PY_LOCK_URI
+)"
+
+lockscreen_live_theme="$(
+    kreadconfig6 \
+        --file kscreenlockerrc \
+        --group Greeter \
+        --key Theme \
+        2>/dev/null \
+        || true
+)"
+
+lockscreen_live_plugin="$(
+    kreadconfig6 \
+        --file kscreenlockerrc \
+        --group Greeter \
+        --key WallpaperPlugin \
+        2>/dev/null \
+        || true
+)"
+
+lockscreen_live_wallpaper="$(
+    kreadconfig6 \
+        --file kscreenlockerrc \
+        --group Greeter \
+        --group Wallpaper \
+        --group org.kde.image \
+        --group General \
+        --key Image \
+        2>/dev/null \
+        || true
+)"
+
+if [[ "$lockscreen_live_theme" == "org.kde.plasma.desktop" ]] \
+    && [[ "$lockscreen_live_plugin" == "org.kde.image" ]] \
+    && [[ "$lockscreen_live_wallpaper" == "$lockscreen_expected_uri" ]] \
+    && [[ -s "$lockscreen_wallpaper_target" ]] \
+    && cmp -s \
+        "$lockscreen_wallpaper_source" \
+        "$lockscreen_wallpaper_target"
+then
+    pass "HELM Mobile Security Lock wallpaper"
+else
+    fail "HELM Mobile Security Lock wallpaper"
+fi
+
+if [[ -s "$lockscreen_state" ]] \
+    && LOCK_STATE="$lockscreen_state" \
+       OVERLAY_SOURCE="$lockscreen_overlay_source" \
+       WALLPAPER_SOURCE="$lockscreen_wallpaper_source" \
+       EXPECTED_SHELL="$lockscreen_target_shell" \
+       EXPECTED_CONFIG="$lockscreen_config" \
+       EXPECTED_WALLPAPER="$lockscreen_wallpaper_target" \
+       "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_LOCK_STATE'
+import hashlib
+import json
+import os
+from pathlib import Path
+
+
+def digest(path: Path) -> str:
+    return hashlib.sha256(
+        path.read_bytes()
+    ).hexdigest()
+
+
+state = json.loads(
+    Path(
+        os.environ["LOCK_STATE"]
+    ).read_text(
+        encoding="utf-8"
+    )
+)
+
+if state.get("stage") != "4b-security-lock":
+    raise SystemExit(1)
+
+if state.get("target_shell") != os.environ["EXPECTED_SHELL"]:
+    raise SystemExit(1)
+
+if state.get("lock_config") != os.environ["EXPECTED_CONFIG"]:
+    raise SystemExit(1)
+
+if state.get("wallpaper_target") != os.environ["EXPECTED_WALLPAPER"]:
+    raise SystemExit(1)
+
+if not Path(state.get("recovery", "")).is_dir():
+    raise SystemExit(1)
+
+if state.get("overlay_sha256") != digest(
+    Path(os.environ["OVERLAY_SOURCE"])
+):
+    raise SystemExit(1)
+
+if state.get("wallpaper_sha256") != digest(
+    Path(os.environ["WALLPAPER_SOURCE"])
+):
+    raise SystemExit(1)
+PY_LOCK_STATE
+then
+    pass "HELM Mobile Security Lock recovery state"
+else
+    fail "HELM Mobile Security Lock recovery state"
+fi
+
 printf '\n%sSYSTEM STATE%s: ' "$cyan" "$reset"
 if (( FAIL > 0 )); then
     printf '%sDEGRADED%s\n' "$red" "$reset"

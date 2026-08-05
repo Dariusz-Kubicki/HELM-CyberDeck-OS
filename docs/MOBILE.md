@@ -256,3 +256,27 @@ Apply the preview only while Firefox is completely closed:
 Restore the previous profile styling with:
 
     scripts/mobile/restore-firefox-preview.sh
+
+## Stage 4B — HELM Mobile Security Lock
+
+The approved ThinkPad Security Lock keeps Plasma's native KScreenLocker
+authentication and adds a visual-only HELM Mobile layer. The design uses the
+field-node wallpaper, an opaque upper-left security panel and a raised
+lower-right status panel that avoids the wallpaper signature.
+
+The installer creates a user-local copy of the current Plasma desktop shell,
+adds `HELMOverlay.qml` to the existing lock-screen implementation and records a
+complete recovery state. It does not replace PAM, alter password handling,
+change automatic-lock timing or modify session unlocking.
+
+Apply the approved Security Lock with:
+
+    scripts/mobile/apply-stage4b-lockscreen.sh
+
+Restore the files captured by the latest application with:
+
+    scripts/mobile/restore-stage4b-lockscreen.sh
+
+The installation requires neither a Plasma restart nor a reboot. Mobile Doctor
+verifies the manifest, Plasma runtime, installed overlay, wallpaper,
+configuration and recovery state.

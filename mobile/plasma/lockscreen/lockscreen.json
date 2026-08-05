@@ -1,0 +1,28 @@
+{
+  "stage": "4b-security-lock",
+  "role": "HELM Mobile Security Lock",
+  "platform": "KDE Plasma 6",
+  "authentication": {
+    "provider": "Plasma KScreenLocker",
+    "modified": false
+  },
+  "shell": {
+    "package": "org.kde.plasma.desktop",
+    "strategy": "local-shell-overlay",
+    "overlay": "HELMOverlay.qml",
+    "integration_marker": "HELM MOBILE SECURITY OVERLAY"
+  },
+  "appearance": {
+    "font_family": "Hack",
+    "accent": "#42E8FF",
+    "security_panel_background": "#FF02070B",
+    "status_panel_background": "#FC02070B",
+    "status_panel_bottom_margin": 132,
+    "wallpaper": "helm-mobile-field-node-v2.svg"
+  },
+  "behavior": {
+    "automatic_lock_settings_modified": false,
+    "authentication_flow_modified": false,
+    "session_unlocking_modified": false
+  }
+}

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#04070a"/>
+      <stop offset="55%" stop-color="#071017"/>
+      <stop offset="100%" stop-color="#020406"/>
+    </linearGradient>
+
+    <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse">
+      <path d="M 56 0 L 0 0 0 56" fill="none" stroke="#15303b" stroke-width="1" stroke-opacity="0.18"/>
+    </pattern>
+
+    <pattern id="scan" width="8" height="8" patternUnits="userSpaceOnUse">
+      <rect width="8" height="1" fill="#9feaff" opacity="0.02"/>
+    </pattern>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <rect width="1920" height="1080" fill="url(#grid)"/>
+  <rect width="1920" height="1080" fill="url(#scan)"/>
+
+  <g stroke="#48dfff" stroke-opacity="0.35" fill="none">
+    <path d="M0 880 C 260 820, 520 810, 820 850 C 1080 885, 1440 890, 1920 820" stroke-width="1.4"/>
+    <path d="M0 930 C 220 900, 560 900, 860 950 C 1160 1000, 1500 980, 1920 920" stroke-width="1.1" stroke-opacity="0.22"/>
+    <path d="M0 760 C 180 730, 380 735, 570 770 C 780 810, 1010 810, 1260 770" stroke-width="0.8" stroke-opacity="0.15"/>
+  </g>
+
+  <g filter="url(#glow)">
+    <circle cx="110" cy="92" r="3" fill="#48dfff"/>
+    <line x1="128" y1="92" x2="420" y2="92" stroke="#48dfff" stroke-width="2" stroke-opacity="0.55"/>
+    <line x1="128" y1="108" x2="298" y2="108" stroke="#48dfff" stroke-width="1" stroke-opacity="0.32"/>
+  </g>
+
+  <g font-family="JetBrains Mono, monospace" fill="#9ddfff">
+    <text x="78" y="64" font-size="16" letter-spacing="3" opacity="0.88">HELM MOBILE NODE</text>
+    <text x="78" y="136" font-size="11" letter-spacing="2" opacity="0.42">FIELD TERMINAL / LOW VISIBILITY / THINKPAD T14</text>
+  </g>
+
+  <g stroke="#48dfff" stroke-opacity="0.16" fill="none">
+    <circle cx="1610" cy="850" r="96" stroke-width="1"/>
+    <circle cx="1610" cy="850" r="64" stroke-width="0.9"/>
+    <line x1="1514" y1="850" x2="1706" y2="850" stroke-width="0.8"/>
+    <line x1="1610" y1="754" x2="1610" y2="946" stroke-width="0.8"/>
+  </g>
+
+  <g font-family="JetBrains Mono, monospace" fill="#84d6ef">
+    <text x="1420" y="1012" font-size="11" letter-spacing="2" opacity="0.28">CYBERDECK-LAPTOP // HELM FIELD SHELL</text>
+  </g>
+</svg>

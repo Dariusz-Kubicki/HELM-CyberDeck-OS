@@ -276,10 +276,60 @@ do
     check_command "$command_name" "Command: $command_name"
 done
 
-if systemctl is-enabled --quiet sddm.service 2>/dev/null; then
-    warning "SDDM is already enabled before Access Gate installation"
+access_gate_manifest="$REPO/mobile/sddm/access-gate.json"
+access_gate_source="$REPO/mobile/sddm/helm-mobile"
+access_gate_system="/usr/share/sddm/themes/helm-mobile"
+access_gate_config="/etc/sddm.conf.d/90-helm-mobile.conf"
+access_gate_state="${XDG_DATA_HOME:-$HOME/.local/share}/helm-mobile/stage4c-sddm-candidate-last-apply.json"
+
+if [[ -s "$access_gate_manifest" ]] \
+    && [[ -s "$access_gate_source/Main.qml" ]] \
+    && [[ -s "$access_gate_source/metadata.desktop" ]] \
+    && [[ -s "$access_gate_source/theme.conf" ]] \
+    && [[ -s "$access_gate_source/wallpaper.svg" ]]
+then
+    pass "HELM Mobile Access Gate source assets"
 else
-    pass "SDDM staged but not enabled"
+    fail "HELM Mobile Access Gate source assets"
+fi
+
+display_manager_target="$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null || true)"
+
+if [[ "$display_manager_target" == "/usr/lib/systemd/system/sddm.service" ]] \
+    && systemctl is-active --quiet sddm.service \
+    && systemctl is-enabled --quiet sddm.service
+then
+    pass "HELM Mobile Access Gate runtime"
+
+    access_gate_matches=1
+
+    for access_gate_asset in Main.qml metadata.desktop theme.conf wallpaper.svg; do
+        if ! cmp -s \
+            "$access_gate_source/$access_gate_asset" \
+            "$access_gate_system/$access_gate_asset"
+        then
+            access_gate_matches=0
+        fi
+    done
+
+    if (( access_gate_matches == 1 )) \
+        && grep -Fqx 'Current=helm-mobile' "$access_gate_config" 2>/dev/null \
+        && grep -Fqx 'QtVersion=6' "$access_gate_system/metadata.desktop" 2>/dev/null
+    then
+        pass "Installed Access Gate matches source"
+    else
+        fail "Installed Access Gate differs from source"
+    fi
+
+    if [[ -s "$access_gate_state" ]] \
+        && [[ "$(jq -r '.real_login_verified // false' "$access_gate_state" 2>/dev/null)" == "true" ]]
+    then
+        pass "Access Gate real login verified"
+    else
+        warning "Access Gate real login not yet verified"
+    fi
+else
+    warning "HELM Mobile Access Gate is staged but inactive"
 fi
 
 if grep -Rqs 'plymouth' \
@@ -1461,15 +1511,29 @@ else
     fail "HELM Mobile Security Lock source assets"
 fi
 
+lock_runtime_state=""
+
 if pacman -Q kscreenlocker >/dev/null 2>&1 \
-    && systemctl is-active \
-        --quiet \
-        plasmalogin.service
+    && command -v qdbus6 >/dev/null 2>&1
 then
-    pass "Plasma Security Lock runtime"
-else
-    fail "Plasma Security Lock runtime"
+    lock_runtime_state="$(
+        qdbus6 \
+            org.freedesktop.ScreenSaver \
+            /ScreenSaver \
+            org.freedesktop.ScreenSaver.GetActive \
+            2>/dev/null \
+            || true
+    )"
 fi
+
+case "$lock_runtime_state" in
+    true | false)
+        pass "Plasma Security Lock runtime"
+        ;;
+    *)
+        fail "Plasma Security Lock runtime"
+        ;;
+esac
 
 if [[ -s "$lockscreen_installed_overlay" ]] \
     && cmp -s \

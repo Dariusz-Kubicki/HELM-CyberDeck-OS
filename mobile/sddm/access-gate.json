@@ -1,0 +1,55 @@
+{
+  "stage": "4c-sddm-access-gate",
+  "version": "1.0",
+  "node": "mobile",
+  "architecture": {
+    "access_gate": {
+      "provider": "sddm",
+      "purpose": "login, logout and new session creation"
+    },
+    "security_lock": {
+      "provider": "kscreenlocker",
+      "purpose": "existing session lock, idle lock and resume lock"
+    },
+    "interfaces_are_independent": true
+  },
+  "display_manager": {
+    "service": "sddm.service",
+    "theme": "helm-mobile",
+    "qt_version": 6,
+    "greeter": "/usr/bin/sddm-greeter-qt6"
+  },
+  "authentication": {
+    "backend": "native-sddm",
+    "pam_modified": false,
+    "password_handling_modified": false,
+    "session_launch_modified": false,
+    "authentication_flow_modified": false
+  },
+  "integration": {
+    "plasma_login_manager_modified": false,
+    "ld_preload_used": false,
+    "binary_interposition_used": false,
+    "qml_injection_used": false
+  },
+  "controls": {
+    "session_selector": "helm-dark",
+    "authenticate_button": "helm-dark",
+    "suspend": "native-sddm-capability",
+    "reboot": "native-sddm-capability",
+    "power_off": "native-sddm-capability"
+  },
+  "validation": {
+    "qt6_preview_verified": true,
+    "system_location_preview_verified": true,
+    "real_login_verified": true,
+    "journal_evidence_verified": true,
+    "security_lock_preserved": true
+  },
+  "checksums": {
+    "Main.qml": "ec8960309052e143bac975da7af91f35533083d419a06d30804f15d74c19e010",
+    "metadata.desktop": "074cc282722e8df9287378efff0f996ed896870a72bfe72f2e4f4416d7a4115a",
+    "theme.conf": "78a16d2fbe317a5176faa62dda7345b9f1c62307c9fd3eadf88aa073b8e22f8b",
+    "wallpaper.svg": "721fc6e1368656f7984dcdae81349ddd436b36725695e885cfe039968537fb34"
+  }
+}

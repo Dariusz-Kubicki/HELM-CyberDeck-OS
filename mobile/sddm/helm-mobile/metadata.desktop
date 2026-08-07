@@ -1,0 +1,13 @@
+[SddmGreeterTheme]
+Name=HELM Mobile Access Gate
+Description=HELM CyberDeck Mobile field-node login interface
+Author=Dariusz Kubicki
+Copyright=2026 Dariusz Kubicki
+License=GPL-3.0-or-later
+Type=sddm-theme
+Version=1.0
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=helm-mobile
+Theme-API=2.0
+QtVersion=6

@@ -15,6 +15,8 @@ All notable changes to HELM CyberDeck OS are documented here.
 - HELM Mobile Konsole profile with a dedicated cyan terminal palette, Hack 11 font, compact two-line prompt, reversible installation and default-profile integration.
 - HELM Data Vault configuration for Dolphin with full-path navigation, compact Places icons, native current-version toolbar integration and reversible installation.
 - HELM Mobile Security Lock with an approved cyberdeck overlay, native Plasma authentication, reversible installation and installed-state diagnostics.
+- HELM Mobile SDDM Access Gate with a Qt 6 greeter, dark HELM session and power controls, native authentication, real-login verification and reversible installation.
+- Independent Stage 4B KScreenLocker Security Lock and Stage 4C SDDM Access Gate lifecycle documentation and diagnostics.
 
 
 ### Added

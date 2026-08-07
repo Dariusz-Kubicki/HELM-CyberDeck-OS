@@ -1,0 +1,36 @@
+{
+  "stage": "5b-mobile-mode-policy",
+  "role": "HELM Mobile adaptive mode power policy",
+  "version": 1,
+  "precedence": {
+    "explicit_mode_power_profile": "wins-when-not-unchanged",
+    "mobile_policy": "used-when-mode-power-profile-is-unchanged"
+  },
+  "fallbacks": {
+    "unknown_power_source": "balanced",
+    "unavailable_profile": "balanced",
+    "apply_failure": "continue-workspace-activation"
+  },
+  "modes": {
+    "chill": {
+      "battery": "power-saver",
+      "ac": "balanced"
+    },
+    "focus": {
+      "battery": "power-saver",
+      "ac": "balanced"
+    },
+    "maker": {
+      "battery": "balanced",
+      "ac": "balanced"
+    },
+    "development": {
+      "battery": "balanced",
+      "ac": "performance"
+    },
+    "command": {
+      "battery": "balanced",
+      "ac": "balanced"
+    }
+  }
+}

@@ -38,6 +38,7 @@ from services.data_service import (
 from services.health_service import HealthReport, HealthService
 from services.log_service import LogService
 from services.mode_service import ModeService
+from services.mobile_power_policy import MobilePowerPolicyService
 from services.settings_service import HelmSettings, SettingsService
 from services.workspace_service import WorkspaceService
 from services.system_action_service import SystemActionService
@@ -121,6 +122,7 @@ class Helm(App):
         self.log_service = LogService()
         self.settings_service = SettingsService()
         self.mode_service = ModeService()
+        self.mobile_power_policy = MobilePowerPolicyService()
         self.workspace_service = WorkspaceService()
         self.system_action_service = SystemActionService()
         self.alert_service = AlertService()
@@ -294,14 +296,28 @@ class Helm(App):
         )
 
         if active_mode is not None:
-            power_profile = self.mode_service.apply_power_profile(
-                active_mode.power_profile
+            power_policy = self.mobile_power_policy.apply(
+                self.mode_service,
+                active_mode.mode_id,
+                active_mode.power_profile,
             )
 
             self.query_one(ModesScreen).update_active_mode(
                 active_mode.mode_id,
-                power_profile,
+                power_policy.applied_profile,
                 f"{active_mode.name} MODE RESTORED",
+            )
+
+            self.log_service.info(
+                "POWER",
+                (
+                    f"{active_mode.name}: "
+                    f"source={power_policy.power_source}; "
+                    f"policy={power_policy.policy_profile}; "
+                    f"resolved={power_policy.resolved_profile}; "
+                    f"applied={power_policy.applied_profile}; "
+                    f"status={power_policy.status}"
+                ),
             )
         else:
             self.query_one(ModesScreen).update_active_mode(
@@ -1351,15 +1367,17 @@ class Helm(App):
             self.query_one(SettingsScreen).load_settings(settings)
             self._restart_refresh_timer()
 
-            power_profile = self.mode_service.apply_power_profile(
-                mode.power_profile
+            power_policy = self.mobile_power_policy.apply(
+                self.mode_service,
+                mode.mode_id,
+                mode.power_profile,
             )
 
             launch_results = self.workspace_service.launch_mode(mode)
 
             screen.show_activation(
                 mode,
-                power_profile,
+                power_policy.applied_profile,
                 launch_results,
             )
 
@@ -1372,6 +1390,19 @@ class Helm(App):
                         f"detail={result.detail}"
                     ),
                 )
+
+            self.log_service.info(
+                "POWER",
+                (
+                    f"{mode.name}: "
+                    f"source={power_policy.power_source}; "
+                    f"policy={power_policy.policy_profile}; "
+                    f"resolved={power_policy.resolved_profile}; "
+                    f"applied={power_policy.applied_profile}; "
+                    f"status={power_policy.status}; "
+                    f"fallback={power_policy.fallback_reason or 'none'}"
+                ),
+            )
 
             self.log_service.info(
                 "MODE",

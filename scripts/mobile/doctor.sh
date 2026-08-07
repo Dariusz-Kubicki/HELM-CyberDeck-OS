@@ -1826,6 +1826,85 @@ else
     fail "Mobile power telemetry integration"
 fi
 
+
+
+mobile_mode_policy_manifest="$REPO/mobile/modes/power-policy.json"
+mobile_mode_policy_service="$REPO/services/mobile_power_policy.py"
+
+if [[ -s "$mobile_mode_policy_manifest" ]] \
+    && POLICY_FILE="$mobile_mode_policy_manifest" \
+       "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_MOBILE_MODE_POLICY_MANIFEST'
+import json
+import os
+from pathlib import Path
+
+payload = json.loads(
+    Path(os.environ["POLICY_FILE"]).read_text(encoding="utf-8")
+)
+
+expected = {
+    "chill": {"battery": "power-saver", "ac": "balanced"},
+    "focus": {"battery": "power-saver", "ac": "balanced"},
+    "maker": {"battery": "balanced", "ac": "balanced"},
+    "development": {"battery": "balanced", "ac": "performance"},
+    "command": {"battery": "balanced", "ac": "balanced"},
+}
+
+if payload.get("stage") != "5b-mobile-mode-policy":
+    raise SystemExit(1)
+if payload.get("role") != "HELM Mobile adaptive mode power policy":
+    raise SystemExit(1)
+if payload.get("modes") != expected:
+    raise SystemExit(1)
+
+fallbacks = payload.get("fallbacks", {})
+if fallbacks.get("unknown_power_source") != "balanced":
+    raise SystemExit(1)
+if fallbacks.get("unavailable_profile") != "balanced":
+    raise SystemExit(1)
+if fallbacks.get("apply_failure") != "continue-workspace-activation":
+    raise SystemExit(1)
+PY_MOBILE_MODE_POLICY_MANIFEST
+then
+    pass "HELM Mobile adaptive mode power policy"
+else
+    fail "HELM Mobile adaptive mode power policy"
+fi
+
+if [[ -s "$mobile_mode_policy_service" ]] \
+    && PYTHONPATH="$REPO" "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_MOBILE_MODE_POLICY_RESOLVER'
+from services.mobile_power_policy import (
+    MobilePowerPolicyService,
+    ModePowerDecision,
+)
+
+service = MobilePowerPolicyService()
+decision = service.resolve("command", "unchanged")
+
+if not isinstance(decision, ModePowerDecision):
+    raise SystemExit(1)
+if service.load_error:
+    raise SystemExit(1)
+if decision.resolved_profile != "balanced":
+    raise SystemExit(1)
+if decision.power_source not in {"AC", "BATTERY", "UNKNOWN"}:
+    raise SystemExit(1)
+PY_MOBILE_MODE_POLICY_RESOLVER
+then
+    pass "Mobile adaptive power-policy resolver"
+else
+    fail "Mobile adaptive power-policy resolver"
+fi
+
+if grep -Fq \
+        'from services.mobile_power_policy import MobilePowerPolicyService' \
+        "$REPO/app/main.py" \
+    && [[ "$(grep -Fc 'self.mobile_power_policy.apply(' "$REPO/app/main.py")" == "2" ]]
+then
+    pass "Mobile mode power-policy integration"
+else
+    fail "Mobile mode power-policy integration"
+fi
 printf '\n%sSYSTEM STATE%s: ' "$cyan" "$reset"
 if (( FAIL > 0 )); then
     printf '%sDEGRADED%s\n' "$red" "$reset"

@@ -27,19 +27,30 @@ The monitor prefers Linux power-supply sysfs and only queries `powerprofilesctl 
 
 `DataService` treats power telemetry as fault-tolerant. A power-reading failure degrades that telemetry cycle and falls back to the previous `PowerSample` (or an explicit unavailable sample); it must not make storage, device, project or resource telemetry disappear.
 
-## Planned Stage 5B — Mobile mode policy
+## Stage 5B — Mobile mode policy
 
-Stage 5B will harden the existing workspace activation transaction and define explicit Mobile Node power behavior for the approved modes. It will not create a parallel mode database.
+Stage 5B adds a Mobile-specific adaptive power policy without creating a second workspace database. The existing `ModeService` still owns mode identity, telemetry interval, target screen, navigation logging and the explicit per-mode `power_profile`.
 
-The current mode identities remain:
+When a mode keeps `power_profile` at `unchanged`, the Mobile policy resolves the platform profile from the current power source:
 
-- `CHILL`
-- `MAKER`
-- `DEVELOPMENT`
-- `FOCUS`
-- `COMMAND`
+| Mode | Battery | AC |
+| --- | --- | --- |
+| `CHILL` | `power-saver` | `balanced` |
+| `FOCUS` | `power-saver` | `balanced` |
+| `MAKER` | `balanced` | `balanced` |
+| `DEVELOPMENT` | `balanced` | `performance` |
+| `COMMAND` | `balanced` | `balanced` |
 
-Power-profile choices must be validated against the laptop and reviewed before changing the runtime defaults.
+An explicit mode `power_profile` other than `unchanged` takes precedence. This preserves the existing MODES editor semantics and lets custom workspaces opt out of the Mobile defaults.
+
+The safety fallbacks are deliberately conservative:
+
+- unknown AC/battery state resolves to `balanced`;
+- an unavailable requested profile resolves to `balanced`;
+- a failed profile change is reported but does not abort workspace activation;
+- custom modes not present in the Mobile policy retain the legacy `power_profile` behavior.
+
+The policy resolver samples Stage 5A power telemetry only when resolving a mode. It does not create another collector loop. Applying the resolved profile remains part of explicit workspace activation or restoring the already-active workspace when HELM starts.
 
 ## Planned Stage 5C — Telemetry surfaces
 

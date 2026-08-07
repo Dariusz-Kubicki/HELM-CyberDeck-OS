@@ -6,7 +6,7 @@ HELM CyberDeck Mobile uses two independent authentication interfaces. They inten
 
 Provider: Plasma KScreenLocker.
 
-The Security Lock protects an existing Plasma session. It appears after automatic idle locking, manual session locking, and resume from sleep when locking is required. The Stage 4B overlay changes presentation only. Native Plasma session unlocking and password verification remain unchanged.
+The Security Lock protects an existing Plasma session. It appears after automatic idle locking, manual session locking, and resume from sleep when locking is required. Visual revision 2.1 styles the local KScreenLocker `LockScreenUi.qml`, `MainBlock.qml`, and `HELMOverlay.qml` presentation while preserving KDE's native authenticator, password-result flow, session unlocking, and password verification.
 
 ## Stage 4C — Access Gate
 

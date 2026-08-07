@@ -1676,6 +1676,66 @@ else
     fail "HELM Mobile Security Lock recovery state"
 fi
 
+
+lockscreen_v21_source_dir="$REPO/mobile/plasma/lockscreen"
+lockscreen_v21_live_dir="${XDG_DATA_HOME:-$HOME/.local/share}/plasma/shells/org.kde.plasma.desktop/contents/lockscreen"
+
+if [[ -s "$lockscreen_v21_source_dir/LockScreen.qml" ]] \
+    && [[ -s "$lockscreen_v21_source_dir/LockScreenUi.qml" ]] \
+    && [[ -s "$lockscreen_v21_source_dir/MainBlock.qml" ]] \
+    && [[ -s "$lockscreen_v21_source_dir/HELMOverlay.qml" ]] \
+    && [[ "$(jq -r '.revision // empty' "$lockscreen_v21_source_dir/lockscreen.json" 2>/dev/null)" == "2.1" ]]
+then
+    pass "HELM Security Lock v2.1 source UI"
+else
+    fail "HELM Security Lock v2.1 source UI"
+fi
+
+lockscreen_v21_matches=1
+
+for lockscreen_v21_file in \
+    LockScreen.qml \
+    LockScreenUi.qml \
+    MainBlock.qml \
+    HELMOverlay.qml
+do
+    if ! cmp -s \
+        "$lockscreen_v21_source_dir/$lockscreen_v21_file" \
+        "$lockscreen_v21_live_dir/$lockscreen_v21_file"
+    then
+        lockscreen_v21_matches=0
+    fi
+done
+
+if (( lockscreen_v21_matches == 1 )); then
+    pass "Installed Security Lock v2.1 UI matches source"
+else
+    fail "Installed Security Lock v2.1 UI differs from source"
+fi
+
+if grep -Fq \
+        'authenticator.respond(password)' \
+        "$lockscreen_v21_live_dir/LockScreenUi.qml" \
+    && grep -Fq \
+        'signal passwordResult(string password)' \
+        "$lockscreen_v21_live_dir/MainBlock.qml" \
+    && grep -Fq \
+        'passwordResult(password)' \
+        "$lockscreen_v21_live_dir/MainBlock.qml"
+then
+    pass "Security Lock native authentication flow preserved"
+else
+    fail "Security Lock native authentication flow preserved"
+fi
+
+if [[ -s "$lockscreen_state" ]] \
+    && [[ "$(jq -r '.visual_revision // empty' "$lockscreen_state" 2>/dev/null)" == "2.1" ]] \
+    && [[ "$(jq -r '.real_unlock_verified // false' "$lockscreen_state" 2>/dev/null)" == "true" ]]
+then
+    pass "Security Lock v2.1 real unlock verified"
+else
+    warning "Security Lock v2.1 real unlock not yet verified"
+fi
 printf '\n%sSYSTEM STATE%s: ' "$cyan" "$reset"
 if (( FAIL > 0 )); then
     printf '%sDEGRADED%s\n' "$red" "$reset"

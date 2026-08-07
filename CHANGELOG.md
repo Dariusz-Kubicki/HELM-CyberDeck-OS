@@ -28,6 +28,7 @@ All notable changes to HELM CyberDeck OS are documented here.
 
 ### Changed
 
+- HELM Mobile Security Lock upgraded to visual revision 2.1 with Access Gate-aligned native KScreenLocker controls while preserving the native unlock flow.
 - Development version advanced to `1.3.0-dev`.
 
 ## [1.2.0] - 2026-08-02

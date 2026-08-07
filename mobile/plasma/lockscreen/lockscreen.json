@@ -1,16 +1,35 @@
 {
   "stage": "4b-security-lock",
+  "revision": "2.1",
   "role": "HELM Mobile Security Lock",
   "platform": "KDE Plasma 6",
   "authentication": {
     "provider": "Plasma KScreenLocker",
-    "modified": false
+    "modified": false,
+    "native_authenticator_preserved": true,
+    "password_result_flow_preserved": true
   },
   "shell": {
     "package": "org.kde.plasma.desktop",
-    "strategy": "local-shell-overlay",
-    "overlay": "HELMOverlay.qml",
-    "integration_marker": "HELM MOBILE SECURITY OVERLAY"
+    "strategy": "local-shell-ui-override",
+    "integration_marker": "HELM MOBILE SECURITY OVERLAY",
+    "sources": [
+      "LockScreen.qml",
+      "LockScreenUi.qml",
+      "MainBlock.qml",
+      "HELMOverlay.qml"
+    ],
+    "base_system_sha256": {
+      "LockScreen.qml": "12d4cff5ae2b439597240dbee684ae862b49a51c9d1eb1747bdb5b5b775125bd",
+      "LockScreenUi.qml": "328501780ab06cc0497a25ff48c6f027a1abed8506f0969f39a5f8bc6696181c",
+      "MainBlock.qml": "ca4116aa7e10fd57f6bdfd648c647751c45fb4933982b3bde2ff231a2ce4497f"
+    },
+    "approved_sha256": {
+      "LockScreen.qml": "df410356be4afedd5522570a2227d1f5a7ca5ba76d6e873f83714cdde1ad685c",
+      "LockScreenUi.qml": "48a4347a2556a51d208e9b26c814744f590413bbdf02de03c72061859b801b1f",
+      "MainBlock.qml": "d0f2a9ead4afc4e79569ba54d3b302b7a7ebcfdb66ceca4c24499fac130ec857",
+      "HELMOverlay.qml": "8179805d12ca49fb0467052a2c010ff7d729791b75f33c6b1b4cfc7dd1a787fd"
+    }
   },
   "appearance": {
     "font_family": "Hack",
@@ -18,11 +37,21 @@
     "security_panel_background": "#FF02070B",
     "status_panel_background": "#FC02070B",
     "status_panel_bottom_margin": 132,
+    "center_card": "secure-session-channel",
+    "native_footer_visible": false,
+    "native_clock_visible": false,
+    "native_session_actions_visible": false,
     "wallpaper": "helm-mobile-field-node-v2.svg"
   },
   "behavior": {
     "automatic_lock_settings_modified": false,
     "authentication_flow_modified": false,
     "session_unlocking_modified": false
-  }
+  },
+  "validation": {
+    "testing_preview_verified": true,
+    "real_win_l_verified": true,
+    "real_password_unlock_verified": true
+  },
+  "wallpaper_sha256": "721fc6e1368656f7984dcdae81349ddd436b36725695e885cfe039968537fb34"
 }

@@ -1,0 +1,52 @@
+{
+  "bootloader": {
+    "active_uki": "/boot/EFI/Linux/arch-linux.efi",
+    "loader_timeout_seconds": 3,
+    "provider": "systemd-boot",
+    "selected_entry": "arch-linux.efi"
+  },
+  "initramfs": {
+    "encryption_hook": "encrypt",
+    "plymouth_hook": false,
+    "preserve_console_luks_prompt": true,
+    "provider": "mkinitcpio",
+    "required_hook_order": [
+      "block",
+      "encrypt",
+      "filesystems"
+    ]
+  },
+  "kernel_command_line": {
+    "preserve_verbose_output": true,
+    "quiet": false,
+    "splash": false
+  },
+  "mode": "preserve-verbose-arch-uki",
+  "plymouth": {
+    "initramfs_integration": false,
+    "package_may_be_installed": true,
+    "policy": "do-not-activate-in-initramfs"
+  },
+  "recovery": {
+    "baseline_required_before_future_uki_change": true,
+    "runtime_state": "~/.local/share/helm-mobile/stage4d-technical-boot-baseline.json"
+  },
+  "role": "HELM Mobile Technical Boot",
+  "safety": {
+    "automatic_reboot": false,
+    "modify_active_uki": false,
+    "modify_bootloader": false,
+    "modify_kernel_cmdline": false,
+    "modify_mkinitcpio_hooks": false,
+    "rebuild_uki": false
+  },
+  "stage": "4d-technical-boot",
+  "uki": {
+    "arch_splash": "/usr/share/systemd/bootctl/splash-arch.bmp",
+    "arch_splash_embedded": true,
+    "baseline_checksum_is_provenance": true,
+    "baseline_sha256": "c23b238cfd7949b92cacd2b4876519de8286337407d153dd7f985fd084ab43ab",
+    "format": "UKI",
+    "preset": "/etc/mkinitcpio.d/linux.preset"
+  }
+}

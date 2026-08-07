@@ -1736,6 +1736,42 @@ then
 else
     warning "Security Lock v2.1 real unlock not yet verified"
 fi
+
+technical_boot_manifest="$REPO/mobile/boot/technical-boot.json"
+technical_boot_state="${XDG_DATA_HOME:-$HOME/.local/share}/helm-mobile/stage4d-technical-boot-baseline.json"
+
+technical_boot_manifest_ok=0
+if [[ -s "$technical_boot_manifest" ]]; then
+    if jq -e '.stage == "4d-technical-boot" and .role == "HELM Mobile Technical Boot" and .bootloader.provider == "systemd-boot" and .bootloader.selected_entry == "arch-linux.efi" and .bootloader.active_uki == "/boot/EFI/Linux/arch-linux.efi" and .kernel_command_line.quiet == false and .kernel_command_line.splash == false and .kernel_command_line.preserve_verbose_output == true and .initramfs.plymouth_hook == false and .initramfs.preserve_console_luks_prompt == true and .safety.modify_active_uki == false and .safety.rebuild_uki == false and .safety.modify_kernel_cmdline == false and .safety.modify_mkinitcpio_hooks == false and .safety.modify_bootloader == false and .safety.automatic_reboot == false' "$technical_boot_manifest" >/dev/null 2>&1; then
+        technical_boot_manifest_ok=1
+    fi
+fi
+if (( technical_boot_manifest_ok == 1 )); then pass "HELM Mobile Technical Boot manifest"; else fail "HELM Mobile Technical Boot manifest"; fi
+
+technical_boot_status="$(bootctl status --no-pager 2>/dev/null || true)"
+if grep -Fq 'Current Entry: arch-linux.efi' <<< "$technical_boot_status" && grep -Fq '/EFI/Linux/arch-linux.efi' <<< "$technical_boot_status"; then pass "Technical Boot active UKI"; else fail "Technical Boot active UKI"; fi
+
+technical_boot_cmdline="$(cat /proc/cmdline 2>/dev/null || true)"
+if [[ " $technical_boot_cmdline " != *" quiet "* ]] && [[ " $technical_boot_cmdline " != *" splash "* ]]; then pass "Technical Boot verbose command line"; else fail "Technical Boot verbose command line"; fi
+
+if grep -Fqx 'default_uki="/boot/EFI/Linux/arch-linux.efi"' /etc/mkinitcpio.d/linux.preset 2>/dev/null && grep -Fqx 'default_options="--splash /usr/share/systemd/bootctl/splash-arch.bmp"' /etc/mkinitcpio.d/linux.preset 2>/dev/null; then pass "Technical Boot Arch UKI splash"; else fail "Technical Boot Arch UKI splash"; fi
+
+technical_boot_hooks="$(grep -E '^[[:space:]]*HOOKS=' /etc/mkinitcpio.conf 2>/dev/null | tail -n 1)"
+technical_boot_hook_words="$(sed -E 's/^[^(]*\((.*)\).*/\1/' <<< "$technical_boot_hooks")"
+if [[ " $technical_boot_hook_words " == *" block "* ]] && [[ " $technical_boot_hook_words " == *" encrypt "* ]] && [[ " $technical_boot_hook_words " == *" filesystems "* ]] && [[ " $technical_boot_hook_words " != *" plymouth "* ]] && [[ "$technical_boot_hook_words" =~ block.*encrypt.*filesystems ]]; then pass "Technical Boot console LUKS flow"; else fail "Technical Boot console LUKS flow"; fi
+
+technical_boot_recovery_ok=0
+if [[ -s "$technical_boot_state" ]]; then
+    technical_boot_recovery="$(jq -r '.recovery // empty' "$technical_boot_state" 2>/dev/null || true)"
+    technical_boot_backup="$(jq -r '.active_uki_backup // empty' "$technical_boot_state" 2>/dev/null || true)"
+    technical_boot_baseline_sha="$(jq -r '.baseline_uki_sha256 // empty' "$technical_boot_state" 2>/dev/null || true)"
+    technical_boot_modified="$(jq -r 'if has("boot_modified") then .boot_modified else true end' "$technical_boot_state" 2>/dev/null || true)"
+    technical_boot_rebuilt="$(jq -r 'if has("uki_rebuilt") then .uki_rebuilt else true end' "$technical_boot_state" 2>/dev/null || true)"
+    if [[ -d "$technical_boot_recovery" ]] && [[ -s "$technical_boot_backup" ]] && [[ "$technical_boot_modified" == "false" ]] && [[ "$technical_boot_rebuilt" == "false" ]] && [[ "$(sha256sum "$technical_boot_backup" 2>/dev/null | awk '{print $1}')" == "$technical_boot_baseline_sha" ]]; then
+        technical_boot_recovery_ok=1
+    fi
+fi
+if (( technical_boot_recovery_ok == 1 )); then pass "Technical Boot recovery baseline"; else fail "Technical Boot recovery baseline"; fi
 printf '\n%sSYSTEM STATE%s: ' "$cyan" "$reset"
 if (( FAIL > 0 )); then
     printf '%sDEGRADED%s\n' "$red" "$reset"

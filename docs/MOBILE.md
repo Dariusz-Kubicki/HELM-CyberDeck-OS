@@ -308,3 +308,7 @@ The reference ThinkPad's lid test showed an intermediate wake-and-resuspend, but
 The Stage 6 decision is documented in `mobile/power/wake-policy.json`, and `scripts/mobile/audit-stage6-wake-sources.sh` provides a reusable read-only diagnostic.
 
 Stage 6 is complete.
+
+## Stage 6D — HELM Mobile Conky HUD
+
+The ThinkPad Mobile Node gains a top-right HELM Conky telemetry HUD derived from the Desktop Node visual language, but adapted for mobile telemetry. It adds AMD GPU, battery, AC/BAT source, power profile and battery ETA while preserving the established 310 px top-right form. The live HUD is visually approved on KDE Plasma Wayland via XWayland; the final window policy intentionally omits the `below` hint so KWin does not place it beneath the Plasma desktop surface. Recovery remains available through `scripts/mobile/restore-stage6d-mobile-hud.sh`.

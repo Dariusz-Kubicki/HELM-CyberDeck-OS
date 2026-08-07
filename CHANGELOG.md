@@ -23,6 +23,7 @@ All notable changes to HELM CyberDeck OS are documented here.
 - HELM Mobile Stage 5C SYSTEM power telemetry surface with battery status, energy, health, remaining time, live platform profile and active mode-policy context.
 - HELM Mobile Stage 6A suspend reliability policy with explicit PowerDevil lid ownership, suspend-only systemd sleep capability, lock-on-resume and reversible live configuration.
 - HELM Mobile Stage 6B real-hardware suspend/resume verification covering manual and lid-triggered s2idle, Security Lock password recovery, amdgpu resume and preserved power state.
+- HELM Mobile Stage 6D top-right Conky telemetry HUD with Desktop Node visual lineage and laptop-aware AMD GPU, battery, power-profile and network telemetry.
 - HELM Mobile Stage 6C wake-source safety closeout documenting the observed wake-and-resuspend, preserving validated wake behavior, and making no wake-source override without causal evidence.
 - HELM Mobile Stage 5D milestone closeout with a reusable read-only telemetry/modes audit, consolidated diagnostics and regression contracts across Stages 5A–5C.
 

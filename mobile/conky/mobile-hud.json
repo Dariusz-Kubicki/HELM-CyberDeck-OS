@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "stage": "6d-mobile-conky-hud",
+  "role": "HELM Mobile Conky HUD",
+  "visual_lineage": "HELM Desktop Node top-right Conky HUD",
+  "window": {
+    "alignment": "top_right",
+    "width": 310,
+    "gap_x": 24,
+    "gap_y": 24,
+    "class": "HELMMobileNode",
+    "title": "HELM // MOBILE NODE",
+    "visibility_policy": {
+      "type": "normal",
+      "hints": [
+        "undecorated",
+        "sticky",
+        "skip_taskbar",
+        "skip_pager"
+      ],
+      "below": false,
+      "reason": "The XWayland Conky window must remain above the Plasma desktop surface."
+    }
+  },
+  "telemetry": [
+    "helm_state",
+    "cpu",
+    "memory",
+    "amdgpu",
+    "battery",
+    "power_source",
+    "power_profile",
+    "battery_eta",
+    "network",
+    "root_storage",
+    "uptime",
+    "kernel"
+  ],
+  "safety": {
+    "modify_power_policy": false,
+    "modify_suspend_policy": false,
+    "modify_boot": false,
+    "modify_auth": false,
+    "restart_plasma": false,
+    "restart_display_manager": false
+  },
+  "status": "visual-approved",
+  "runtime": {
+    "session": "KDE Plasma Wayland",
+    "render_path": "Conky XWayland",
+    "visual_validation": "approved-on-thinkpad"
+  }
+}

@@ -1,0 +1,227 @@
+#!/usr/bin/env bash
+set -u
+
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+NET_STATE="$RUNTIME_DIR/helm-mobile-conky-network-${UID}.state"
+
+unavailable() { printf '%s' '--'; }
+
+battery_dir() {
+    local d
+    for d in /sys/class/power_supply/BAT*; do
+        [[ -d "$d" ]] || continue
+        printf '%s' "$d"
+        return 0
+    done
+    return 1
+}
+
+read_num() {
+    local file="$1"
+    [[ -r "$file" ]] || return 1
+    local value
+    value="$(cat "$file" 2>/dev/null || true)"
+    [[ "$value" =~ ^[0-9]+$ ]] || return 1
+    printf '%s' "$value"
+}
+
+helm_state() {
+    if pgrep -u "$UID" -f '[p]ython.*-m app\.main' >/dev/null 2>&1; then
+        printf '${color3}LINKED${color}'
+    else
+        printf '${color4}STANDBY${color}'
+    fi
+}
+
+cpu_temperature() {
+    local value=""
+    if command -v sensors >/dev/null 2>&1; then
+        value="$(sensors 2>/dev/null | awk '
+            /Tctl:/ {gsub(/[+°C]/,"",$2); printf "%.0f",$2; exit}
+            /Tdie:/ {gsub(/[+°C]/,"",$2); printf "%.0f",$2; exit}
+        ')"
+    fi
+    if [[ -z "$value" ]]; then
+        local zone raw type
+        for zone in /sys/class/thermal/thermal_zone*; do
+            [[ -r "$zone/temp" ]] || continue
+            type="$(cat "$zone/type" 2>/dev/null || true)"
+            [[ "$type" == *k10temp* || "$type" == *x86_pkg_temp* ]] || continue
+            raw="$(cat "$zone/temp" 2>/dev/null || true)"
+            if [[ "$raw" =~ ^[0-9]+$ ]]; then
+                value="$((raw / 1000))"
+                break
+            fi
+        done
+    fi
+    [[ -n "$value" ]] && printf '%s' "$value" || unavailable
+}
+
+gpu_device() {
+    local card
+    for card in /sys/class/drm/card[0-9]*; do
+        [[ -r "$card/device/gpu_busy_percent" ]] || continue
+        printf '%s' "$card/device"
+        return 0
+    done
+    return 1
+}
+
+gpu_util() {
+    local dev value
+    dev="$(gpu_device 2>/dev/null || true)"
+    [[ -n "$dev" ]] || { unavailable; return; }
+    value="$(cat "$dev/gpu_busy_percent" 2>/dev/null || true)"
+    [[ "$value" =~ ^[0-9]+$ ]] && printf '%s' "$value" || unavailable
+}
+
+gpu_temp() {
+    local dev hw raw
+    dev="$(gpu_device 2>/dev/null || true)"
+    [[ -n "$dev" ]] || { unavailable; return; }
+    for hw in "$dev"/hwmon/hwmon*; do
+        [[ -r "$hw/temp1_input" ]] || continue
+        raw="$(cat "$hw/temp1_input" 2>/dev/null || true)"
+        if [[ "$raw" =~ ^[0-9]+$ ]]; then
+            printf '%d' "$((raw / 1000))"
+            return
+        fi
+    done
+    unavailable
+}
+
+external_power_online() {
+    local d type online
+    for d in /sys/class/power_supply/*; do
+        [[ -r "$d/type" && -r "$d/online" ]] || continue
+        type="$(cat "$d/type" 2>/dev/null || true)"
+        case "$type" in
+            Mains|USB|USB_C|USB_PD)
+                online="$(cat "$d/online" 2>/dev/null || true)"
+                [[ "$online" == "1" ]] && return 0
+                ;;
+        esac
+    done
+    return 1
+}
+
+battery_percent() {
+    local bat value
+    bat="$(battery_dir 2>/dev/null || true)"
+    [[ -n "$bat" ]] || { printf '0'; return; }
+    value="$(cat "$bat/capacity" 2>/dev/null || true)"
+    [[ "$value" =~ ^[0-9]+$ ]] && printf '%s' "$value" || printf '0'
+}
+
+human_eta() {
+    local bat="$1" status="$2"
+    local now full power seconds
+    now="$(read_num "$bat/energy_now" 2>/dev/null || true)"
+    full="$(read_num "$bat/energy_full" 2>/dev/null || true)"
+    power="$(read_num "$bat/power_now" 2>/dev/null || true)"
+
+    if [[ -z "$now" || -z "$power" || "$power" == "0" ]]; then
+        printf '%s' '--'
+        return
+    fi
+
+    if [[ "$status" == "Charging" && -n "$full" && "$full" -gt "$now" ]]; then
+        seconds="$(( (full - now) * 3600 / power ))"
+    elif [[ "$status" == "Discharging" ]]; then
+        seconds="$(( now * 3600 / power ))"
+    else
+        printf '%s' '--'
+        return
+    fi
+
+    printf '%dH %02dM' "$((seconds / 3600))" "$(((seconds % 3600) / 60))"
+}
+
+battery_health() {
+    local bat="$1" full design
+    full="$(read_num "$bat/energy_full" 2>/dev/null || true)"
+    design="$(read_num "$bat/energy_full_design" 2>/dev/null || true)"
+    if [[ -n "$full" && -n "$design" && "$design" -gt 0 ]]; then
+        awk -v f="$full" -v d="$design" 'BEGIN { printf "%.0f", (f/d)*100 }'
+    else
+        printf '%s' '--'
+    fi
+}
+
+power_state() {
+    local bat percent status source profile eta health
+    bat="$(battery_dir 2>/dev/null || true)"
+    if [[ -z "$bat" ]]; then
+        printf '${color1}BATTERY${alignr}${color4}NOT PRESENT${color}\n'
+        return
+    fi
+
+    percent="$(battery_percent)"
+    status="$(cat "$bat/status" 2>/dev/null || printf Unknown)"
+    if external_power_online; then source="AC"; else source="BAT"; fi
+    profile="$(powerprofilesctl get 2>/dev/null || printf unknown)"
+    eta="$(human_eta "$bat" "$status")"
+    health="$(battery_health "$bat")"
+
+    printf '${color1}BATTERY${alignr}${color5}%s%%${color2} // ${color3}%s${color}\n' "$percent" "$source"
+    printf '${color2}STATE${alignr}${color5}%s${color}\n' "${status^^}"
+    printf '${color2}HEALTH${alignr}${color5}%s%%${color}\n' "$health"
+    printf '${color2}PROFILE${alignr}${color1}%s${color}\n' "${profile^^}"
+    printf '${color2}EST. TIME${alignr}${color5}%s${color}\n' "$eta"
+}
+
+human_rate() {
+    local bytes="${1:-0}"
+    awk -v value="$bytes" 'BEGIN {
+        if (value >= 1073741824) printf "%.1f GiB", value/1073741824;
+        else if (value >= 1048576) printf "%.1f MiB", value/1048576;
+        else if (value >= 1024) printf "%.1f KiB", value/1024;
+        else printf "%.0f B", value;
+    }'
+}
+
+network_state() {
+    local iface ip_address="--" operstate="OFFLINE"
+    local rx=0 tx=0 now_ns prev_iface="" prev_rx=0 prev_tx=0 prev_ns=0
+    local rx_rate=0 tx_rate=0 delta_ns
+
+    iface="$(ip route show default 2>/dev/null | awk 'NR==1 {print $5}')"
+    if [[ -z "$iface" || ! -r "/sys/class/net/$iface/statistics/rx_bytes" ]]; then
+        printf '${color1}NETWORK${alignr}${color4}OFFLINE${color}\n'
+        printf '${color2}NO DEFAULT ROUTE${color}\n'
+        return
+    fi
+
+    rx="$(cat "/sys/class/net/$iface/statistics/rx_bytes")"
+    tx="$(cat "/sys/class/net/$iface/statistics/tx_bytes")"
+    now_ns="$(date +%s%N)"
+    ip_address="$(ip -4 -o addr show dev "$iface" scope global 2>/dev/null | awk 'NR==1 {split($4,a,"/");print a[1]}')"
+    [[ -n "$ip_address" ]] || ip_address="--"
+    [[ "$(cat "/sys/class/net/$iface/operstate" 2>/dev/null || true)" == "up" ]] && operstate="LINKED"
+
+    if [[ -r "$NET_STATE" ]]; then
+        read -r prev_iface prev_rx prev_tx prev_ns < "$NET_STATE" || true
+    fi
+    if [[ "$prev_iface" == "$iface" && "$now_ns" -gt "$prev_ns" && "$rx" -ge "$prev_rx" && "$tx" -ge "$prev_tx" ]]; then
+        delta_ns=$((now_ns-prev_ns))
+        rx_rate="$(awk -v b="$((rx-prev_rx))" -v e="$delta_ns" 'BEGIN {if(e>0) printf "%.0f",b*1000000000/e; else print 0}')"
+        tx_rate="$(awk -v b="$((tx-prev_tx))" -v e="$delta_ns" 'BEGIN {if(e>0) printf "%.0f",b*1000000000/e; else print 0}')"
+    fi
+    printf '%s %s %s %s\n' "$iface" "$rx" "$tx" "$now_ns" > "$NET_STATE"
+
+    printf '${color1}NETWORK // %s${alignr}${color3}%s${color}\n' "${iface^^}" "$operstate"
+    printf '${color2}DOWN${alignr}${color5}%s/s${color}\n' "$(human_rate "$rx_rate")"
+    printf '${color2}UP${alignr}${color5}%s/s${color}\n' "$(human_rate "$tx_rate")"
+    printf '${color2}LOCAL IP${alignr}${color5}%s${color}\n' "$ip_address"
+}
+
+case "${1:-}" in
+    helm) helm_state ;;
+    cpu-temp) cpu_temperature ;;
+    gpu-util) gpu_util ;;
+    gpu-temp) gpu_temp ;;
+    battery-percent) battery_percent ;;
+    power) power_state ;;
+    network) network_state ;;
+    *) printf 'UNKNOWN'; exit 1 ;;
+esac

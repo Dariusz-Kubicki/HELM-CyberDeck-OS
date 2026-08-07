@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+CONFIG="$HOME/.config/conky/helm-mobile.conf"
+STATE_DIR="$HOME/.local/state/helm-mobile"
+LOG_FILE="$STATE_DIR/mobile-node-conky.log"
+PID_FILE="$STATE_DIR/mobile-node-conky.pid"
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+LOCK="$RUNTIME_DIR/helm-mobile-node-launch-${UID}.lock"
+
+mkdir -p "$STATE_DIR" "$RUNTIME_DIR"
+[[ -r "$CONFIG" ]] || { echo "ERROR: Mobile HUD config missing: $CONFIG" >&2; exit 1; }
+command -v conky >/dev/null 2>&1 || { echo "ERROR: Conky is not installed." >&2; exit 1; }
+
+find_pid() {
+    local pid cmdline
+    while IFS= read -r pid; do
+        [[ -r "/proc/$pid/cmdline" ]] || continue
+        cmdline="$(tr '\0' ' ' < "/proc/$pid/cmdline")"
+        if [[ "$cmdline" == *"$CONFIG"* ]]; then
+            printf '%s\n' "$pid"
+            return 0
+        fi
+    done < <(pgrep -u "$UID" -x conky 2>/dev/null || true)
+    return 1
+}
+
+exec 9>"$LOCK"
+flock -n 9 || { echo "HELM Mobile HUD launch already in progress."; exit 0; }
+
+if pid="$(find_pid)"; then
+    printf '%s\n' "$pid" > "$PID_FILE"
+    echo "◈ HELM Mobile HUD already online. PID $pid"
+    exit 0
+fi
+
+printf '\n[%s] Starting HELM Mobile HUD.\n' "$(date --iso-8601=seconds)" >> "$LOG_FILE"
+conky -d -c "$CONFIG" >> "$LOG_FILE" 2>&1 </dev/null
+
+for _ in {1..50}; do
+    if pid="$(find_pid)"; then
+        printf '%s\n' "$pid" > "$PID_FILE"
+        echo "◈ HELM Mobile HUD started. PID $pid"
+        exit 0
+    fi
+    sleep 0.1
+done
+
+echo "ERROR: HELM Mobile HUD process did not appear." >&2
+tail -n 20 "$LOG_FILE" >&2 || true
+exit 1

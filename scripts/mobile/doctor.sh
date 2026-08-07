@@ -2429,6 +2429,63 @@ else
 fi
 
 
+
+
+stage6d_manifest="$REPO/mobile/conky/mobile-hud.json"
+stage6d_config_source="$REPO/mobile/conky/helm-mobile.conf"
+stage6d_status_source="$REPO/mobile/conky/helm-mobile-status"
+stage6d_start_source="$REPO/mobile/conky/helm-mobile-start"
+stage6d_autostart_source="$REPO/mobile/autostart/helm-mobile-node.desktop"
+stage6d_config_target="$HOME/.config/conky/helm-mobile.conf"
+stage6d_status_target="$HOME/.local/bin/helm-mobile-status"
+stage6d_start_target="$HOME/.local/bin/helm-mobile-start"
+stage6d_autostart_target="$HOME/.config/autostart/helm-mobile-node.desktop"
+stage6d_state="${XDG_DATA_HOME:-$HOME/.local/share}/helm-mobile/stage6d-mobile-hud-last-apply.json"
+
+if [[ -s "$stage6d_manifest" ]] && jq -e '.stage == "6d-mobile-conky-hud" and .status == "visual-approved" and .window.alignment == "top_right" and .window.width == 310 and .window.visibility_policy.below == false and (.telemetry | index("battery")) != null and (.telemetry | index("amdgpu")) != null and ([.safety[]] | any) == false' "$stage6d_manifest" >/dev/null 2>&1; then
+    pass "HELM Mobile Stage 6D Conky HUD manifest"
+else
+    fail "HELM Mobile Stage 6D Conky HUD manifest"
+fi
+
+if [[ -s "$stage6d_config_source" && -x "$stage6d_status_source" && -x "$stage6d_start_source" && -s "$stage6d_autostart_source" ]]; then
+    pass "Stage 6D HUD source assets"
+else
+    fail "Stage 6D HUD source assets"
+fi
+
+stage6d_autostart_expected="$(sed "s|__HOME__|$HOME|g" "$stage6d_autostart_source")"
+stage6d_autostart_actual="$(cat "$stage6d_autostart_target" 2>/dev/null || true)"
+if [[ -s "$stage6d_config_target" ]] && cmp -s "$stage6d_config_source" "$stage6d_config_target" && cmp -s "$stage6d_status_source" "$stage6d_status_target" && cmp -s "$stage6d_start_source" "$stage6d_start_target" && [[ "$stage6d_autostart_actual" == "$stage6d_autostart_expected" ]]; then
+    pass "Installed Stage 6D HUD matches source"
+else
+    fail "Installed Stage 6D HUD differs from source"
+fi
+
+if command -v conky >/dev/null 2>&1; then
+    pass "Stage 6D Conky runtime dependency"
+else
+    fail "Stage 6D Conky runtime dependency"
+fi
+
+stage6d_live=0
+while IFS= read -r stage6d_pid; do
+    [[ -r "/proc/$stage6d_pid/cmdline" ]] || continue
+    stage6d_cmdline="$(tr '\0' ' ' < "/proc/$stage6d_pid/cmdline")"
+    if [[ "$stage6d_cmdline" == *"$stage6d_config_target"* ]]; then stage6d_live=1; break; fi
+done < <(pgrep -u "$UID" -x conky 2>/dev/null || true)
+if (( stage6d_live == 1 )); then
+    pass "Live HELM Mobile top-right HUD"
+else
+    fail "Live HELM Mobile top-right HUD"
+fi
+
+if [[ -s "$stage6d_state" ]] && [[ "$(jq -r '.stage // empty' "$stage6d_state" 2>/dev/null)" == "6d-mobile-conky-hud" ]]; then
+    pass "Stage 6D HUD recovery state"
+else
+    fail "Stage 6D HUD recovery state"
+fi
+
 printf '\n%sSYSTEM STATE%s: ' "$cyan" "$reset"
 if (( FAIL > 0 )); then
     printf '%sDEGRADED%s\n' "$red" "$reset"

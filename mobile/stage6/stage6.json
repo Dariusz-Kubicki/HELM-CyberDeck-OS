@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "stage": "6c-stage6-closeout",
+  "role": "HELM Mobile power and suspend milestone",
+  "status": "complete",
+  "base_commit": "0f3deb2e992892218c6bc21239f7c1a9c824101c",
+  "stages": {
+    "6a": {
+      "status": "complete",
+      "contract": "suspend-only policy with PowerDevil ownership and lock-on-resume"
+    },
+    "6b": {
+      "status": "real-hardware-verified",
+      "contract": "manual and lid-triggered s2idle resume verified on the reference ThinkPad"
+    },
+    "6c": {
+      "status": "complete-no-policy-change",
+      "contract": "wake-and-resuspend investigated; no harmful causal wake source proven"
+    }
+  },
+  "final_policy": {
+    "sleep_backend": "s2idle",
+    "allow_suspend": true,
+    "allow_hibernation": false,
+    "allow_suspend_then_hibernate": false,
+    "allow_hybrid_sleep": false,
+    "lid_owner": "KDE PowerDevil",
+    "lock_on_resume": true,
+    "wake_source_action": "no-policy-change"
+  },
+  "verification": {
+    "real_manual_suspend": true,
+    "real_lid_suspend": true,
+    "security_lock_after_resume": true,
+    "native_password_unlock": true,
+    "amdgpu_resume": true,
+    "wifi_resume": true,
+    "power_profile_preserved": true,
+    "boot_identity_preserved": true,
+    "wake_policy_preserved": true
+  },
+  "safety": {
+    "hibernate_tested": false,
+    "wake_source_disabled": false,
+    "boot_modified": false,
+    "pam_modified": false
+  }
+}

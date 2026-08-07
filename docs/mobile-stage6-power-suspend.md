@@ -65,3 +65,23 @@ The reference ThinkPad passed both required cycles:
 The milestone is tracked by `mobile/power/suspend-validation.json`. Device evidence remains outside Git in `~/.local/share/helm-mobile/stage6b-suspend-validation-state.json`.
 
 Stage 6B status: **REAL-HARDWARE VERIFIED**.
+
+## Stage 6C — Wake-source analysis and no-change closeout
+
+Stage 6C investigates the extra wake-and-resuspend observed during the Stage 6B lid test without changing wake policy.
+
+The read-only audit confirms two `s2idle` entries in the lid cycle, but the available evidence does not identify a single harmful wake source with sufficient causality to justify disabling it. `/sys/power/pm_wakeup_irq` reported IRQ 9, mapped to ACPI / `pinctrl_amd`. The boot also contains an older kernel message about disabling the keyboard IRQ1 wake path to avoid a firmware bug, but that message is not temporally tied to the Stage 6B lid event.
+
+Network and GPU wake are disabled. USB/xHCI and RTC remain wake-capable candidates but are not proven causes of the intermediate wake. Because an enabled wake source is not itself evidence of fault, HELM does not disable any wake source.
+
+The final Stage 6C decision is therefore **NO POLICY CHANGE**:
+
+- preserve lid-open wake;
+- preserve normal input wake;
+- keep PowerDevil's current wake-and-resuspend handling;
+- keep the Stage 6A `s2idle` suspend-only policy;
+- do not add a firmware-specific wake workaround without a causal journal/IRQ/counter match.
+
+The decision is recorded in `mobile/power/wake-policy.json`. The reusable read-only audit is `scripts/mobile/audit-stage6-wake-sources.sh`.
+
+Stage 6 status: **COMPLETE**.

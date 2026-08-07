@@ -2281,6 +2281,154 @@ else
 fi
 
 
+
+stage6c_wake_manifest="$REPO/mobile/power/wake-policy.json"
+stage6_manifest="$REPO/mobile/stage6/stage6.json"
+stage6_wake_audit="$REPO/scripts/mobile/audit-stage6-wake-sources.sh"
+
+if [[ -s "$stage6c_wake_manifest" ]] \
+    && STAGE6C_WAKE="$stage6c_wake_manifest" \
+       "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_STAGE6C_WAKE'
+import json
+import os
+from pathlib import Path
+
+p = json.loads(
+    Path(os.environ["STAGE6C_WAKE"]).read_text(encoding="utf-8")
+)
+
+if p.get("stage") != "6c-wake-source-closeout":
+    raise SystemExit(1)
+if p.get("status") != "complete-no-policy-change":
+    raise SystemExit(1)
+
+decision = p.get("decision", {})
+if decision.get("action") != "no-policy-change":
+    raise SystemExit(1)
+if decision.get("disable_wake_sources") is not False:
+    raise SystemExit(1)
+if decision.get("preserve_lid_open_wake") is not True:
+    raise SystemExit(1)
+if decision.get("preserve_normal_input_wake") is not True:
+    raise SystemExit(1)
+PY_STAGE6C_WAKE
+then
+    pass "HELM Mobile Stage 6C wake decision"
+else
+    fail "HELM Mobile Stage 6C wake decision"
+fi
+
+if [[ -s "$stage6c_wake_manifest" ]] \
+    && STAGE6C_WAKE="$stage6c_wake_manifest" \
+       "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_STAGE6C_CAUSALITY'
+import json
+import os
+from pathlib import Path
+
+p = json.loads(
+    Path(os.environ["STAGE6C_WAKE"]).read_text(encoding="utf-8")
+)
+e = p.get("evidence", {})
+
+if e.get("last_observed_pm_wakeup_irq") != 9:
+    raise SystemExit(1)
+
+for key in (
+    "keyboard_irq1_causality_proven",
+    "wifi_network_causality_proven",
+    "usb_xhci_causality_proven",
+    "rtc_alarm_causality_proven",
+):
+    if e.get(key) is not False:
+        raise SystemExit(1)
+
+if p.get("observed_behavior", {}).get(
+    "wake_and_resuspend_confirmed"
+) is not True:
+    raise SystemExit(1)
+PY_STAGE6C_CAUSALITY
+then
+    pass "Stage 6C no-policy-change contract"
+else
+    fail "Stage 6C no-policy-change contract"
+fi
+
+if [[ -x "$stage6_wake_audit" ]] \
+    && bash -n "$stage6_wake_audit" >/dev/null 2>&1 \
+    && ! grep -Eq \
+        'systemctl suspend|systemctl hibernate|powerprofilesctl set|systemctl restart|kwriteconfig6|sudo ' \
+        "$stage6_wake_audit" \
+    && ! grep -Eq \
+        '>[[:space:]]*/proc/acpi/wakeup|>[[:space:]]*/sys/.*/power/wakeup' \
+        "$stage6_wake_audit"
+then
+    pass "Stage 6 reusable wake audit"
+else
+    fail "Stage 6 reusable wake audit"
+fi
+
+if [[ -s "$stage6_manifest" ]] \
+    && STAGE6_MANIFEST="$stage6_manifest" \
+       "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_STAGE6_MANIFEST'
+import json
+import os
+from pathlib import Path
+
+p = json.loads(
+    Path(os.environ["STAGE6_MANIFEST"]).read_text(encoding="utf-8")
+)
+
+if p.get("stage") != "6c-stage6-closeout":
+    raise SystemExit(1)
+if p.get("status") != "complete":
+    raise SystemExit(1)
+if p.get("stages", {}).get("6b", {}).get(
+    "status"
+) != "real-hardware-verified":
+    raise SystemExit(1)
+if p.get("stages", {}).get("6c", {}).get(
+    "status"
+) != "complete-no-policy-change":
+    raise SystemExit(1)
+PY_STAGE6_MANIFEST
+then
+    pass "HELM Mobile Stage 6 milestone manifest"
+else
+    fail "HELM Mobile Stage 6 milestone manifest"
+fi
+
+if [[ -s "$stage6_manifest" ]] \
+    && STAGE6_MANIFEST="$stage6_manifest" \
+       "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_STAGE6_FINAL'
+import json
+import os
+from pathlib import Path
+
+p = json.loads(
+    Path(os.environ["STAGE6_MANIFEST"]).read_text(encoding="utf-8")
+)
+f = p.get("final_policy", {})
+
+if f.get("sleep_backend") != "s2idle":
+    raise SystemExit(1)
+if f.get("allow_suspend") is not True:
+    raise SystemExit(1)
+if f.get("allow_hibernation") is not False:
+    raise SystemExit(1)
+if f.get("allow_suspend_then_hibernate") is not False:
+    raise SystemExit(1)
+if f.get("allow_hybrid_sleep") is not False:
+    raise SystemExit(1)
+if f.get("wake_source_action") != "no-policy-change":
+    raise SystemExit(1)
+PY_STAGE6_FINAL
+then
+    pass "Stage 6 suspend-only final contract"
+else
+    fail "Stage 6 suspend-only final contract"
+fi
+
+
 printf '\n%sSYSTEM STATE%s: ' "$cyan" "$reset"
 if (( FAIL > 0 )); then
     printf '%sDEGRADED%s\n' "$red" "$reset"

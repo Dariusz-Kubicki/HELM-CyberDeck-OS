@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "stage": "6c-wake-source-closeout",
+  "role": "HELM Mobile wake-source safety decision",
+  "status": "complete-no-policy-change",
+  "stage6b_base_commit": "0f3deb2e992892218c6bc21239f7c1a9c824101c",
+  "observed_behavior": {
+    "lid_cycle_s2idle_entries": 2,
+    "wake_and_resuspend_confirmed": true,
+    "user_visible_failure": false,
+    "final_resume_successful": true
+  },
+  "evidence": {
+    "last_observed_pm_wakeup_irq": 9,
+    "irq9_mapping": [
+      "acpi",
+      "pinctrl_amd"
+    ],
+    "historical_irq1_keyboard_firmware_workaround": true,
+    "keyboard_irq1_causality_proven": false,
+    "wifi_network_causality_proven": false,
+    "usb_xhci_causality_proven": false,
+    "rtc_alarm_causality_proven": false,
+    "network_wake_enabled_at_audit": false,
+    "gpu_wake_enabled_at_audit": false,
+    "debugfs_wakeup_sources_available_without_root": false,
+    "audit_report": "stage6c-wake-source-audit-20260807-164122.txt"
+  },
+  "decision": {
+    "action": "no-policy-change",
+    "disable_wake_sources": false,
+    "preserve_lid_open_wake": true,
+    "preserve_normal_input_wake": true,
+    "reason": "No causal journal/IRQ/counter match identifies a harmful wake source."
+  },
+  "safety": {
+    "modify_proc_acpi_wakeup": false,
+    "modify_sysfs_wakeup": false,
+    "modify_power_profile": false,
+    "restart_services": false,
+    "modify_systemd": false,
+    "modify_kde": false,
+    "modify_boot": false,
+    "modify_pam": false
+  }
+}

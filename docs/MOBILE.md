@@ -300,3 +300,11 @@ The installer creates recovery state before changing the systemd sleep drop-in o
 The reference ThinkPad has passed deliberate real-hardware validation for both manual suspend and physical lid-close suspend. Both returned from `s2idle`, resumed `amdgpu`, preserved the active power profile and required HELM Security Lock password authentication before returning to the session.
 
 The saved installed-state evidence is checked by Mobile Doctor. Stage 6B does not enable or test hibernation.
+
+## Stage 6C — Wake-source safety closeout
+
+The reference ThinkPad's lid test showed an intermediate wake-and-resuspend, but the read-only wake audit did not prove a harmful causal source. HELM therefore keeps the validated Stage 6A/6B suspend behavior and makes no wake-source override. Lid-open and normal input wake remain preserved.
+
+The Stage 6 decision is documented in `mobile/power/wake-policy.json`, and `scripts/mobile/audit-stage6-wake-sources.sh` provides a reusable read-only diagnostic.
+
+Stage 6 is complete.

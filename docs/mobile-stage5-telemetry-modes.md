@@ -52,9 +52,26 @@ The safety fallbacks are deliberately conservative:
 
 The policy resolver samples Stage 5A power telemetry only when resolving a mode. It does not create another collector loop. Applying the resolved profile remains part of explicit workspace activation or restoring the already-active workspace when HELM starts.
 
-## Planned Stage 5C — Telemetry surfaces
+## Stage 5C — Telemetry surfaces
 
-Stage 5C will expose the new power sample in the HELM interface (system/status surfaces and mode context) without adding a second collector loop.
+Stage 5C exposes Stage 5A laptop power data directly on the `SYSTEM` screen through a dedicated `MobilePowerPanel`. The existing four-card CPU/GPU/RAM/STORAGE dashboard remains unchanged.
+
+The surface reports:
+
+- battery percentage and charge/discharge state;
+- estimated remaining time;
+- instantaneous battery draw;
+- current and full-charge energy;
+- calculated battery health;
+- AC/battery source;
+- the currently active platform power profile;
+- active HELM mode and its configured adaptive policy target.
+
+The panel consumes the existing `SystemSnapshot.power` sample. It does not create another collector loop and does not invoke a profile change.
+
+Mode policy context is resolved through a pure source-mapping helper in `MobilePowerPolicyService`. That helper uses the already-collected AC/battery state and the active mode's existing `power_profile`; it performs no system sampling and no `powerprofilesctl` operation.
+
+Stage 5C therefore remains a presentation layer over Stage 5A telemetry and Stage 5B policy rather than becoming another power-management subsystem.
 
 ## Safety contract
 

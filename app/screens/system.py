@@ -3,6 +3,7 @@ from textual.containers import Vertical
 
 from app.cpu_history import CpuHistory
 from app.dashboard import Dashboard
+from app.mobile_power_panel import MobilePowerPanel
 from app.resource_history import ResourceHistory
 from app.system_actions import SystemActions
 from app.system_alerts import SystemAlerts
@@ -13,20 +14,37 @@ from services.data_service import SystemSnapshot
 
 
 class SystemScreen(Vertical):
-    """Main system monitoring and diagnostic control center."""
+    # Main system monitoring and diagnostic control center.
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.alert_service = AlertService()
+        self._mode_id = "custom"
+        self._mode_power_profile = "unchanged"
 
     def compose(self) -> ComposeResult:
         yield SystemPanel(id="system-panel")
+        yield MobilePowerPanel(id="mobile-power-panel")
         yield Dashboard(id="dashboard")
         yield CpuHistory(id="cpu-history")
         yield ResourceHistory(id="resource-history")
         yield SystemAlerts(id="system-alerts")
         yield SystemActions(id="system-actions")
         yield SystemInspector(id="system-inspector")
+
+    def update_mode_context(
+        self,
+        mode_id: str,
+        explicit_profile: str,
+    ) -> None:
+        self._mode_id = (
+            str(mode_id).strip().lower()
+            or "custom"
+        )
+        self._mode_power_profile = (
+            str(explicit_profile).strip().lower()
+            or "unchanged"
+        )
 
     def update_snapshot(
         self,
@@ -35,6 +53,14 @@ class SystemScreen(Vertical):
         self.query_one(
             SystemPanel
         ).update_snapshot(snapshot)
+
+        self.query_one(
+            MobilePowerPanel
+        ).update_snapshot(
+            snapshot,
+            self._mode_id,
+            self._mode_power_profile,
+        )
 
         self.query_one(
             Dashboard

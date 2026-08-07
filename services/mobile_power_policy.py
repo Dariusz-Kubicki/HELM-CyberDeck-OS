@@ -124,6 +124,33 @@ class MobilePowerPolicyService:
             fallback_reason=",".join(reasons),
         )
 
+    def policy_target_for_source(
+        self,
+        mode_id: str,
+        explicit_profile: str,
+        external_power_online: bool | None,
+    ) -> str:
+        # Resolve configured mode target without sampling or applying power.
+        mode_key = str(mode_id).strip().lower()
+        explicit = self._normalise_profile(explicit_profile)
+
+        if explicit != "unchanged":
+            return explicit
+
+        mode_policy = self._mode_policy(mode_key)
+        if mode_policy is None:
+            return "unchanged"
+
+        if external_power_online is True:
+            return mode_policy["ac"]
+
+        if external_power_online is False:
+            return mode_policy["battery"]
+
+        return self._fallback_profile(
+            "unknown_power_source"
+        )
+
     def apply(
         self,
         controller: ModePowerController,

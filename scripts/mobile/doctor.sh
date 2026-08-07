@@ -1905,6 +1905,97 @@ then
 else
     fail "Mobile mode power-policy integration"
 fi
+
+mobile_power_panel="$REPO/app/mobile_power_panel.py"
+mobile_system_screen="$REPO/app/screens/system.py"
+
+mobile_power_surface_source_ok=0
+if [[ -s "$mobile_power_panel" ]] \
+    && grep -Fq \
+        'class MobilePowerPanel(Static):' \
+        "$mobile_power_panel" \
+    && grep -Fq \
+        'MOBILE POWER // FIELD ENERGY STATUS' \
+        "$mobile_power_panel" \
+    && ! grep -Eq \
+        'subprocess|powerprofilesctl|apply_power_profile\(|RuntimeJsonStore|set_interval\(' \
+        "$mobile_power_panel"
+then
+    mobile_power_surface_source_ok=1
+fi
+
+if (( mobile_power_surface_source_ok == 1 )); then
+    pass "HELM Mobile power telemetry surface source"
+else
+    fail "HELM Mobile power telemetry surface source"
+fi
+
+if grep -Fq \
+        'from app.mobile_power_panel import MobilePowerPanel' \
+        "$mobile_system_screen" \
+    && grep -Fq \
+        'yield MobilePowerPanel(id="mobile-power-panel")' \
+        "$mobile_system_screen" \
+    && grep -Fq \
+        'self._mode_power_profile' \
+        "$mobile_system_screen"
+then
+    pass "Mobile power surface SYSTEM integration"
+else
+    fail "Mobile power surface SYSTEM integration"
+fi
+
+if [[ "$(
+        grep -Fc \
+            '.update_mode_context(' \
+            "$REPO/app/main.py" \
+            2>/dev/null \
+            || true
+    )" == "4" ]]
+then
+    pass "Mobile power surface mode context integration"
+else
+    fail "Mobile power surface mode context integration"
+fi
+
+if PYTHONPATH="$REPO" "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_MOBILE_POWER_SURFACE'
+from app.mobile_power_panel import MobilePowerPanel
+from modules.power import PowerMonitor
+from services.mobile_power_policy import MobilePowerPolicyService
+
+sample = PowerMonitor().sample()
+policy = MobilePowerPolicyService()
+
+target = policy.policy_target_for_source(
+    "command",
+    "unchanged",
+    sample.external_power_online,
+)
+
+markup = MobilePowerPanel.build_markup(
+    sample,
+    "command",
+    target,
+)
+
+required = (
+    "MOBILE POWER // FIELD ENERGY STATUS",
+    "BATTERY",
+    "HEALTH",
+    "SOURCE",
+    "PROFILE",
+    "MODE POLICY",
+)
+
+if not all(marker in markup for marker in required):
+    raise SystemExit(1)
+PY_MOBILE_POWER_SURFACE
+then
+    pass "Mobile power surface live read-only rendering"
+else
+    fail "Mobile power surface live read-only rendering"
+fi
+
 printf '\n%sSYSTEM STATE%s: ' "$cyan" "$reset"
 if (( FAIL > 0 )); then
     printf '%sDEGRADED%s\n' "$red" "$reset"

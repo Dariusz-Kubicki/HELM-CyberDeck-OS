@@ -4002,3 +4002,19 @@ Button#mode-web-app-add.-active {
 }
 
 /* END HELM V1.2 SIGNATURE ALIGNMENT */
+
+/* HELM MOBILE STAGE 5C POWER SURFACE */
+#mobile-power-panel {
+    width: 100%;
+    height: 8;
+    margin-bottom: 1;
+    padding: 1 2;
+    border: solid #1f7187;
+    background: #071116;
+    color: #b8eaf5;
+}
+
+#mobile-power-panel:hover {
+    border: solid #36d7ff;
+    background: #0b1d24;
+}

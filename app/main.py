@@ -296,6 +296,13 @@ class Helm(App):
         )
 
         if active_mode is not None:
+            self.query_one(
+                SystemScreen
+            ).update_mode_context(
+                active_mode.mode_id,
+                active_mode.power_profile,
+            )
+
             power_policy = self.mobile_power_policy.apply(
                 self.mode_service,
                 active_mode.mode_id,
@@ -320,6 +327,13 @@ class Helm(App):
                 ),
             )
         else:
+            self.query_one(
+                SystemScreen
+            ).update_mode_context(
+                "custom",
+                "unchanged",
+            )
+
             self.query_one(ModesScreen).update_active_mode(
                 "custom",
                 self.mode_service.get_current_power_profile(),
@@ -1358,6 +1372,13 @@ class Helm(App):
             self.active_mode_id = mode.mode_id
 
             self.query_one(
+                SystemScreen
+            ).update_mode_context(
+                mode.mode_id,
+                mode.power_profile,
+            )
+
+            self.query_one(
                 Sidebar
             ).update_mode(
                 mode.name,
@@ -1536,6 +1557,13 @@ class Helm(App):
     def _set_custom_mode(self) -> None:
         self.active_mode_id = "custom"
         self.mode_service.save_active_mode("custom")
+
+        self.query_one(
+            SystemScreen
+        ).update_mode_context(
+            "custom",
+            "unchanged",
+        )
 
         self.query_one(ModesScreen).update_active_mode(
             "custom",

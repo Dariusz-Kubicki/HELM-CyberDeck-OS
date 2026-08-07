@@ -1996,6 +1996,139 @@ else
     fail "Mobile power surface live read-only rendering"
 fi
 
+
+stage5_manifest="$REPO/mobile/stage5/stage5.json"
+stage5_audit="$REPO/scripts/mobile/audit-stage5-telemetry-modes.sh"
+
+if [[ -s "$stage5_manifest" ]] \
+    && STAGE5_MANIFEST="$stage5_manifest" \
+       "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_STAGE5_DOCTOR_MANIFEST'
+import json
+import os
+from pathlib import Path
+
+payload = json.loads(
+    Path(os.environ["STAGE5_MANIFEST"]).read_text(encoding="utf-8")
+)
+
+if payload.get("stage") != "5d-stage5-closeout":
+    raise SystemExit(1)
+if payload.get("status") != "complete":
+    raise SystemExit(1)
+if payload.get("telemetry", {}).get("single_collector") is not True:
+    raise SystemExit(1)
+if payload.get("surface", {}).get("second_collector") is not False:
+    raise SystemExit(1)
+if any(payload.get("safety", {}).values()):
+    raise SystemExit(1)
+PY_STAGE5_DOCTOR_MANIFEST
+then
+    pass "HELM Mobile Stage 5 milestone manifest"
+else
+    fail "HELM Mobile Stage 5 milestone manifest"
+fi
+
+if grep -Fq \
+        'from modules.power import PowerMonitor, PowerSample' \
+        "$REPO/services/data_service.py" \
+    && grep -Fq \
+        'power: PowerSample' \
+        "$REPO/services/data_service.py" \
+    && ! grep -Eq \
+        'set_interval\(|apply_power_profile\(|RuntimeJsonStore' \
+        "$REPO/app/mobile_power_panel.py"
+then
+    pass "Stage 5 telemetry read-only contract"
+else
+    fail "Stage 5 telemetry read-only contract"
+fi
+
+if PYTHONPATH="$REPO" "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_STAGE5_DOCTOR_POLICY'
+from services.mobile_power_policy import MobilePowerPolicyService
+
+service = MobilePowerPolicyService()
+
+expected = {
+    ("chill", False): "power-saver",
+    ("focus", False): "power-saver",
+    ("maker", False): "balanced",
+    ("development", False): "balanced",
+    ("development", True): "performance",
+    ("command", False): "balanced",
+}
+
+for (mode_id, external), target in expected.items():
+    if service.policy_target_for_source(
+        mode_id,
+        "unchanged",
+        external,
+    ) != target:
+        raise SystemExit(1)
+
+if service.policy_target_for_source(
+    "development",
+    "unchanged",
+    None,
+) != "balanced":
+    raise SystemExit(1)
+PY_STAGE5_DOCTOR_POLICY
+then
+    pass "Stage 5 adaptive mode policy contract"
+else
+    fail "Stage 5 adaptive mode policy contract"
+fi
+
+if PYTHONPATH="$REPO" "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_STAGE5_DOCTOR_SURFACE'
+from app.mobile_power_panel import MobilePowerPanel
+from modules.power import PowerSample
+
+sample = PowerSample(
+    battery_present=True,
+    battery_percent=50.0,
+    battery_state="DISCHARGING",
+    battery_power_w=7.0,
+    battery_energy_wh=23.0,
+    battery_energy_full_wh=46.0,
+    battery_energy_full_design_wh=50.0,
+    battery_health_percent=92.0,
+    battery_time_remaining_s=10800,
+    external_power_online=False,
+    power_profile="balanced",
+)
+
+markup = MobilePowerPanel.build_markup(
+    sample,
+    "command",
+    "balanced",
+)
+
+for marker in (
+    "MOBILE POWER // FIELD ENERGY STATUS",
+    "50.0%",
+    "SOURCE",
+    "PROFILE",
+    "COMMAND -> BALANCED",
+):
+    if marker not in markup:
+        raise SystemExit(1)
+PY_STAGE5_DOCTOR_SURFACE
+then
+    pass "Stage 5 telemetry surface contract"
+else
+    fail "Stage 5 telemetry surface contract"
+fi
+
+if [[ -x "$stage5_audit" ]] \
+    && bash -n "$stage5_audit" >/dev/null 2>&1 \
+    && ! grep -Fq 'powerprofilesctl set' "$stage5_audit" \
+    && ! grep -Fq 'save_active_mode(' "$stage5_audit" \
+    && ! grep -Fq 'launch_mode(' "$stage5_audit"
+then
+    pass "Stage 5 reusable read-only audit"
+else
+    fail "Stage 5 reusable read-only audit"
+fi
+
 printf '\n%sSYSTEM STATE%s: ' "$cyan" "$reset"
 if (( FAIL > 0 )); then
     printf '%sDEGRADED%s\n' "$red" "$reset"

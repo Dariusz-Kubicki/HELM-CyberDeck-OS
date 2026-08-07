@@ -21,6 +21,7 @@ All notable changes to HELM CyberDeck OS are documented here.
 - HELM Mobile Stage 5A laptop power telemetry with battery energy, health, power draw, remaining-time estimation and current power-profile sampling.
 - HELM Mobile Stage 5B adaptive workspace power policy with AC/battery-aware defaults, balanced safety fallbacks and non-fatal profile application.
 - HELM Mobile Stage 5C SYSTEM power telemetry surface with battery status, energy, health, remaining time, live platform profile and active mode-policy context.
+- HELM Mobile Stage 5D milestone closeout with a reusable read-only telemetry/modes audit, consolidated diagnostics and regression contracts across Stages 5A–5C.
 
 
 ### Added

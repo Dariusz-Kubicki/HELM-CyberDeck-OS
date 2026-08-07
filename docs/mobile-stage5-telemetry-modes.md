@@ -73,6 +73,21 @@ Mode policy context is resolved through a pure source-mapping helper in `MobileP
 
 Stage 5C therefore remains a presentation layer over Stage 5A telemetry and Stage 5B policy rather than becoming another power-management subsystem.
 
+## Stage 5D — Final validation and milestone closeout
+
+Stage 5D closes the Mobile telemetry and modes milestone without adding another runtime feature. It consolidates the contracts introduced by Stages 5A, 5B and 5C and adds a reusable subsystem audit at `scripts/mobile/audit-stage5-telemetry-modes.sh`.
+
+The closeout verifies that:
+
+- laptop power data remains part of the existing fault-tolerant `DataService` telemetry cycle;
+- `MobilePowerPolicyService` keeps the approved AC/battery mapping and conservative `balanced` fallbacks;
+- an explicit non-`unchanged` mode profile still takes precedence;
+- a profile-apply failure remains non-fatal to workspace activation;
+- `MobilePowerPanel` consumes the existing `SystemSnapshot.power` sample and does not create another collector loop;
+- audit and diagnostic paths do not activate modes, launch workspace applications, write HELM runtime JSON or change the live platform power profile.
+
+Stage 5 status: **COMPLETE**.
+
 ## Safety contract
 
 Stage 5 telemetry collection must remain read-only. Sampling must never:

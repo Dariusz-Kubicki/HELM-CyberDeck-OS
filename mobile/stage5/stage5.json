@@ -1,0 +1,64 @@
+{
+  "stage": "5d-stage5-closeout",
+  "role": "HELM Mobile telemetry and modes milestone",
+  "status": "complete",
+  "closeout_base_commit": "7b3ccee227bfebdaa7df158cb526826fd3033ed7",
+  "subsystems": {
+    "5a": "mobile-power-telemetry-foundation",
+    "5b": "adaptive-mode-power-policy",
+    "5c": "mobile-power-telemetry-surface"
+  },
+  "telemetry": {
+    "single_collector": true,
+    "power_sample_in_system_snapshot": true,
+    "sampling_is_read_only": true,
+    "battery_fields": [
+      "battery_present",
+      "battery_percent",
+      "battery_state",
+      "battery_power_w",
+      "battery_energy_wh",
+      "battery_energy_full_wh",
+      "battery_energy_full_design_wh",
+      "battery_health_percent",
+      "battery_time_remaining_s",
+      "external_power_online",
+      "power_profile"
+    ]
+  },
+  "mode_policy": {
+    "manifest": "mobile/modes/power-policy.json",
+    "adaptive_ac_battery_policy": true,
+    "explicit_override_precedence": true,
+    "unknown_power_source_fallback": "balanced",
+    "unavailable_profile_fallback": "balanced",
+    "apply_failure_non_fatal": true
+  },
+  "surface": {
+    "screen": "SYSTEM",
+    "panel": "MobilePowerPanel",
+    "uses_existing_system_snapshot": true,
+    "second_collector": false,
+    "shows_live_profile_and_policy_target": true
+  },
+  "safety": {
+    "audit_activates_mode": false,
+    "audit_launches_workspace_apps": false,
+    "audit_writes_runtime_json": false,
+    "audit_changes_power_profile": false,
+    "audit_changes_services": false,
+    "audit_changes_boot_login_lock": false,
+    "audit_reboots": false
+  },
+  "verification": {
+    "audit": "scripts/mobile/audit-stage5-telemetry-modes.sh",
+    "release_check": "scripts/check-release.sh",
+    "doctor_checks": [
+      "HELM Mobile Stage 5 milestone manifest",
+      "Stage 5 telemetry read-only contract",
+      "Stage 5 adaptive mode policy contract",
+      "Stage 5 telemetry surface contract",
+      "Stage 5 reusable read-only audit"
+    ]
+  }
+}

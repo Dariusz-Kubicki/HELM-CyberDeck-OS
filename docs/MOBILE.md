@@ -294,3 +294,9 @@ Restore with:
     scripts/mobile/restore-stage6a-suspend-policy.sh
 
 The installer creates recovery state before changing the systemd sleep drop-in or KDE configuration. It does not suspend the machine, restart PowerDevil/logind, change the active power profile, or modify boot/login/PAM configuration. A deliberate real suspend/resume test is deferred to Stage 6B.
+
+## Stage 6B — Real suspend/resume validation
+
+The reference ThinkPad has passed deliberate real-hardware validation for both manual suspend and physical lid-close suspend. Both returned from `s2idle`, resumed `amdgpu`, preserved the active power profile and required HELM Security Lock password authentication before returning to the session.
+
+The saved installed-state evidence is checked by Mobile Doctor. Stage 6B does not enable or test hibernation.

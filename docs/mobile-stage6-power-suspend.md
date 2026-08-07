@@ -45,3 +45,23 @@ Restore:
     scripts/mobile/restore-stage6a-suspend-policy.sh
 
 Neither path restarts the display manager or changes boot/authentication infrastructure.
+
+## Stage 6B — Real suspend/resume validation
+
+Stage 6B performs the deliberately deferred real-hardware validation without changing the Stage 6A policy.
+
+The reference ThinkPad passed both required cycles:
+
+- manual `systemctl suspend` entered and exited `s2idle`;
+- physical lid close was handled by PowerDevil and produced a real suspend/resume cycle;
+- KScreenLocker reported the resumed session locked after both cycles;
+- HELM Security Lock was visible and the native password path unlocked the session after both cycles;
+- `amdgpu` resumed successfully after both cycles;
+- Wi-Fi was connected before the tests and recovered after both resumes;
+- the active power profile and boot identity were preserved;
+- no failed system or user services remained after resume;
+- no hibernate, hybrid-sleep or suspend-then-hibernate path was used.
+
+The milestone is tracked by `mobile/power/suspend-validation.json`. Device evidence remains outside Git in `~/.local/share/helm-mobile/stage6b-suspend-validation-state.json`.
+
+Stage 6B status: **REAL-HARDWARE VERIFIED**.

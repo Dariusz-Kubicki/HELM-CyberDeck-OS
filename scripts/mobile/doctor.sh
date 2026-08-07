@@ -2195,6 +2195,92 @@ else
     fail "Stage 6A lock-on-resume"
 fi
 
+
+stage6b_manifest="$REPO/mobile/power/suspend-validation.json"
+stage6b_state="${XDG_DATA_HOME:-$HOME/.local/share}/helm-mobile/stage6b-suspend-validation-state.json"
+
+if [[ -s "$stage6b_manifest" ]] \
+    && STAGE6B_MANIFEST="$stage6b_manifest" \
+       "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_STAGE6B_MANIFEST'
+import json
+import os
+from pathlib import Path
+
+p = json.loads(
+    Path(os.environ["STAGE6B_MANIFEST"]).read_text(encoding="utf-8")
+)
+
+if p.get("stage") != "6b-real-suspend-validation":
+    raise SystemExit(1)
+if p.get("status") != "real-hardware-verified":
+    raise SystemExit(1)
+if p.get("sleep_backend") != "s2idle":
+    raise SystemExit(1)
+
+v = p.get("validation", {})
+for key in (
+    "manual_suspend_resume",
+    "lid_close_suspend_resume",
+    "powerdevil_lid_request",
+    "kscreenlocker_locked_hint",
+    "native_password_unlock_user_verified",
+    "amdgpu_resume",
+    "power_profile_preserved",
+    "boot_identity_preserved",
+):
+    if v.get(key) is not True:
+        raise SystemExit(1)
+
+if v.get("failed_services_after_resume") is not False:
+    raise SystemExit(1)
+PY_STAGE6B_MANIFEST
+then
+    pass "HELM Mobile Stage 6B real suspend validation"
+else
+    fail "HELM Mobile Stage 6B real suspend validation"
+fi
+
+if [[ -s "$stage6b_state" ]] \
+    && STAGE6B_STATE="$stage6b_state" \
+       "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_STAGE6B_STATE'
+import json
+import os
+from pathlib import Path
+
+p = json.loads(
+    Path(os.environ["STAGE6B_STATE"]).read_text(encoding="utf-8")
+)
+
+if p.get("stage") != "6b-real-suspend-validation":
+    raise SystemExit(1)
+if p.get("status") != "passed":
+    raise SystemExit(1)
+if p.get("sleep_backend") != "s2idle":
+    raise SystemExit(1)
+if p.get("hibernation_used") is not False:
+    raise SystemExit(1)
+
+for section in ("manual_suspend", "lid_suspend"):
+    item = p.get(section, {})
+    if item.get("passed") is not True:
+        raise SystemExit(1)
+    if item.get("lock_hint_observed") is not True:
+        raise SystemExit(1)
+    if item.get("security_lock_user_confirmed") is not True:
+        raise SystemExit(1)
+    if item.get("amdgpu_resume") is not True:
+        raise SystemExit(1)
+
+if p.get("power_profile", {}).get("preserved") is not True:
+    raise SystemExit(1)
+PY_STAGE6B_STATE
+then
+    pass "Stage 6B real-hardware evidence"
+else
+    fail "Stage 6B real-hardware evidence"
+fi
+
+
 printf '\n%sSYSTEM STATE%s: ' "$cyan" "$reset"
 if (( FAIL > 0 )); then
     printf '%sDEGRADED%s\n' "$red" "$reset"

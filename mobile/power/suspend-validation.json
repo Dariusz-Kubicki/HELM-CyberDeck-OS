@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "stage": "6b-real-suspend-validation",
+  "role": "HELM Mobile real suspend/resume validation",
+  "status": "real-hardware-verified",
+  "stage6a_base_commit": "2fbf4ad4b6a730f414bd1927df445ab32b3e648e",
+  "platform": "ThinkPad T14 Gen 2a",
+  "verified_at": "2026-08-07T16:34:04+02:00",
+  "kernel": "7.1.5-arch1-2",
+  "sleep_backend": "s2idle",
+  "validation": {
+    "manual_suspend_resume": true,
+    "lid_close_suspend_resume": true,
+    "powerdevil_lid_request": true,
+    "kscreenlocker_locked_hint": true,
+    "native_password_unlock_user_verified": true,
+    "amdgpu_resume": true,
+    "wifi_recovery": "verified",
+    "power_profile_preserved": true,
+    "boot_identity_preserved": true,
+    "failed_services_after_resume": false
+  },
+  "not_validated": {
+    "hibernate": true,
+    "hybrid_sleep": true,
+    "suspend_then_hibernate": true
+  },
+  "evidence": {
+    "runtime_state": "~/.local/share/helm-mobile/stage6b-suspend-validation-state.json",
+    "journal_scope": "same-boot real hardware cycles"
+  },
+  "safety": {
+    "policy_changed": false,
+    "power_profile_changed": false,
+    "wake_sources_changed": false,
+    "services_restarted": false,
+    "boot_modified": false,
+    "pam_modified": false
+  }
+}

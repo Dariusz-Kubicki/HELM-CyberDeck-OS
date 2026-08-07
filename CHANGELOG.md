@@ -18,6 +18,7 @@ All notable changes to HELM CyberDeck OS are documented here.
 - HELM Mobile SDDM Access Gate with a Qt 6 greeter, dark HELM session and power controls, native authentication, real-login verification and reversible installation.
 - Independent Stage 4B KScreenLocker Security Lock and Stage 4C SDDM Access Gate lifecycle documentation and diagnostics.
 - HELM Mobile Stage 4D Technical Boot baseline preserving the Arch UKI splash, verbose boot output, console LUKS authentication and non-destructive UKI recovery policy.
+- HELM Mobile Stage 5A laptop power telemetry with battery energy, health, power draw, remaining-time estimation and current power-profile sampling.
 
 
 ### Added

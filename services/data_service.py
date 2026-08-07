@@ -13,6 +13,7 @@ from modules.hardware import (
     get_ram_usage,
 )
 from modules.network import NetworkMonitor
+from modules.power import PowerMonitor, PowerSample
 from modules.projects import ProjectMonitor, ProjectSample
 from modules.resources import ResourceMonitor, ResourceSample
 from modules.storage import StorageMonitor, StorageSample
@@ -50,6 +51,8 @@ class SystemSnapshot:
     network_upload_bps: float
     network_bytes_received: int
     network_bytes_sent: int
+
+    power: PowerSample
 
     storage: StorageSample
     devices: DeviceSample
@@ -97,6 +100,7 @@ class DataService:
 
     def __init__(self) -> None:
         self.network_monitor = NetworkMonitor()
+        self.power_monitor = PowerMonitor()
         self.storage_monitor = StorageMonitor()
         self.device_monitor = DeviceMonitor()
         self.project_monitor = ProjectMonitor()
@@ -341,6 +345,18 @@ class DataService:
             network_fallback,
         )
 
+        power_fallback = (
+            previous.power
+            if previous is not None
+            else PowerSample.unavailable()
+        )
+
+        power = capture(
+            "POWER",
+            self.power_monitor.sample,
+            power_fallback,
+        )
+
         storage = capture(
             "STORAGE",
             self.storage_monitor.sample,
@@ -404,6 +420,7 @@ class DataService:
             assert isinstance(system_info, dict)
             assert isinstance(gpu_info, dict)
             assert isinstance(network, dict)
+            assert isinstance(power, PowerSample)
 
             snapshot = SystemSnapshot(
                 timestamp=datetime.now().strftime(
@@ -499,6 +516,8 @@ class DataService:
                 network_bytes_sent=int(
                     network["sent"]
                 ),
+
+                power=power,
 
                 storage=storage,
                 devices=devices,

@@ -1772,6 +1772,60 @@ if [[ -s "$technical_boot_state" ]]; then
     fi
 fi
 if (( technical_boot_recovery_ok == 1 )); then pass "Technical Boot recovery baseline"; else fail "Technical Boot recovery baseline"; fi
+
+
+mobile_power_module="$REPO/modules/power.py"
+mobile_power_source_ok=0
+
+if [[ -s "$mobile_power_module" ]]; then
+    if PYTHONPATH="$REPO" "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_MOBILE_POWER'
+from modules.power import PowerMonitor, PowerSample
+
+sample = PowerMonitor().sample()
+
+if not isinstance(sample, PowerSample):
+    raise SystemExit(1)
+
+if sample.battery_percent is not None:
+    if not 0.0 <= sample.battery_percent <= 100.0:
+        raise SystemExit(1)
+
+if sample.battery_health_percent is not None:
+    if not 0.0 <= sample.battery_health_percent <= 150.0:
+        raise SystemExit(1)
+
+if not isinstance(sample.power_profile, str):
+    raise SystemExit(1)
+PY_MOBILE_POWER
+    then
+        mobile_power_source_ok=1
+    fi
+fi
+
+if (( mobile_power_source_ok == 1 )); then
+    pass "Mobile power telemetry source"
+else
+    fail "Mobile power telemetry source"
+fi
+
+if grep -Fq \
+        'from modules.power import PowerMonitor, PowerSample' \
+        "$REPO/services/data_service.py" \
+    && grep -Fq \
+        'power: PowerSample' \
+        "$REPO/services/data_service.py" \
+    && grep -Fq \
+        'self.power_monitor = PowerMonitor()' \
+        "$REPO/services/data_service.py" \
+    && grep -Fq \
+        'power=power' \
+        "$REPO/services/data_service.py"
+then
+    pass "Mobile power telemetry integration"
+else
+    fail "Mobile power telemetry integration"
+fi
+
 printf '\n%sSYSTEM STATE%s: ' "$cyan" "$reset"
 if (( FAIL > 0 )); then
     printf '%sDEGRADED%s\n' "$red" "$reset"

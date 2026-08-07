@@ -280,3 +280,17 @@ Restore the files captured by the latest application with:
 The installation requires neither a Plasma restart nor a reboot. Mobile Doctor
 verifies the manifest, Plasma runtime, installed overlay, wallpaper,
 configuration and recovery state.
+
+## Stage 6A — Suspend reliability policy
+
+The Mobile Node keeps KDE PowerDevil as the desktop owner of lid and power events and systemd as the sleep executor. Stage 6A makes the already-proven lid-close-to-suspend behavior explicit for AC and battery use, preserves PowerDevil's external-monitor suppression, keeps `s2idle`, enables lock-on-resume and disables unprovisioned hibernation paths.
+
+Apply with:
+
+    scripts/mobile/apply-stage6a-suspend-policy.sh
+
+Restore with:
+
+    scripts/mobile/restore-stage6a-suspend-policy.sh
+
+The installer creates recovery state before changing the systemd sleep drop-in or KDE configuration. It does not suspend the machine, restart PowerDevil/logind, change the active power profile, or modify boot/login/PAM configuration. A deliberate real suspend/resume test is deferred to Stage 6B.

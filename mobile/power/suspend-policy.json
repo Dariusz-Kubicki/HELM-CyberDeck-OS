@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "stage": "6a-mobile-suspend-policy",
+  "role": "HELM Mobile suspend reliability policy",
+  "ownership": {
+    "lid_and_power_events": "KDE PowerDevil",
+    "sleep_execution": "systemd"
+  },
+  "lid": {
+    "battery": "suspend",
+    "ac": "suspend",
+    "external_monitor": "preserve-powerdevil-native-suppression"
+  },
+  "sleep": {
+    "backend": "s2idle",
+    "allow_suspend": true,
+    "allow_hibernation": false,
+    "allow_suspend_then_hibernate": false,
+    "allow_hybrid_sleep": false
+  },
+  "security": {
+    "lock_on_resume": true,
+    "authentication_backend": "native-kscreenlocker"
+  },
+  "safety": {
+    "change_power_profile": false,
+    "restart_powerdevil": false,
+    "restart_logind": false,
+    "modify_boot": false,
+    "modify_pam": false,
+    "trigger_sleep_during_install": false
+  }
+}

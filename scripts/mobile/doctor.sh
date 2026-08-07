@@ -2129,6 +2129,72 @@ else
     fail "Stage 5 reusable read-only audit"
 fi
 
+
+
+stage6a_manifest="$REPO/mobile/power/suspend-policy.json"
+stage6a_sleep_source="$REPO/mobile/systemd/90-helm-mobile-sleep.conf"
+stage6a_sleep_target="/etc/systemd/sleep.conf.d/90-helm-mobile-sleep.conf"
+
+if [[ -s "$stage6a_manifest" ]] \
+    && POLICY="$stage6a_manifest" "$PYTHON_BIN" - >/dev/null 2>&1 <<'PY_STAGE6A_MANIFEST'
+import json
+import os
+from pathlib import Path
+p = json.loads(Path(os.environ["POLICY"]).read_text(encoding="utf-8"))
+if p.get("stage") != "6a-mobile-suspend-policy": raise SystemExit(1)
+if p.get("ownership", {}).get("lid_and_power_events") != "KDE PowerDevil": raise SystemExit(1)
+if p.get("lid", {}).get("battery") != "suspend": raise SystemExit(1)
+if p.get("lid", {}).get("ac") != "suspend": raise SystemExit(1)
+sleep = p.get("sleep", {})
+if sleep.get("backend") != "s2idle": raise SystemExit(1)
+if sleep.get("allow_suspend") is not True: raise SystemExit(1)
+if sleep.get("allow_hibernation") is not False: raise SystemExit(1)
+if sleep.get("allow_suspend_then_hibernate") is not False: raise SystemExit(1)
+if sleep.get("allow_hybrid_sleep") is not False: raise SystemExit(1)
+if p.get("security", {}).get("lock_on_resume") is not True: raise SystemExit(1)
+PY_STAGE6A_MANIFEST
+then
+    pass "HELM Mobile Stage 6A suspend policy"
+else
+    fail "HELM Mobile Stage 6A suspend policy"
+fi
+
+if [[ -s "$stage6a_sleep_source" ]] \
+    && [[ -s "$stage6a_sleep_target" ]] \
+    && cmp -s "$stage6a_sleep_source" "$stage6a_sleep_target" \
+    && grep -Fqx 'AllowSuspend=yes' "$stage6a_sleep_target" \
+    && grep -Fqx 'AllowHibernation=no' "$stage6a_sleep_target" \
+    && grep -Fqx 'AllowSuspendThenHibernate=no' "$stage6a_sleep_target" \
+    && grep -Fqx 'AllowHybridSleep=no' "$stage6a_sleep_target"
+then
+    pass "Stage 6A installed sleep policy"
+else
+    fail "Stage 6A installed sleep policy"
+fi
+
+if command -v systemd-inhibit >/dev/null 2>&1 \
+    && systemd-inhibit --list --no-pager 2>/dev/null | grep -Fq 'PowerDevil'
+then
+    pass "Stage 6A PowerDevil lid ownership"
+else
+    fail "Stage 6A PowerDevil lid ownership"
+fi
+
+stage6a_ac_lid="$(kreadconfig6 --file powerdevilrc --group AC --group SuspendAndShutdown --key LidAction 2>/dev/null || true)"
+stage6a_bat_lid="$(kreadconfig6 --file powerdevilrc --group Battery --group SuspendAndShutdown --key LidAction 2>/dev/null || true)"
+if [[ "$stage6a_ac_lid" == "1" ]] && [[ "$stage6a_bat_lid" == "1" ]]; then
+    pass "Stage 6A lid-close suspend configuration"
+else
+    fail "Stage 6A lid-close suspend configuration"
+fi
+
+stage6a_lock_resume="$(kreadconfig6 --file kscreenlockerrc --group Daemon --key LockOnResume --default true 2>/dev/null || true)"
+if [[ "$stage6a_lock_resume" == "true" ]]; then
+    pass "Stage 6A lock-on-resume"
+else
+    fail "Stage 6A lock-on-resume"
+fi
+
 printf '\n%sSYSTEM STATE%s: ' "$cyan" "$reset"
 if (( FAIL > 0 )); then
     printf '%sDEGRADED%s\n' "$red" "$reset"
